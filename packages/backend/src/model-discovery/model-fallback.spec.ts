@@ -322,6 +322,7 @@ describe('buildSubscriptionFallbackModels', () => {
       'claude-opus-5',
       'claude-opus-5-5',
       'claude-sonnet-5',
+      'claude-sonnet-5-5',
     ]);
     expect(result.every((model) => model.provider === 'anthropic')).toBe(true);
     expect(result.every((model) => model.displayName === model.id)).toBe(true);
@@ -336,6 +337,7 @@ describe('buildSubscriptionFallbackModels', () => {
     expect(result.find((model) => model.id === 'claude-opus-5')?.contextWindow).toBe(1000000);
     expect(result.find((model) => model.id === 'claude-opus-5-5')?.contextWindow).toBe(1000000);
     expect(result.find((model) => model.id === 'claude-sonnet-5')?.contextWindow).toBe(1000000);
+    expect(result.find((model) => model.id === 'claude-sonnet-5-5')?.contextWindow).toBe(1000000);
     expect(result.every((model) => model.contextWindowSource === 'subscription_config')).toBe(true);
   });
 

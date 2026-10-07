@@ -335,13 +335,23 @@ describe('getSubscriptionKnownModels', () => {
     expect(models).toContain('claude-sonnet-5');
     // Opus 5.5 is a point release addressed directly by callers.
     expect(models).toContain('claude-opus-5-5');
+    expect(models).toContain('claude-sonnet-5-5');
   });
 
   it('returns the curated ChatGPT plan models for OpenAI', () => {
     const models = getSubscriptionKnownModels('openai');
     expect(models).toEqual(
-      expect.arrayContaining(['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']),
+      expect.arrayContaining([
+        'gpt-6-astra',
+        'gpt-6.1-sol',
+        'gpt-6-sol',
+        'gpt-6-luna',
+        'gpt-5.6-sol',
+        'gpt-5.6-terra',
+        'gpt-5.6-luna',
+      ]),
     );
+    expect(models).not.toContain('gpt-6-luna-pro');
     expect(models).not.toContain('gpt-5.6-sol-pro');
     expect(models).not.toContain('gpt-5.6-terra-pro');
     expect(models).not.toContain('gpt-5.6-luna-pro');
@@ -514,6 +524,10 @@ describe('getSubscriptionCapabilities', () => {
       supportsBatching: false,
     });
     expect(caps?.modelContextWindows).toMatchObject({
+      'gpt-6-astra': 1050000,
+      'gpt-6.1-sol': 1050000,
+      'gpt-6-sol': 1050000,
+      'gpt-6-luna': 1050000,
       'gpt-5.6-sol': 1050000,
       'gpt-5.6-terra': 1050000,
       'gpt-5.6-luna': 1050000,
