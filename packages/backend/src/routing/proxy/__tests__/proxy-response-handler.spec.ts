@@ -7,6 +7,7 @@ import {
   recordSuccess,
 } from '../proxy-response-handler';
 import { RoutingMeta } from '../proxy.service';
+import { transformGoogleStreamChunk } from '../google-adapter';
 import { FailedFallback } from '../proxy-fallback.service';
 import { IngestionContext } from '../../../otlp/interfaces/ingestion-context.interface';
 import { StreamUsage } from '../stream-writer';
@@ -1453,7 +1454,7 @@ describe('proxy-response-handler', () => {
         forward.response.body,
         res,
         expect.any(Function),
-        undefined,
+        expect.any(Function),
         undefined,
         { protocol: 'google_generate_content' },
       );
@@ -1930,6 +1931,100 @@ describe('proxy-response-handler', () => {
 
       // Should not throw — just drops the signatures silently.
       expect(() => capturedTransform!('{}')).not.toThrow();
+    });
+
+    describe('Google end-of-stream usage', () => {
+      const usageEvent = (text: string, n: number, finishReason?: string) =>
+        JSON.stringify({
+          candidates: [
+            { content: { parts: [{ text }] }, ...(finishReason ? { finishReason } : {}) },
+          ],
+          usageMetadata: { promptTokenCount: 10, candidatesTokenCount: n, totalTokenCount: 10 + n },
+        });
+
+      async function captureGoogleStream(apiMode?: 'messages') {
+        const { res } = mockResponse();
+        const client = mockProviderClient();
+        client.convertGoogleStreamChunk.mockImplementation(transformGoogleStreamChunk);
+        let transform: ((chunk: string) => string | null) | undefined;
+        let finalize: (() => string | null) | undefined;
+        pipeStreamSpy.mockImplementation(
+          async (
+            _body: unknown,
+            _res: unknown,
+            t?: (chunk: string) => string | null,
+            f?: () => string | null,
+          ) => {
+            transform = t;
+            finalize = f;
+            return null;
+          },
+        );
+        await handleStreamResponse(
+          res as any,
+          mockForward({ isGoogle: true }) as any,
+          makeMeta(),
+          {},
+          client as any,
+          undefined,
+          undefined,
+          undefined,
+          apiMode,
+        );
+        return { transform: transform!, finalize: finalize! };
+      }
+
+      it('reports the last usage when the stream ends before a finishReason', async () => {
+        const { transform, finalize } = await captureGoogleStream();
+        transform(usageEvent('a', 1));
+        transform(usageEvent('b', 2));
+
+        const tail = finalize()!;
+        expect(tail).toContain('"completion_tokens":2');
+        expect(tail).not.toContain('finish_reason');
+        expect(tail.trimEnd().endsWith('data: [DONE]')).toBe(true);
+      });
+
+      it('adds no second usage chunk to a complete stream', async () => {
+        const { transform, finalize } = await captureGoogleStream();
+        transform(usageEvent('a', 1));
+        expect(transform(usageEvent('', 2, 'STOP'))).toContain('"completion_tokens":2');
+
+        expect(finalize()).toBe('data: [DONE]\n\n');
+      });
+
+      it('hands the last usage to the inbound transformer before it finalizes', async () => {
+        const { transform, finalize } = await captureGoogleStream('messages');
+        transform(usageEvent('a', 3));
+
+        const tail = finalize()!;
+        expect(tail).toContain('event: message_stop');
+        expect(tail).toContain('"output_tokens":3');
+      });
+    });
+
+    it('passes one stream state to every Google chunk of a stream', async () => {
+      const { res } = mockResponse();
+      const forward = mockForward({ isGoogle: true });
+      const client = mockProviderClient();
+      const meta = makeMeta();
+
+      let capturedTransform: ((chunk: string) => string | null) | undefined;
+      pipeStreamSpy.mockImplementation(
+        async (_body: unknown, _res: unknown, transform?: (chunk: string) => string | null) => {
+          capturedTransform = transform;
+          return null;
+        },
+      );
+      client.convertGoogleStreamChunk.mockReturnValue({ chunk: 'data: {}\n\n', signatures: [] });
+
+      await handleStreamResponse(res as any, forward as any, meta, {}, client as any);
+      capturedTransform!('{"a":1}');
+      capturedTransform!('{"b":2}');
+
+      const [first, second] = client.convertGoogleStreamChunk.mock.calls;
+      expect(first[2]).toEqual(expect.objectContaining({ toolCallCount: 0 }));
+      expect(second[2]).toBe(first[2]);
     });
 
     it('caches reasoning_content from compatible OpenAI-compatible streams', async () => {

@@ -40,7 +40,11 @@ import type {
   ThinkingBlockRouteContext,
 } from './thinking-block-cache';
 import type { ReasoningContentCache } from './reasoning-content-cache';
-import type { ExtractedSignature } from './google-adapter';
+import {
+  createGoogleStreamState,
+  finishGoogleStream,
+  type ExtractedSignature,
+} from './google-adapter';
 import {
   extractThinkingBlocksFromMessagesResponse,
   type ExtractedThinkingBlocks,
@@ -657,6 +661,7 @@ export async function handleStreamResponse(
   }
 
   if (forward.isGoogle) {
+    const googleState = createGoogleStreamState();
     return pipeStream(
       forward.response.body!,
       res,
@@ -665,6 +670,7 @@ export async function handleStreamResponse(
         const { chunk: out, signatures } = providerClient.convertGoogleStreamChunk(
           innerChunk,
           meta.model,
+          googleState,
         );
         if (signatureCache && sessionKey) {
           for (const s of signatures) {
@@ -673,7 +679,14 @@ export async function handleStreamResponse(
         }
         return out ? toClientChunk(out) : null;
       },
-      finalize,
+      () => {
+        // A truncated stream still reports its last cumulative usage. A
+        // finalize hook makes pipeStream skip its own [DONE], so add it here.
+        const tail = finishGoogleStream(googleState, meta.model);
+        const tailOut = tail ? toClientChunk(tail) : null;
+        const end = finalize ? finalize() : 'data: [DONE]\n\n';
+        return (tailOut ?? '') + (end ?? '') || null;
+      },
       onClient,
       relayOptions,
     );

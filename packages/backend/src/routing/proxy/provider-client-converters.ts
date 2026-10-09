@@ -3,6 +3,7 @@ import {
   fromGoogleResponse,
   transformGoogleStreamChunk,
   type GoogleStreamChunkResult,
+  type GoogleStreamState,
 } from './google-adapter';
 import {
   applyAnthropicAutomaticCacheControl,
@@ -49,9 +50,16 @@ export function convertGoogleResponse(
   return fromGoogleResponse(googleBody, model);
 }
 
-/** Convert a Google SSE chunk to OpenAI SSE format. */
-export function convertGoogleStreamChunk(chunk: string, model: string): GoogleStreamChunkResult {
-  return transformGoogleStreamChunk(chunk, model);
+/**
+ * Convert a Google SSE chunk to OpenAI SSE format. Pass one `state` (from
+ * `createGoogleStreamState`) for every chunk of a stream.
+ */
+export function convertGoogleStreamChunk(
+  chunk: string,
+  model: string,
+  state?: GoogleStreamState,
+): GoogleStreamChunkResult {
+  return transformGoogleStreamChunk(chunk, model, state);
 }
 
 /** Convert an Anthropic non-streaming response to OpenAI format. */
