@@ -75,9 +75,24 @@ insert_stats() {
      FROM pg_stat_statements WHERE query LIKE 'INSERT INTO \"requests\"%'"
 }
 
+# Cancels the build of index $1 and waits until its backend is really gone:
+# cancel first, terminate after 5 tries. Logs loudly if it still can't confirm,
+# so an operator knows the build may still be running.
 cancel_build() {
-  q "SELECT pg_cancel_backend(pid) FROM pg_stat_activity
-     WHERE query = 'REINDEX INDEX CONCURRENTLY \"$1\"' AND pid <> pg_backend_pid()" >/dev/null
+  local match="query = 'REINDEX INDEX CONCURRENTLY \"$1\"' AND pid <> pg_backend_pid()"
+  local fn=pg_cancel_backend left i
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    [ "$i" -gt 5 ] && fn=pg_terminate_backend
+    q "SELECT $fn(pid) FROM pg_stat_activity WHERE $match" >/dev/null
+    sleep 2
+    left=$(q "SELECT count(*) FROM pg_stat_activity WHERE $match")
+    if [ "$left" = "0" ]; then
+      log "GUARD: build of $1 stopped"
+      return 0
+    fi
+  done
+  log "GUARD: COULD NOT CONFIRM the build of $1 stopped; check pg_stat_activity by hand"
+  return 1
 }
 
 # Runs in the background while an index builds; cancels that build (and only
@@ -143,7 +158,9 @@ for idx in "${INDEXES[@]}"; do
     -c "SET maintenance_work_mem = '$MAINTENANCE_WORK_MEM'" -c "SET statement_timeout = 0" \
     -c "SET max_parallel_maintenance_workers = $PARALLEL_WORKERS" \
     -c "REINDEX INDEX CONCURRENTLY \"$idx\""; then
-    kill "$guard_pid" 2>/dev/null || true
+    # Let a cancelling guard finish confirming the backend is gone (bounded).
+    (sleep 25 && kill "$guard_pid" 2>/dev/null) &
+    wait "$guard_pid" 2>/dev/null || true
     log "FAILED $idx; dropping leftover ${idx}_ccnew if any"
     q "DROP INDEX CONCURRENTLY IF EXISTS \"${idx}_ccnew\"" || true
     exit 1

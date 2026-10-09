@@ -154,7 +154,7 @@ async function pickTenants(db) {
   for (const t of rows) {
     const sample = await db.query(
       `SELECT m.agent_id, m.request_id, a.name AS agent_name
-       FROM agent_messages m JOIN agents a ON a.id = m.agent_id
+       FROM agent_messages m JOIN agents a ON a.id = m.agent_id AND a.deleted_at IS NULL
        WHERE m.tenant_id = $1 AND m.request_id IS NOT NULL
        ORDER BY m.timestamp DESC LIMIT 1`,
       [t.tenant_id],

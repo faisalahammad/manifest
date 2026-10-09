@@ -1,6 +1,6 @@
 # Manifest DB footprint evaluation (2026-10-09)
 
-This is an evaluation only. Nothing in production was changed. Every number carries a source tag:
+The evaluation itself (§1–§3 and §5) changed nothing in production: it used read-only queries, the Railway metrics API and estimates. After it, two operational changes were made on 2026-10-09, both recorded in §1a: the rollup fix (#3061) and the guarded index rebuild (14 of 20 indexes). Every number carries a source tag:
 
 - **[M-prod]** measured read-only on production (`pg_stat_*`, `pg_stats`, `EXPLAIN`, `SELECT`).
 - **[M-rw]** measured from the Railway metrics API (hourly samples, 2026-09-09 → 2026-10-09).
