@@ -31,9 +31,18 @@ MAINTENANCE_WORK_MEM=${MAINTENANCE_WORK_MEM:-256MB}
 PARALLEL_WORKERS=${PARALLEL_WORKERS:-0}
 # Latency guard: cancel the running build when the mean of the request INSERT
 # (on the proxy path) over the last GUARD_INTERVAL seconds exceeds this.
+# Windows with fewer than GUARD_MIN_CALLS inserts are too small to judge and
+# are skipped, so on near-idle traffic only MAX_BUILD_SECONDS protects you.
+# The guard fails closed: if it cannot read pg_stat_statements it cancels.
 MAX_INSERT_MS=${MAX_INSERT_MS:-40}
 GUARD_INTERVAL=${GUARD_INTERVAL:-30}
+GUARD_MIN_CALLS=${GUARD_MIN_CALLS:-5}
+# A concurrent build waits for every transaction that starts while it runs, so
+# a fresh long transaction can stall it indefinitely. Cancel past this age.
+MAX_BUILD_SECONDS=${MAX_BUILD_SECONDS:-1800}
 
+# On 2026-10-09 the first 14 were rebuilt on prod. The last 6 were left
+# alone on purpose: each build slowed proxy requests (see header).
 DEFAULT_INDEXES=(
   IDX_requests_pending
   IDX_agent_messages_direct_usage
@@ -66,19 +75,37 @@ insert_stats() {
      FROM pg_stat_statements WHERE query LIKE 'INSERT INTO \"requests\"%'"
 }
 
-# Runs in the background while an index builds; cancels the build when the
-# insert mean over a window goes above MAX_INSERT_MS.
+cancel_build() {
+  q "SELECT pg_cancel_backend(pid) FROM pg_stat_activity
+     WHERE query = 'REINDEX INDEX CONCURRENTLY \"$1\"' AND pid <> pg_backend_pid()" >/dev/null
+}
+
+# Runs in the background while an index builds; cancels that build (and only
+# that one) when the insert mean over a window goes above MAX_INSERT_MS, when
+# the build runs past MAX_BUILD_SECONDS, or when the stats can't be read.
 guard() {
-  local idx=$1 prev cur
+  set +e
+  local idx=$1 started prev cur c0 t0 c1 t1 n
+  started=$(date +%s)
   prev=$(insert_stats)
   while sleep "$GUARD_INTERVAL"; do
     cur=$(insert_stats)
+    if [ -z "$prev" ] || [ -z "$cur" ]; then
+      log "GUARD: cannot read pg_stat_statements; cancelling $idx"
+      cancel_build "$idx"
+      return
+    fi
+    if [ $(($(date +%s) - started)) -gt "$MAX_BUILD_SECONDS" ]; then
+      log "GUARD: $idx still building after $MAX_BUILD_SECONDS s; cancelling"
+      cancel_build "$idx"
+      return
+    fi
     read -r c0 t0 <<<"$prev"
     read -r c1 t1 <<<"$cur"
-    if [ $((c1 - c0)) -ge 20 ] && [ $(((t1 - t0) / (c1 - c0))) -gt "$MAX_INSERT_MS" ]; then
-      log "GUARD: request INSERT mean $(((t1 - t0) / (c1 - c0))) ms > $MAX_INSERT_MS ms; cancelling $idx"
-      q "SELECT pg_cancel_backend(pid) FROM pg_stat_activity
-         WHERE query LIKE 'REINDEX INDEX CONCURRENTLY%' AND pid <> pg_backend_pid()" >/dev/null
+    n=$((c1 - c0))
+    if [ "$n" -ge "$GUARD_MIN_CALLS" ] && [ $(((t1 - t0) / n)) -gt "$MAX_INSERT_MS" ]; then
+      log "GUARD: request INSERT mean $(((t1 - t0) / n)) ms > $MAX_INSERT_MS ms; cancelling $idx"
+      cancel_build "$idx"
       return
     fi
     prev=$cur
@@ -91,6 +118,9 @@ if [ -n "$invalid" ]; then
   log "ABORT: invalid indexes already present: $invalid"
   exit 1
 fi
+
+guard_pid=
+trap '[ -n "$guard_pid" ] && kill "$guard_pid" 2>/dev/null' EXIT INT TERM
 
 total_before=0
 total_after=0

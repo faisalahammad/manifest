@@ -14,7 +14,7 @@ Stats windows: `pg_stat_statements` was reset on 2026-09-19 08:57 UTC. The postm
 
 The bill is mostly the memory limit, not the data size.
 
-**RAM is about 70% of the cost, and page cache counts toward it.** Usage sits between a floor of about 4 GB and the 8 GB limit, averaging 6.4 GB **[M-rw]**. The floor is shared_buffers plus backends; the rest is page cache.
+**RAM is about 80% of the cost, and page cache counts toward it.** Usage sits between a floor of about 4 GB and the 8 GB limit, averaging 6.4 GB **[M-rw]**. The floor is shared_buffers plus backends; the rest is page cache.
 
 **What saves money is lowering the memory ceiling: shared_buffers 2 GB and limit 6 GB, then 5 GB.** That is about **$16–22/month** **[E]**. It is safe only after the cheap fixes below have shrunk the hot set:
 
@@ -136,7 +136,7 @@ Columns: **$ saved** is low / expected / high per month, **[E]** unless marked.
 | #    | Change                                                                                                                                      | $ saved                                     | Disk freed                                                   | RAM                                                                               | HOT p95                 | DASH p95                                                                         | Insert cost                              | UX impact                                                                                    | Risk                                                           | Reversible     | Effort                             | Recommendation                                                            |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | -------------- | ---------------------------------- | ------------------------------------------------------------------------- |
 | A1   | Reindex the 6 near-empty partial indexes (`*_agent_usage_pending` ×2, `recording`, `requests_pending`, `unlinked_fallback`, `direct_usage`) | 0.25 / 0.3 / 0.3                            | 1.99 → 0.08 GB **[E]**                                       | Takes about 1.1 GB of bloat out of shared_buffers (the rollup reads it every run) | none                    | none                                                                             | slightly better                          | none                                                                                         | low                                                            | n/a            | 0.5 h                              | **Do now**                                                                |
-| A2   | Reindex the 17 large btrees (extra space 20–64%)                                                                                            | 1.6 / 1.8 / 2.1                             | 25.0 → 12.9 GB fresh; about 11–12 GB stays recovered **[E]** | Indirect: index working set about halves; `provider_usage` 7.3 → 2.6 GB           | equal or better **[E]** | better for range queries **[E]**                                                 | slightly better (fewer leaf misses)      | none                                                                                         | medium (INVALID leftovers, waits on long Peacock transactions) | yes            | 2 h hands-on, about 3 h rebuilding | **Do now** (off-peak)                                                     |
+| A2   | Reindex the 14 large btrees (extra space 20–64%)                                                                                            | 1.6 / 1.8 / 2.1                             | 25.0 → 12.9 GB fresh; about 11–12 GB stays recovered **[E]** | Indirect: index working set about halves; `provider_usage` 7.3 → 2.6 GB           | equal or better **[E]** | better for range queries **[E]**                                                 | slightly better (fewer leaf misses)      | none                                                                                         | medium (INVALID leftovers, waits on long Peacock transactions) | yes            | 2 h hands-on, about 3 h rebuilding | **Do now** (off-peak)                                                     |
 | A3   | Rollup orphan fix (code plus a one-off UPDATE)                                                                                              | ≈0 direct                                   | none                                                         | Removes about 68k buffer touches per run                                          | none                    | none                                                                             | none                                     | none                                                                                         | low                                                            | yes            | 2–3 h                              | **Do now**                                                                |
 | B1   | Drop `IDX_agent_messages_unlinked_fallback` (0 scans)                                                                                       | 0.05                                        | 0.32 GB (≈0 after A1)                                        | none                                                                              | none                    | none                                                                             | none                                     | none                                                                                         | low once the backfill transition is final                      | yes (recreate) | 0.5 h                              | **Do later**: v2 transition not finalized (§5)                            |
 | B2   | Drop `IDX_requests_pending` (1 scan)                                                                                                        | 0.01                                        | 0.09 GB                                                      | none                                                                              | none                    | none                                                                             | none                                     | none                                                                                         | same as B1                                                     | yes            | 0.5 h                              | **Do later**: same gate                                                   |
@@ -204,11 +204,12 @@ How the C figures were estimated:
 Each step ends with a checkpoint: 3 days of Railway metrics (memory average/p95, disk, backup `usedMB`) compared with §2, plus a `pg_stat_statements` delta for the HOT inserts, the rollup and the dashboard queries.
 
 1. **A3 rollup orphan fix**: code deploy plus a one-off UPDATE. Checkpoint: rollup mean drops from 789 ms to under 50 ms.
-2. **A1 + A2 reindex** (runbook below), off-peak, one index at a time, smallest first. Checkpoint: index sizes, `provider_usage` hit rate, insert mean.
-3. **D2 + D4** in one restart: shared_buffers 2 GB, max_connections 100, Railway limit 6 GB. Checkpoint: memory average about 4.8 GB, no OOM, insert mean within +10%, dashboard query means within +25%.
-4. **Peacock fix**: move its cross-tenant analytics to rollups or a read replica. Its production connection already uses `peacock_reader` with a 10-minute timeout; find out who runs the same SQL as `postgres` (start by having Manifest set `application_name`). This is not a DB-footprint change but it is the precondition for steps 5 and 6.
-5. **D3** (limit 5 GB), only if the step-3 checkpoint holds. **B1/B2** once the backfill transition is finalized. **B5** after step 4.
-6. ~~C~~: rejected. Full retention is a hard constraint.
+2. **A1 + A2 reindex** with `scripts/db-reindex-bloated.sh` (runbook below), one index at a time, smallest first. Done 2026-10-09 for 14 of 20 (§1a).
+3. **D1, memory limit only** (8 → 6 GB, shared_buffers stays 3 GB). Checkpoint after 3 days: memory average, no OOM, request INSERT mean at or under about 10 ms in 1-minute windows, dashboard query means within +25%.
+4. **D2 + D4, only if step 3 holds**: shared_buffers 2 GB and max_connections 100, in one restart. Same checkpoint.
+5. **Peacock fix**: move its cross-tenant analytics to rollups or a read replica. Its production connection already uses `peacock_reader` with a 10-minute timeout; find out who runs the same SQL as `postgres` (start by having Manifest set `application_name`). This is not a DB-footprint change but it is the precondition for step 6.
+6. **D3** (limit 5 GB), only if the step-4 checkpoint holds. **B1/B2** once the backfill transition is finalized. **B5** after step 5.
+7. ~~C~~: rejected. Full retention is a hard constraint.
 
 ## 5. Open questions for Bruno
 
@@ -243,52 +244,40 @@ Code change in `analytics/services/agent-usage-daily.service.ts` `processBatch`:
 
 This is an ops step, not a migration. Self-hosted installs don't need it.
 
-```sql
--- 0. Pre-checks: no deploy with migrations in flight; no long Peacock query running
-SELECT pid, now()-xact_start, left(query,80) FROM pg_stat_activity
- WHERE xact_start < now() - interval '5 minutes';
--- 1. One at a time, smallest first. SHARE UPDATE EXCLUSIVE: writes keep flowing.
-SET maintenance_work_mem = '1GB';
-REINDEX INDEX CONCURRENTLY "IDX_requests_pending";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_direct_usage";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_recording";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_unlinked_fallback";
-REINDEX INDEX CONCURRENTLY "IDX_requests_agent_usage_pending";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_agent_usage_pending";
--- A2 (largest last; peak extra disk = size of the index being rebuilt, max ~2.6 GB)
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_errors_timestamp";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_error_origin";
-REINDEX INDEX CONCURRENTLY "PK_requests";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_fallback_window";
-REINDEX INDEX CONCURRENTLY "PK_8c7cdeda30e81dba421925df4fe";
-REINDEX INDEX CONCURRENTLY "UQ_agent_messages_request_attempt_number";
-REINDEX INDEX CONCURRENTLY "IDX_requests_tenant_status_timestamp";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_tenant_timestamp";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_request_id";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_tenant_provider";
-REINDEX INDEX CONCURRENTLY "IDX_b920481d4d296ccce0647d6a8a";
-REINDEX INDEX CONCURRENTLY "IDX_requests_tenant_timestamp";
-REINDEX INDEX CONCURRENTLY "IDX_requests_tenant_agent_timestamp";
-REINDEX INDEX CONCURRENTLY "IDX_agent_messages_provider_usage";
--- 2. After each statement (and after any failure): no INVALID leftovers
-SELECT indexrelid::regclass FROM pg_index WHERE NOT indisvalid;
--- a failed run leaves "<name>_ccnew"; remove it with DROP INDEX CONCURRENTLY "<name>_ccnew";
+**Always use `scripts/db-reindex-bloated.sh`; never run the `REINDEX` statements by hand.** On prod every build, even with no parallel workers, slowed the proxy's request INSERT from about 1 ms to 150–400 ms (§1a). The script handles that:
+
+- builds one index at a time, with no parallel workers;
+- refuses to start while a transaction older than 5 minutes is open;
+- runs a guard next to each build that cancels only that build when the request INSERT mean goes above 40 ms, when the build runs past 30 minutes, or when it cannot read `pg_stat_statements` (it fails closed);
+- drops the `_ccnew` leftover after any failure.
+
+```bash
+DATABASE_URL='postgresql://…direct, not PgBouncer…' scripts/db-reindex-bloated.sh            # default list
+DATABASE_URL='…' scripts/db-reindex-bloated.sh IDX_agent_messages_provider_usage            # one index
 ```
 
-Time: each A2 rebuild scans the table heap twice (13 GB or 7.6 GB), plus a sort. That is about 5–15 min per index, about 3 h in total **[E]**. Run it from a direct connection (`MIGRATION_DATABASE_URL`), not through PgBouncer.
+Status after 2026-10-09:
 
-### D2 + D4: memory settings
+| Group | Indexes                                                                                                                                                                                                                                                                                    | Status                                                                                                    |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| A1    | `IDX_requests_pending`, `IDX_agent_messages_direct_usage`, `IDX_agent_messages_recording`, `IDX_agent_messages_unlinked_fallback`, `IDX_requests_agent_usage_pending`, `IDX_agent_messages_agent_usage_pending`                                                                            | Done                                                                                                      |
+| A2    | `IDX_agent_messages_errors_timestamp`, `IDX_agent_messages_error_origin`, `PK_requests`, `IDX_agent_messages_fallback_window`, `PK_8c7cdeda30e81dba421925df4fe`, `UQ_agent_messages_request_attempt_number`, `IDX_requests_tenant_status_timestamp`, `IDX_agent_messages_tenant_timestamp` | Done                                                                                                      |
+| A2    | `IDX_agent_messages_request_id`, `IDX_agent_messages_tenant_provider`, `IDX_b920481d4d296ccce0647d6a8a`, `IDX_requests_tenant_timestamp`, `IDX_requests_tenant_agent_timestamp`, `IDX_agent_messages_provider_usage`                                                                       | **Excluded on purpose.** Each costs about 8 min of slow proxy requests; rebuild only if that is accepted. |
 
-These need a restart.
+### D1, then D2 + D4: memory settings
+
+**D1** is the Railway memory limit only (8 → 6 GB), with no SQL. Hold it for 3 days and check it (rollout step 3).
+
+**D2 + D4** come only after D1 holds, and they need a restart:
 
 ```sql
 ALTER SYSTEM SET shared_buffers = '2GB';
 ALTER SYSTEM SET effective_cache_size = '4GB';
 ALTER SYSTEM SET max_connections = 100;
--- restart the "Manifest DB (Production)" service, then set its Railway memory limit to 6 GB
+-- restart the "Manifest DB (Production)" service (its memory limit is already 6 GB from D1)
 ```
 
-Before step 3, check that PgBouncer-M21O's `default_pool_size` × the number of databases stays under 100, with a few connections left for `peacock_reader` and admin sessions.
+Before step 4, check that PgBouncer-M21O's `default_pool_size` × the number of databases stays under 100, with a few connections left for `peacock_reader` and admin sessions.
 
 ### B1/B2 (later, gated): TypeORM migration
 
@@ -307,7 +296,13 @@ export class DropFinishedBackfillIndexes1803200000000 implements MigrationInterf
     await q.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_requests_pending"`);
   }
   public async down(q: QueryRunner): Promise<void> {
-    // recreate with the definitions from 1801000000000
+    // Definitions as they exist on prod (pg_get_indexdef, 2026-10-09).
+    await q.query(`CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_agent_messages_unlinked_fallback"
+      ON "agent_messages" ("fallback_from_model", "timestamp", "tenant_id", "agent_id")
+      INCLUDE ("fallback_index", "status", "superseded")
+      WHERE "request_id" IS NULL AND "fallback_from_model" IS NOT NULL`);
+    await q.query(`CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_requests_pending"
+      ON "requests" ("id") WHERE "status" = 'pending'`);
   }
 }
 ```

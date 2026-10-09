@@ -3,8 +3,9 @@
  * DB footprint benchmark: run against a COPY of the Manifest database,
  * never against production.
  *
- * Runs the main HOT (proxy path), DASH (dashboard) and BG (rollup) queries for
- * three tenant profiles: biggest, median and small by 30-day attempt volume.
+ * Runs the main HOT (proxy path) and DASH (dashboard) queries for three tenant
+ * profiles (biggest, median and small by 30-day attempt volume) and the BG
+ * rollup selection once, globally.
  * Each query gets 5 warm-up runs and 50 measured runs, and the script prints
  * p50/p95. It also times a batch of 1,000 request inserts plus the matching
  * attempt inserts, inside a transaction that is always rolled back.
@@ -32,7 +33,11 @@ function parseArgs(argv) {
     else if (argv[i] === '--runs') a.runs = Number(argv[++i]);
     else if (argv[i] === '--warmup') a.warmup = Number(argv[++i]);
     else if (argv[i] === '--json') a.json = argv[++i];
+    else throw new Error(`Unknown argument: ${argv[i]}`);
   }
+  if (!Number.isInteger(a.runs) || a.runs < 1) throw new Error('--runs must be an integer >= 1');
+  if (!Number.isInteger(a.warmup) || a.warmup < 0)
+    throw new Error('--warmup must be an integer >= 0');
   return a;
 }
 
@@ -42,10 +47,21 @@ const QUERIES = [
   {
     tag: 'HOT',
     name: 'block-rule cost sum (current month, per agent)',
+    // Same predicate as NotificationRulesService.getConsumption(), including
+    // the legacy agent_name branch for attempts without an agent_id.
     sql: `SELECT COALESCE(SUM(at.cost_usd), 0) AS total FROM agent_messages at
-          WHERE at.tenant_id = $1 AND at.agent_id = $2
-            AND at.timestamp >= date_trunc('month', now())`,
-    params: (t) => [t.tenant_id, t.agent_id],
+          WHERE at.tenant_id = $1
+            AND (
+              at.agent_id = (
+                SELECT id FROM agents
+                WHERE tenant_id = at.tenant_id AND name = $2 AND deleted_at IS NULL
+                LIMIT 1
+              )
+              OR (at.agent_id IS NULL AND at.agent_name = $2)
+            )
+            AND at.timestamp >= date_trunc('month', now())
+            AND at.timestamp < date_trunc('month', now()) + interval '1 month'`,
+    params: (t) => [t.tenant_id, t.agent_name],
   },
   {
     tag: 'HOT',
@@ -108,11 +124,15 @@ const QUERIES = [
   {
     tag: 'BG',
     name: 'rollup batch selection (requests)',
-    sql: `SELECT r.id FROM requests r WHERE r.agent_usage_rolled_up_at IS NULL
-            AND (r.status IS NULL OR r.status NOT IN ('pending', 'cancelled'))
-            AND r.tenant_id IS NOT NULL AND r.agent_id IS NOT NULL
-            AND EXISTS (SELECT 1 FROM agents a WHERE a.id = r.agent_id)
-          ORDER BY r.timestamp DESC, r.id DESC LIMIT 250`,
+    // Mirrors AgentUsageDailyService.processBatch(): select pending rows
+    // first, check the harness only when aggregating.
+    sql: `WITH selected AS MATERIALIZED (
+            SELECT r.id, r.agent_id FROM requests r WHERE r.agent_usage_rolled_up_at IS NULL
+              AND (r.status IS NULL OR r.status NOT IN ('pending', 'cancelled'))
+              AND r.tenant_id IS NOT NULL AND r.agent_id IS NOT NULL
+            ORDER BY r.timestamp DESC, r.id DESC LIMIT 250
+          )
+          SELECT COUNT(*) FROM selected s WHERE EXISTS (SELECT 1 FROM agents a WHERE a.id = s.agent_id)`,
     params: () => [],
     once: true,
   },
@@ -127,17 +147,28 @@ async function pickTenants(db) {
     ), ranked AS (
       SELECT tenant_id, n, ROW_NUMBER() OVER (ORDER BY n DESC) AS rk, COUNT(*) OVER () AS total FROM vol
     )
-    SELECT tenant_id, n, CASE WHEN rk = 1 THEN 'biggest' WHEN rk = total / 2 THEN 'median' ELSE 'small' END AS profile
-    FROM ranked WHERE rk IN (1, total / 2, total)`);
+    SELECT tenant_id, n,
+      CASE WHEN rk = 1 THEN 'biggest' WHEN rk = (total + 1) / 2 THEN 'median' ELSE 'small' END AS profile
+    FROM ranked WHERE rk IN (1, (total + 1) / 2, total)`);
+  const tenants = [];
   for (const t of rows) {
-    const agent = await db.query(
-      `SELECT agent_id, request_id FROM agent_messages WHERE tenant_id = $1 AND request_id IS NOT NULL
-       ORDER BY timestamp DESC LIMIT 1`,
+    const sample = await db.query(
+      `SELECT m.agent_id, m.request_id, a.name AS agent_name
+       FROM agent_messages m JOIN agents a ON a.id = m.agent_id
+       WHERE m.tenant_id = $1 AND m.request_id IS NOT NULL
+       ORDER BY m.timestamp DESC LIMIT 1`,
       [t.tenant_id],
     );
-    Object.assign(t, agent.rows[0]);
+    if (!sample.rows[0]) {
+      console.warn(
+        `skipping ${t.profile} tenant ${t.tenant_id}: no linked attempt with a live harness`,
+      );
+      continue;
+    }
+    tenants.push({ ...t, ...sample.rows[0] });
   }
-  return rows;
+  if (tenants.length === 0) throw new Error('No tenant with recent linked attempts to benchmark');
+  return tenants;
 }
 
 const pct = (xs, p) => {
@@ -210,8 +241,14 @@ async function main() {
       );
     }
   }
-  const inserts = await timeInserts(db);
-  console.log('inserts (rolled back):', JSON.stringify(inserts));
+  // A failed insert probe must not throw away the query timings above.
+  let inserts = null;
+  try {
+    inserts = await timeInserts(db);
+    console.log('inserts (rolled back):', JSON.stringify(inserts));
+  } catch (err) {
+    console.error(`insert probe failed: ${err.message}`);
+  }
   await db.end();
   if (args.json)
     writeFileSync(
