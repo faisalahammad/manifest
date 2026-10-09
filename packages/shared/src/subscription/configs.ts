@@ -30,6 +30,8 @@ export const SUBSCRIPTION_PROVIDER_CONFIGS: Readonly<
       'claude-sonnet-5',
       // Same as Opus 5.5: a point release the curated list must name itself.
       'claude-sonnet-5-5',
+      // Haiku 5.5 is not matched by the claude-haiku-4 prefix either.
+      'claude-haiku-5-5',
     ]),
     subscriptionCapabilities: Object.freeze({
       maxContextWindow: 200000,

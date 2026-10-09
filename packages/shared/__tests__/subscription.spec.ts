@@ -336,6 +336,7 @@ describe('getSubscriptionKnownModels', () => {
     // Opus 5.5 is a point release addressed directly by callers.
     expect(models).toContain('claude-opus-5-5');
     expect(models).toContain('claude-sonnet-5-5');
+    expect(models).toContain('claude-haiku-5-5');
   });
 
   it('returns the curated ChatGPT plan models for OpenAI', () => {

@@ -87,6 +87,9 @@ export const BEDROCK_RUNTIME_CLAUDE_MESSAGES_MODELS: readonly {
   { modelId: 'anthropic.claude-opus-5', verifiedAt: '2026-10-01' },
   { modelId: 'anthropic.claude-opus-5-5', verifiedAt: '2026-10-01' },
   { modelId: 'anthropic.claude-haiku-4-5-20251001-v1:0', verifiedAt: '2026-10-01' },
+  // AWS lists the us./global. CRIS profiles, and Runtime Messages recognises the
+  // ID (403 entitlement, not the 400 an unknown ID gets). Not yet a 200.
+  { modelId: 'anthropic.claude-haiku-5-5', verifiedAt: '2026-10-09' },
 ];
 
 const CLAUDE_MESSAGES_MODEL_IDS = new Set(
