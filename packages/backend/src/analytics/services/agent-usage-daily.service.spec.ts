@@ -356,6 +356,14 @@ describe('AgentUsageDailyService', () => {
     expect(sql).toContain('pa."agent_usage_rolled_up_at" IS NULL');
     expect(sql).toContain('pa."request_id" IS NULL');
     expect(sql).toContain('EXISTS (SELECT 1 FROM "agents"');
+    // The harness check gates the increments, not the selection: rows whose
+    // harness is gone are still selected and marked, so they never pile up.
+    const selection = sql.slice(0, sql.indexOf('request_rollups AS'));
+    expect(selection).not.toContain('FROM "agents"');
+    expect(sql).toContain('FROM selected s\n           WHERE EXISTS (SELECT 1 FROM "agents"');
+    expect(sql).toContain(
+      'FROM selected_attempts pa\n           WHERE EXISTS (SELECT 1 FROM "agents"',
+    );
     expect(sql).toContain('SET "agent_usage_rolled_up_at" = NOW()');
     expect(sql.indexOf('upserted AS')).toBeLessThan(sql.indexOf('marked_requests AS'));
     expect(manager.query.mock.calls[3][1][0]).toBe(2);

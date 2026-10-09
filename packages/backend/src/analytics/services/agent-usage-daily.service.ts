@@ -349,6 +349,10 @@ export class AgentUsageDailyService implements OnModuleInit {
         return { acquired: false, processed: 0, rollups: 0 };
       }
 
+      // Rows whose harness row is gone are selected and marked like any other,
+      // but contribute no increment (agent_usage_daily rows cascade with their
+      // agent). Filtering them out of the selection instead left them pending
+      // forever, and every batch re-walked them all in the pending index.
       const rows = (await manager.query(
         `WITH selected AS MATERIALIZED (
            SELECT r."id", r."tenant_id", r."agent_id", r."timestamp", r."status"
@@ -357,7 +361,6 @@ export class AgentUsageDailyService implements OnModuleInit {
              AND (r."status" IS NULL OR r."status" NOT IN ('pending', 'cancelled'))
              AND r."tenant_id" IS NOT NULL
              AND r."agent_id" IS NOT NULL
-             AND EXISTS (SELECT 1 FROM "agents" a WHERE a."id" = r."agent_id")
            ORDER BY r."timestamp" DESC, r."id" DESC
            LIMIT $1
            FOR UPDATE SKIP LOCKED
@@ -370,7 +373,6 @@ export class AgentUsageDailyService implements OnModuleInit {
              AND (pa."status" IS NULL OR pa."status" NOT IN ('pending', 'cancelled'))
              AND pa."tenant_id" IS NOT NULL
              AND pa."agent_id" IS NOT NULL
-             AND EXISTS (SELECT 1 FROM "agents" a WHERE a."id" = pa."agent_id")
            ORDER BY pa."timestamp" DESC, pa."id" DESC
            LIMIT $1
            FOR UPDATE SKIP LOCKED
@@ -387,6 +389,7 @@ export class AgentUsageDailyService implements OnModuleInit {
              0::numeric AS "cost_usd",
              MAX(s."timestamp") AS "last_active_at"
            FROM selected s
+           WHERE EXISTS (SELECT 1 FROM "agents" a WHERE a."id" = s."agent_id")
            GROUP BY s."tenant_id", s."agent_id", "day"
          ), attempt_rollups AS (
            SELECT
@@ -408,6 +411,7 @@ export class AgentUsageDailyService implements OnModuleInit {
              COALESCE(SUM(CASE WHEN pa."cost_usd" >= 0 THEN pa."cost_usd" ELSE 0 END), 0)::numeric AS "cost_usd",
              MAX(pa."timestamp") AS "last_active_at"
            FROM selected_attempts pa
+           WHERE EXISTS (SELECT 1 FROM "agents" a WHERE a."id" = pa."agent_id")
            GROUP BY pa."tenant_id", pa."agent_id", "day"
          ), increments AS (
            SELECT
