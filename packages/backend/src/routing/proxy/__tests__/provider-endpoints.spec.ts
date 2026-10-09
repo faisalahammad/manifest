@@ -672,6 +672,11 @@ describe('PROVIDER_ENDPOINTS', () => {
     expect(path).toBe('/v1beta/models/gemini-2.0-flash:generateContent');
   });
 
+  it('google buildStreamPath uses streamGenerateContent', () => {
+    const path = PROVIDER_ENDPOINTS['google'].buildStreamPath!('gemini-2.0-flash');
+    expect(path).toBe('/v1beta/models/gemini-2.0-flash:streamGenerateContent');
+  });
+
   it('openrouter buildPath returns /api/v1/chat/completions', () => {
     const path = PROVIDER_ENDPOINTS['openrouter'].buildPath('openai/gpt-4o');
     expect(path).toBe('/api/v1/chat/completions');

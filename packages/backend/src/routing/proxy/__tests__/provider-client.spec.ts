@@ -2265,7 +2265,7 @@ describe('ProviderClient', () => {
       expect(result.wireRequestBody).toEqual(JSON.parse(mockFetch.mock.calls[0][1].body));
     });
 
-    it('adds alt=sse for streaming', async () => {
+    it('streams through streamGenerateContent with alt=sse', async () => {
       mockFetch.mockResolvedValue(new Response('{}', { status: 200 }));
 
       await client.forward({
@@ -2277,7 +2277,9 @@ describe('ProviderClient', () => {
       });
 
       const url = mockFetch.mock.calls[0][0] as string;
-      expect(url).toContain('alt=sse');
+      expect(url).toBe(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse',
+      );
     });
 
     it('converts request body to Gemini format', async () => {
