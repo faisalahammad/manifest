@@ -77,7 +77,7 @@ describe('AgentUsageDailyService rollup of rows whose harness is gone (e2e)', ()
     await ds.query(`UPDATE "agent_messages" SET "agent_usage_rolled_up_at" = NULL`);
 
     service = new AgentUsageDailyService(ds);
-  });
+  }, 60_000);
 
   afterAll(async () => {
     await ds?.destroy();
