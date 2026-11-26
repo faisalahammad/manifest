@@ -501,11 +501,15 @@ describe('PROVIDERS', () => {
     const meta = PROVIDERS.find((provider) => provider.id === 'meta')!;
     expect(meta.name).toBe('Meta');
     expect(meta.models.map((model) => model.value)).toEqual([
+      'muse-spark-1.3',
+      'muse-spark-1.3-contributor',
       'muse-spark-1.2',
       'muse-spark-1.2-contributor',
       'muse-spark-1.1',
     ]);
+    expect(meta.subtitle).toBe('Muse Spark 1.3, 1.2, 1.1, and Contributor');
     expect(meta.models[1].label).toMatch(/may train Meta/);
+    expect(meta.models[3].label).toMatch(/may train Meta/);
     expect(getRoutingProviderApiKeyUrl('meta')).toBe('https://dev.meta.ai/');
   });
 
