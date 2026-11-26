@@ -377,6 +377,7 @@ export const MESSAGE_ROW_SELECT_ALIASES = [
   'custom_provider_name',
   'autofix_applied',
   'autofix_role',
+  'key_failover',
 ] as const;
 
 export function selectMessageRowColumns<T extends ObjectLiteral>(
@@ -414,5 +415,6 @@ export function selectMessageRowColumns<T extends ObjectLiteral>(
     .addSelect('at.provider_key_label', 'provider_key_label')
     .addSelect('cp.name', 'custom_provider_name')
     .addSelect('at.autofix_applied', 'autofix_applied')
-    .addSelect('at.autofix_role', 'autofix_role');
+    .addSelect('at.autofix_role', 'autofix_role')
+    .addSelect('at.key_failover_index IS NOT NULL', 'key_failover');
 }

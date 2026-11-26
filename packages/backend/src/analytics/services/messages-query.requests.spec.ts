@@ -688,15 +688,29 @@ describe('MessagesQueryService request-first queries', () => {
       expect(clause).not.toContain('requestCutoff');
     });
 
-    it('tests "no recovery attempt" as two anti-joins, one per recovery kind', async () => {
+    it('tests "no recovery attempt" as one anti-join per recovery kind', async () => {
       const { requestQb } = await run({ tenantId: 'tenant-1', range: '7d', triggers: ['none'] });
 
       const clause = requestQb.andWhere.mock.calls
         .map((call) => String(call[0]))
         .find((c) => c.includes('trigger_attempt'));
-      expect(clause?.match(/NOT EXISTS/g)).toHaveLength(2);
+      expect(clause?.match(/NOT EXISTS/g)).toHaveLength(3);
+      expect(clause).toContain('key_failover_index IS NOT NULL');
       expect(clause).toMatch(/autofix_applied = true\s+\)\s+AND NOT EXISTS/);
       expect(clause).not.toContain('autofix_applied = true OR');
+    });
+
+    it('finds requests with a key failover attempt', async () => {
+      const { requestQb } = await run({
+        tenantId: 'tenant-1',
+        range: '7d',
+        triggers: ['key_failover'],
+      });
+      const clause = requestQb.andWhere.mock.calls
+        .map((call) => String(call[0]))
+        .find((c) => c.includes('trigger_attempt'));
+      expect(clause).toContain('EXISTS');
+      expect(clause).toContain('trigger_attempt.key_failover_index IS NOT NULL');
     });
 
     it.each([undefined, '7d'])(

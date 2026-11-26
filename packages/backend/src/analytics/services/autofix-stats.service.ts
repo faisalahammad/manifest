@@ -45,6 +45,8 @@ export interface AutofixStatsResponse {
   autofix_saves: { value: number; previous: number };
   /** Additive: requests recovered by a successful fallback attempt. */
   fallback_saves: { value: number; previous: number };
+  /** Requests recovered by key failover (additive field). */
+  key_failover_saves: { value: number; previous: number };
   /** Additive: window total, denominator for the self-healed share. */
   total_requests: { value: number; previous: number };
   errors_remaining: { value: number; previous: number };
@@ -85,6 +87,7 @@ interface WindowCounts {
   successes: number;
   saves: number;
   fallback_saves: number;
+  key_failover_saves: number;
   errors: number;
   healed: number;
   no_fix_found: number;
@@ -225,6 +228,10 @@ export class AutofixStatsService {
       success_rate: { value: rate(current), previous: rate(previous) },
       autofix_saves: { value: current.saves, previous: previous.saves },
       fallback_saves: { value: current.fallback_saves, previous: previous.fallback_saves },
+      key_failover_saves: {
+        value: current.key_failover_saves,
+        previous: previous.key_failover_saves,
+      },
       total_requests: { value: current.total, previous: previous.total },
       errors_remaining: { value: current.errors, previous: previous.errors },
       coverage: { rate: covRate(current), previous_rate: covRate(previous) },
@@ -454,12 +461,13 @@ export class AutofixStatsService {
       }
       m.set(dim, (m.get(dim) ?? 0) + Number(r.count));
     }
-    // For disposition, use a fixed order: success → autofix → fallback → error.
+    // For disposition, use a fixed order: success → autofix → fallback → key failover → error.
     const DISPOSITION_ORDER: Record<string, number> = {
       success: 0,
       autofix: 1,
       fallback: 2,
-      error: 3,
+      key_failover: 3,
+      error: 4,
     };
     const keys =
       by === 'disposition'
@@ -485,9 +493,10 @@ export class AutofixStatsService {
   private windowCounts(t: DispositionTotals): WindowCounts {
     return {
       total: t.total,
-      successes: t.success + t.healed + t.fallback,
+      successes: t.success + t.healed + t.fallback + t.key_failover,
       saves: t.healed,
       fallback_saves: t.fallback,
+      key_failover_saves: t.key_failover,
       errors: t.error,
       healed: t.healed,
       no_fix_found: t.error,

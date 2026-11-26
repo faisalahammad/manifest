@@ -456,9 +456,11 @@ export class MessagesQueryService {
         if (trigger === 'autofix') return triggerExists('trigger_attempt.autofix_applied = true');
         if (trigger === 'fallback')
           return triggerExists('trigger_attempt.fallback_from_model IS NOT NULL');
-        // 'none': no recovery attempt anywhere on the request. Two anti-joins
-        // rather than one over `autofix OR fallback`: each kind has its own
-        // partial index, and the OR forced a heap read of every attempt in range.
+        if (trigger === 'key_failover')
+          return triggerExists('trigger_attempt.key_failover_index IS NOT NULL');
+        // 'none': no recovery attempt anywhere on the request. One anti-join
+        // per kind rather than one over `autofix OR fallback OR key failover`:
+        // the OR forced a heap read of every attempt in range.
         const noAttempt = (condition: string): string => `NOT EXISTS (
           SELECT 1 FROM agent_messages trigger_attempt
           WHERE trigger_attempt.request_id = r.id AND ${window('trigger_attempt')}
@@ -466,7 +468,7 @@ export class MessagesQueryService {
         )`;
         return `(${noAttempt('trigger_attempt.autofix_applied = true')} AND ${noAttempt(
           'trigger_attempt.fallback_from_model IS NOT NULL',
-        )})`;
+        )} AND ${noAttempt('trigger_attempt.key_failover_index IS NOT NULL')})`;
       });
       qb.andWhere(`(${parts.join(' OR ')})`, triggerParameters);
     }
@@ -605,6 +607,9 @@ export class MessagesQueryService {
         `CASE WHEN COALESCE(BOOL_OR(at.autofix_applied), false) THEN 'retry' ELSE NULL END`,
         'autofix_role',
       )
+      // A recovery attempt like Autofix: some key of the request's hops was
+      // retried on the same provider's next key.
+      .addSelect('COALESCE(BOOL_OR(at.key_failover_index IS NOT NULL), false)', 'key_failover')
       .addSelect('COALESCE(SUM(at.cache_read_tokens), 0)', 'cache_read_tokens')
       .addSelect('COALESCE(SUM(at.cache_creation_tokens), 0)', 'cache_creation_tokens')
       .addSelect('COUNT(at.id)::int', 'attempt_count')
@@ -962,12 +967,18 @@ export class MessagesQueryService {
         if (t === 'autofix') return 'at.autofix_role = :triggerAutofixRole';
         if (t === 'fallback')
           return "(COALESCE(at.autofix_role, '') != :triggerAutofixRole AND at.fallback_from_model IS NOT NULL AND at.fallback_from_model != '')";
-        return "(COALESCE(at.autofix_role, '') != :triggerAutofixRole AND (at.fallback_from_model IS NULL OR at.fallback_from_model = ''))";
+        if (t === 'key_failover') return 'at.key_failover_index IS NOT NULL';
+        return "(COALESCE(at.autofix_role, '') != :triggerAutofixRole AND (at.fallback_from_model IS NULL OR at.fallback_from_model = '') AND at.key_failover_index IS NULL)";
       });
       qb.andWhere(`(${conditions.join(' OR ')})`, { triggerAutofixRole: AUTOFIX_TRIGGER_ROLE });
       return;
     }
     const trigger = triggers[0];
+
+    if (trigger === 'key_failover') {
+      qb.andWhere('at.key_failover_index IS NOT NULL');
+      return;
+    }
 
     if (trigger === 'autofix') {
       qb.andWhere('at.autofix_role = :triggerAutofixRole', {
@@ -983,7 +994,9 @@ export class MessagesQueryService {
     if (trigger === 'fallback') {
       qb.andWhere("at.fallback_from_model IS NOT NULL AND at.fallback_from_model != ''");
     } else {
-      qb.andWhere("(at.fallback_from_model IS NULL OR at.fallback_from_model = '')");
+      qb.andWhere(
+        "(at.fallback_from_model IS NULL OR at.fallback_from_model = '') AND at.key_failover_index IS NULL",
+      );
     }
   }
 
