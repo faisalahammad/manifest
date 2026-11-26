@@ -308,6 +308,52 @@ export async function agentProviderDisable(io: CliIo, argv: string[]): Promise<v
   printJson(io, { agent, enabled: false, provider: conn.provider, connection: conn.id });
 }
 
+/** The agent-scoped key ring path for key status and rotation reset. */
+function keyRingPath(
+  args: ReturnType<typeof parseArgs>,
+  suffix: string,
+): {
+  agent: string;
+  provider: string;
+  path: string;
+} {
+  const agent = slugifyAgentName(requirePositional(args, 0, '<agent-name>'));
+  const provider = resolveProviderId(requirePositional(args, 1, '<provider>'));
+  return {
+    agent,
+    provider,
+    path: `/routing/${encodeURIComponent(agent)}/providers/${encodeURIComponent(provider)}/keys/${suffix}`,
+  };
+}
+
+/**
+ * Per-key status of one provider for one agent: which key served last, and
+ * each key's last success and last failure (read from Provider Attempts).
+ */
+export async function agentProviderKeys(io: CliIo, argv: string[]): Promise<void> {
+  const args = parseArgs(argv, { strings: ['url', 'auth-type'], maxPositionals: 2 });
+  const { agent, path } = keyRingPath(args, 'status');
+  const { client } = clientFromFlags(io, args);
+  const status = await client.request('GET', path, {
+    query: { authType: args.strings['auth-type'] },
+  });
+  printJson(io, { agent, ...(status as object) });
+}
+
+/**
+ * Reset key rotation: the provider's next Auto request for this agent starts
+ * from its first key again, and the cooldowns of its keys are dropped.
+ */
+export async function agentProviderResetRotation(io: CliIo, argv: string[]): Promise<void> {
+  const args = parseArgs(argv, { strings: ['url', 'auth-type'], maxPositionals: 2 });
+  const { agent, path } = keyRingPath(args, 'reset-rotation');
+  const { client } = clientFromFlags(io, args);
+  const status = await client.request('POST', path, {
+    body: args.strings['auth-type'] ? { authType: args.strings['auth-type'] } : {},
+  });
+  printJson(io, { agent, reset: true, ...(status as object) });
+}
+
 export async function providerConnect(io: CliIo, argv: string[]): Promise<void> {
   const args = parseArgs(argv, {
     strings: ['url', 'provider', 'agent', 'credential-env', 'label', 'region', 'auth-type'],

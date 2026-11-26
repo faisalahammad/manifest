@@ -43,15 +43,17 @@ The CLI uses that gateway for later commands. You can select another gateway wit
 
 ## Useful commands
 
-| Task                           | Command                                        |
-| ------------------------------ | ---------------------------------------------- |
-| Check your connection          | `mnfst doctor`                                 |
-| List available agent platforms | `mnfst agent platforms`                        |
-| List connectable providers     | `mnfst provider catalog`                       |
-| Review an agent's routing      | `mnfst routing status my-app`                  |
-| Read or set model params       | `mnfst routing params get my-app`              |
-| Read recent requests           | `mnfst requests get --agent my-app --range 7d` |
-| See all commands and options   | `mnfst --help`                                 |
+| Task                           | Command                                             |
+| ------------------------------ | --------------------------------------------------- |
+| Check your connection          | `mnfst doctor`                                      |
+| List available agent platforms | `mnfst agent platforms`                             |
+| List connectable providers     | `mnfst provider catalog`                            |
+| Review an agent's routing      | `mnfst routing status my-app`                       |
+| Read or set model params       | `mnfst routing params get my-app`                   |
+| See which provider key serves  | `mnfst agent provider keys my-app openai`           |
+| Restart key rotation           | `mnfst agent provider reset-rotation my-app openai` |
+| Read recent requests           | `mnfst requests get --agent my-app --range 7d`      |
+| See all commands and options   | `mnfst --help`                                      |
 
 Most commands write JSON to stdout for scripts and coding agents. `mnfst agent env` and `mnfst skill show` write text. `mnfst routing test` sends a real provider request, which may incur provider charges. Destructive commands require `--yes`.
 

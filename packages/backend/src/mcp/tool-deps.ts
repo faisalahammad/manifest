@@ -18,6 +18,7 @@ import { SpecificityService } from '../routing/routing-core/specificity.service'
 import { ResolveAgentService } from '../routing/routing-core/resolve-agent.service';
 import { HeaderTierService } from '../routing/header-tiers/header-tier.service';
 import { CustomProviderService } from '../routing/custom-provider/custom-provider.service';
+import { KeyRotationAdminService } from '../routing/routing-core/key-rotation-admin.service';
 import { AutofixService } from '../routing/autofix/autofix.service';
 import { RouteModelParamsService } from '../routing/model-params/route-model-params.service';
 import { ModelDiscoveryService } from '../model-discovery/model-discovery.service';
@@ -55,4 +56,5 @@ export interface McpToolDeps {
   tenantProviderRepo: Repository<TenantProvider>;
   agentEnabledProviderRepo: Repository<AgentEnabledProvider>;
   agentRepo: Repository<Agent>;
+  keyRotation: KeyRotationAdminService;
 }
