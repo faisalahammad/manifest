@@ -28,9 +28,11 @@ import {
   AgentProviderKeyParamDto,
   ConnectProviderDto,
   RemoveProviderQueryDto,
+  ProviderKeyRotationDto,
   RenameProviderKeyDto,
   ReorderProviderKeysDto,
 } from './dto/routing.dto';
+import { KeyRotationAdminService } from './routing-core/key-rotation-admin.service';
 import { QWEN_REGION_VALIDATION_MESSAGE, isQwenRegion } from './qwen-region';
 import { getSubscriptionEndpointRegionConfig } from './subscription-region';
 import { isBedrockProvider, isBedrockRegion } from './bedrock-region';
@@ -54,6 +56,7 @@ export class ProviderController {
     private readonly pricingSync: PricingSyncService,
     private readonly customProviderService: CustomProviderService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly keyRotationAdmin: KeyRotationAdminService,
   ) {}
 
   /**
@@ -280,6 +283,37 @@ export class ProviderController {
         label: row.label,
         priority: row.priority,
       }));
+  }
+
+  /**
+   * Per-key status for the key list: which key served last and each key's
+   * latest failure, read from Provider Attempts so every instance agrees.
+   */
+  @Get(':agentName/providers/:provider/keys/status')
+  async getProviderKeyStatus(
+    @TenantCtx() ctx: TenantContext,
+    @Param() params: AgentProviderParamDto,
+    @Query() query: ProviderKeyRotationDto,
+  ) {
+    const agent = await this.resolveAgentService.resolve(ctx.tenantId, params.agentName);
+    return this.keyRotationAdmin.getStatus(agent, params.provider, query.authType ?? 'api_key');
+  }
+
+  /**
+   * Reset key rotation: the provider's next Auto request starts from its
+   * first key again, and the 429 and 401 cooldowns of its keys are dropped,
+   * on every instance.
+   */
+  @Post(':agentName/providers/:provider/keys/reset-rotation')
+  async resetProviderKeyRotation(
+    @TenantCtx() ctx: TenantContext,
+    @Param() params: AgentProviderParamDto,
+    @Body() body: ProviderKeyRotationDto,
+  ) {
+    const agent = await this.resolveAgentService.resolve(ctx.tenantId, params.agentName);
+    const authType = body.authType ?? 'api_key';
+    this.keyRotationAdmin.reset(agent, params.provider, authType);
+    return this.keyRotationAdmin.getStatus(agent, params.provider, authType);
   }
 
   @Post(':agentName/providers/deactivate-all')

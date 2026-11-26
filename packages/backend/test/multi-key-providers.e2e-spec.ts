@@ -3,7 +3,9 @@
  *
  *  - POST /providers with `label` adds extra keys
  *  - PATCH /providers/:provider/keys/:label renames a key
- *  - PUT /providers/:provider/keys/order rewrites priorities by index
+ *  - PUT /providers/:provider/keys/order rewrites priorities by index, with
+ *    more than five keys too
+ *  - GET /providers/:provider/keys/status and POST .../keys/reset-rotation
  *  - DELETE /providers/:provider?label=… removes one key from the chain
  *    while leaving the provider connected (and renumbers priorities)
  *  - DELETE /providers/:provider with no label keeps legacy whole-provider
@@ -180,5 +182,69 @@ describe('Multi-key per provider — HTTP', () => {
     // inactive after the beforeEach `deactivate-all`).
     const active = await listActiveOpenAi();
     expect(active).toHaveLength(0);
+  });
+
+  it('PUT /providers/:provider/keys/order accepts more than five keys', async () => {
+    const labels = ['Default', 'K2', 'K3', 'K4', 'K5', 'K6', 'K7'];
+    for (const label of labels) {
+      await auth(api().post('/api/v1/routing/test-agent/providers'))
+        .send({
+          provider: 'openai',
+          apiKey: `sk-seven-${label}`,
+          ...(label === 'Default' ? {} : { label }),
+        })
+        .expect(201);
+    }
+    const reversed = [...labels].reverse();
+
+    const res = await auth(api().put('/api/v1/routing/test-agent/providers/openai/keys/order'))
+      .send({ labels: reversed })
+      .expect(200);
+
+    expect(res.body.map((r: { label: string }) => r.label)).toEqual(reversed);
+  });
+
+  it('GET keys/status lists each key with no history, and reset-rotation answers the same shape', async () => {
+    await auth(api().post('/api/v1/routing/test-agent/providers'))
+      .send({ provider: 'openai', apiKey: 'sk-status-default' })
+      .expect(201);
+    await auth(api().post('/api/v1/routing/test-agent/providers'))
+      .send({ provider: 'openai', apiKey: 'sk-status-work', label: 'Work' })
+      .expect(201);
+
+    const status = await auth(
+      api().get('/api/v1/routing/test-agent/providers/openai/keys/status'),
+    ).expect(200);
+    expect(status.body.provider).toBe('openai');
+    expect(status.body.auth_type).toBe('api_key');
+    expect(
+      status.body.keys.map((k: { label: string; last_served: boolean; last_failure: unknown }) => [
+        k.label,
+        k.last_served,
+        k.last_failure,
+      ]),
+    ).toEqual(
+      // Order follows priority, which earlier tests on the shared DB may have changed.
+      expect.arrayContaining([
+        ['Default', false, null],
+        ['Work', false, null],
+      ]),
+    );
+    expect(status.body.keys).toHaveLength(2);
+    // Never any key material.
+    expect(JSON.stringify(status.body)).not.toContain('sk-status');
+
+    const reset = await auth(
+      api().post('/api/v1/routing/test-agent/providers/openai/keys/reset-rotation'),
+    )
+      .send({})
+      .expect(201);
+    expect(reset.body.keys).toHaveLength(2);
+  });
+
+  it('rejects an unknown auth type on reset-rotation', async () => {
+    await auth(api().post('/api/v1/routing/test-agent/providers/openai/keys/reset-rotation'))
+      .send({ authType: 'magic' })
+      .expect(400);
   });
 });

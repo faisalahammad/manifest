@@ -26,6 +26,8 @@ describe('ProviderController', () => {
   let mockCustomProviderService: Record<string, jest.Mock>;
   let mockCacheManager: { clear: jest.Mock };
 
+  let mockKeyRotationAdmin: { reset: jest.Mock; getStatus: jest.Mock };
+
   beforeEach(() => {
     jest.clearAllMocks();
     process.env['MANIFEST_MODE'] = 'selfhosted';
@@ -66,6 +68,12 @@ describe('ProviderController', () => {
       clear: jest.fn().mockResolvedValue(true),
     };
 
+    mockKeyRotationAdmin = {
+      reset: jest.fn(),
+      getStatus: jest
+        .fn()
+        .mockResolvedValue({ provider: 'openai', auth_type: 'api_key', keys: [] }),
+    };
     controller = new ProviderController(
       mockProviderService as unknown as ProviderService,
       mockDiscoveryService as unknown as ModelDiscoveryService,
@@ -75,6 +83,7 @@ describe('ProviderController', () => {
       mockPricingSync as unknown as PricingSyncService,
       mockCustomProviderService as unknown as CustomProviderService,
       mockCacheManager as never,
+      mockKeyRotationAdmin as never,
     );
   });
 
@@ -1141,6 +1150,43 @@ describe('ProviderController', () => {
         { id: 'p2', label: 'Work', priority: 0 },
         { id: 'p1', label: 'Personal', priority: 1 },
       ]);
+    });
+  });
+
+  describe('key rotation', () => {
+    it('resets rotation for the agent ring and returns the fresh key status', async () => {
+      const result = await controller.resetProviderKeyRotation(
+        mockCtx,
+        { agentName: 'test-agent', provider: 'openai' } as never,
+        { authType: 'subscription' },
+      );
+      const agent = expect.objectContaining({ id: TEST_AGENT_ID });
+      expect(mockKeyRotationAdmin.reset).toHaveBeenCalledWith(agent, 'openai', 'subscription');
+      expect(mockKeyRotationAdmin.getStatus).toHaveBeenCalledWith(agent, 'openai', 'subscription');
+      expect(result).toEqual({ provider: 'openai', auth_type: 'api_key', keys: [] });
+    });
+
+    it('defaults to API keys for reset and status', async () => {
+      await controller.resetProviderKeyRotation(
+        mockCtx,
+        { agentName: 'test-agent', provider: 'openai' } as never,
+        {},
+      );
+      await controller.getProviderKeyStatus(
+        mockCtx,
+        { agentName: 'test-agent', provider: 'openai' } as never,
+        {},
+      );
+      expect(mockKeyRotationAdmin.reset).toHaveBeenCalledWith(
+        expect.anything(),
+        'openai',
+        'api_key',
+      );
+      expect(mockKeyRotationAdmin.getStatus).toHaveBeenLastCalledWith(
+        expect.anything(),
+        'openai',
+        'api_key',
+      );
     });
   });
 });

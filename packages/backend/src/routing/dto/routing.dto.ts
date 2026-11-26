@@ -188,6 +188,13 @@ export class ReorderProviderKeysDto {
   authType?: 'api_key' | 'subscription';
 }
 
+/** Auth type of the key ring a rotation reset or key status call targets. */
+export class ProviderKeyRotationDto {
+  @IsOptional()
+  @IsIn(AUTH_TYPES)
+  authType?: 'api_key' | 'subscription';
+}
+
 export class SetOverrideDto {
   @IsString()
   @IsNotEmpty()
