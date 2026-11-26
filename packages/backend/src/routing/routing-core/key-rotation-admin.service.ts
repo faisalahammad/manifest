@@ -90,7 +90,7 @@ export class KeyRotationAdminService {
           this.latestPerKey(agent, ids, sqlIsFailedStatus('status')),
         ])
       : [[], []];
-    const successAt = new Map(successes.map((r) => [r.id, String(r.at)]));
+    const successAt = new Map(successes.map((r) => [r.id, r.at]));
     const failureOf = new Map(failures.map((r) => [r.id, r]));
     let lastServedId: string | null = null;
     for (const [id, at] of successAt) {
@@ -109,7 +109,7 @@ export class KeyRotationAdminService {
           last_success_at: successAt.get(k.id) ?? null,
           last_failure: failure
             ? {
-                at: String(failure.at),
+                at: failure.at,
                 http_status: failure.error_http_status ?? null,
                 error_class: failure.error_class ?? null,
                 error_code: failure.error_code ?? null,
@@ -137,7 +137,9 @@ export class KeyRotationAdminService {
     return this.messageRepo.query(
       `SELECT DISTINCT ON (tenant_provider_id)
          tenant_provider_id::text AS id,
-         timestamp AS at,
+         -- Text, not a Date: the column is UTC without a zone, and text keeps
+         -- it exact (and comparable) for the dashboard, CLI and MCP.
+         timestamp::text AS at,
          error_http_status,
          error_class,
          error_code
