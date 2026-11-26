@@ -46,6 +46,32 @@ describe('SetupService', () => {
     jest.clearAllMocks();
   });
 
+  describe('isSignUpEnabled', () => {
+    const originalMode = process.env['MANIFEST_MODE'];
+    beforeEach(() => {
+      process.env['MANIFEST_MODE'] = 'selfhosted';
+    });
+    afterEach(() => {
+      if (originalMode === undefined) delete process.env['MANIFEST_MODE'];
+      else process.env['MANIFEST_MODE'] = originalMode;
+    });
+
+    it('reports false once the admin closed sign-up', async () => {
+      ds.query.mockResolvedValue([{ has_users: true, signup_enabled: false }]);
+      await expect(service.isSignUpEnabled()).resolves.toBe(false);
+    });
+
+    it('reports true while sign-up is open', async () => {
+      ds.query.mockResolvedValue([{ has_users: true, signup_enabled: true }]);
+      await expect(service.isSignUpEnabled()).resolves.toBe(true);
+    });
+
+    it('shows the form when the check fails, since the auth hook still enforces it', async () => {
+      ds.query.mockRejectedValue(new Error('db down'));
+      await expect(service.isSignUpEnabled()).resolves.toBe(true);
+    });
+  });
+
   describe('getLocalLlmHost', () => {
     let originalExistsSync: typeof import('fs').existsSync;
     beforeEach(() => {

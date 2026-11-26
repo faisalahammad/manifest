@@ -18,6 +18,7 @@ export class SetupController {
     emailConfigured: boolean;
     mcpEnabled: boolean;
     autofixAvailable: boolean;
+    signUpEnabled: boolean;
   }> {
     const selfHosted = this.setupService.isSelfHosted();
     const ollamaAvailable = selfHosted ? await this.setupService.isOllamaAvailable() : false;
@@ -30,6 +31,7 @@ export class SetupController {
       emailConfigured: this.setupService.isEmailConfigured(),
       mcpEnabled: this.setupService.isMcpEnabled(),
       autofixAvailable: this.setupService.isAutofixAvailable(),
+      signUpEnabled: await this.setupService.isSignUpEnabled(),
     };
   }
 

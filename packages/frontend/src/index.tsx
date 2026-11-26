@@ -30,6 +30,7 @@ const Routing = lazyReload(() => import('./pages/Routing.jsx'));
 const Playground = lazyReload(() => import('./pages/Playground.jsx'));
 const Limits = lazyReload(() => import('./pages/Limits.jsx'));
 const Account = lazyReload(() => import('./pages/Account.jsx'));
+const InstanceSettings = lazyReload(() => import('./pages/InstanceSettings.jsx'));
 const Upgrade = lazyReload(() => import('./pages/Upgrade.jsx'));
 const CliAuth = lazyReload(() => import('./pages/CliAuth.jsx'));
 const Consent = lazyReload(() => import('./pages/Consent.jsx'));
@@ -138,6 +139,7 @@ render(
 
           <Route path="/connect-provider" component={ConnectProvider} />
           <Route path="/account" component={Account} />
+          <Route path="/instance-settings" component={InstanceSettings} />
         </Route>
         <Route path="/upgrade" component={AuthGuard}>
           <Route path="/" component={Upgrade} />

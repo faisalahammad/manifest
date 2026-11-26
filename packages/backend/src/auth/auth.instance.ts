@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import type { Auth } from 'better-auth';
+import { APIError } from 'better-auth/api';
 import { jwt } from 'better-auth/plugins';
 import { cimd } from '@better-auth/cimd';
 import { mcp } from '@better-auth/mcp';
@@ -19,6 +20,7 @@ import {
 import { fetchClientMetadataResource } from './cimd-client-metadata-fetch';
 import { authOriginFromEnv, mcpAvailability } from './mcp-availability';
 import { MCP_READ_SCOPE, MCP_WRITE_SCOPE, MCP_SCOPES } from './mcp-scopes';
+import { isSignUpAllowed, SIGNUP_DISABLED_MESSAGE } from './signup-gate';
 
 const port = process.env['PORT'] ?? '3001';
 const isDev = (process.env['NODE_ENV'] ?? '') !== 'production';
@@ -266,6 +268,18 @@ const pluginAuth = betterAuth({
     // every SessionGuard cache miss, before any page can load. A revoked
     // session stays valid for at most maxAge; sign-out clears the cookie.
     cookieCache: { enabled: true, maxAge: 5 * 60 },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        // Runs for every sign-up path, social logins included. See signup-gate.ts.
+        before: async (user) => {
+          const allowed = await isSignUpAllowed(async (sql) => (await database.query(sql)).rows);
+          if (!allowed) throw new APIError('FORBIDDEN', { message: SIGNUP_DISABLED_MESSAGE });
+          return { data: user };
+        },
+      },
+    },
   },
   account: {
     accountLinking: {

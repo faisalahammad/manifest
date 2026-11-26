@@ -14,7 +14,7 @@ import PlanPicker, { type PlanId } from '../components/PlanPicker.jsx';
 import { authClient } from '../services/auth-client.js';
 import { appendSearch } from '../services/auth-redirects.js';
 import { getLastAuthMethod, setLastAuthMethod } from '../services/last-auth-method.js';
-import { checkSocialProviders } from '../services/setup-status.js';
+import { checkSignUpEnabled, checkSocialProviders } from '../services/setup-status.js';
 import { getBillingStatus } from '../services/api/billing.js';
 import { markPlanChosen } from '../services/plan-selection.js';
 import { formatBillingPrice } from '../services/billing-display.js';
@@ -33,6 +33,7 @@ const Register: Component = () => {
   const [alreadyExists, setAlreadyExists] = createSignal(false);
   const [resendCooldown, setResendCooldown] = createSignal(0);
   const [socialProviders, setSocialProviders] = createSignal<string[]>([]);
+  const [signUpEnabled, setSignUpEnabled] = createSignal(true);
   const [lastAuthMethod] = createSignal(getLastAuthMethod());
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ const Register: Component = () => {
 
   onMount(async () => {
     setSocialProviders(await checkSocialProviders());
+    setSignUpEnabled(await checkSignUpEnabled());
   });
 
   createEffect(() => {
@@ -211,92 +213,116 @@ const Register: Component = () => {
           when={showPlan()}
           fallback={
             <>
-              <div class="auth-header">
-                <h1 class="auth-header__title">Create an account</h1>
-                <p class="auth-header__subtitle">Monitor your AI harnesses' costs and usage</p>
-              </div>
+              <Show
+                when={signUpEnabled()}
+                fallback={
+                  <>
+                    <div class="auth-header">
+                      <h1 class="auth-header__title">Sign-up is turned off</h1>
+                      <p class="auth-header__subtitle">
+                        The admin of this TierGate install is not accepting new accounts. Ask them
+                        to turn sign-up back on.
+                      </p>
+                    </div>
+                    <div class="auth-footer">
+                      <span>Already have an account? </span>
+                      <A href={appendSearch('/login', location.search)} class="auth-footer__link">
+                        Sign in
+                      </A>
+                    </div>
+                  </>
+                }
+              >
+                <div class="auth-header">
+                  <h1 class="auth-header__title">Create an account</h1>
+                  <p class="auth-header__subtitle">Monitor your AI harnesses' costs and usage</p>
+                </div>
 
-              <SocialButtons enabledProviders={socialProviders()} lastUsed={lastAuthMethod()} />
+                <SocialButtons enabledProviders={socialProviders()} lastUsed={lastAuthMethod()} />
 
-              <Show when={socialProviders().length > 0}>
-                <div class="auth-divider">
-                  <span class="auth-divider__text">or</span>
+                <Show when={socialProviders().length > 0}>
+                  <div class="auth-divider">
+                    <span class="auth-divider__text">or</span>
+                  </div>
+                </Show>
+
+                <form class="auth-form" onSubmit={handleSubmit}>
+                  <Show when={alreadyExists()}>
+                    <div id={errorId} class="auth-form__error" role="alert">
+                      An account with this email already exists.{' '}
+                      <A
+                        href={appendSearch('/login', location.search)}
+                        class="auth-form__error-link"
+                      >
+                        Sign in
+                      </A>{' '}
+                      or{' '}
+                      <A href="/reset-password" class="auth-form__error-link">
+                        reset your password
+                      </A>
+                      .
+                    </div>
+                  </Show>
+                  <Show when={error() && !alreadyExists()}>
+                    <div id={errorId} class="auth-form__error" role="alert">
+                      {error()}
+                    </div>
+                  </Show>
+                  <label class="auth-form__label" for={nameId}>
+                    Name
+                    <input
+                      ref={(el) => requestAnimationFrame(() => el.focus())}
+                      id={nameId}
+                      class="auth-form__input"
+                      type="text"
+                      autocomplete="name"
+                      placeholder="Your name"
+                      value={name()}
+                      onInput={(e) => setName(e.currentTarget.value)}
+                      required
+                      aria-describedby={error() ? errorId : undefined}
+                    />
+                  </label>
+                  <label class="auth-form__label" for={emailId}>
+                    Email
+                    <input
+                      id={emailId}
+                      class="auth-form__input"
+                      type="email"
+                      autocomplete="email"
+                      placeholder="you@example.com"
+                      value={email()}
+                      onInput={(e) => setEmail(e.currentTarget.value)}
+                      required
+                      aria-describedby={error() ? errorId : undefined}
+                    />
+                  </label>
+                  <label class="auth-form__label" for={passwordId}>
+                    Password
+                    <input
+                      id={passwordId}
+                      class="auth-form__input"
+                      type="password"
+                      autocomplete="new-password"
+                      placeholder="Create a password"
+                      value={password()}
+                      onInput={(e) => setPassword(e.currentTarget.value)}
+                      required
+                      minLength={8}
+                      aria-describedby={error() ? errorId : undefined}
+                    />
+                  </label>
+                  <button class="auth-form__submit" type="submit" disabled={loading()}>
+                    {loading() ? <span class="spinner" /> : 'Create account'}
+                  </button>
+                </form>
+                <div class="auth-footer">
+                  <span>Already have an account? </span>
+                  <A href={appendSearch('/login', location.search)} class="auth-footer__link">
+                    Sign in
+                  </A>
                 </div>
               </Show>
-
-              <form class="auth-form" onSubmit={handleSubmit}>
-                <Show when={alreadyExists()}>
-                  <div id={errorId} class="auth-form__error" role="alert">
-                    An account with this email already exists.{' '}
-                    <A href={appendSearch('/login', location.search)} class="auth-form__error-link">
-                      Sign in
-                    </A>{' '}
-                    or{' '}
-                    <A href="/reset-password" class="auth-form__error-link">
-                      reset your password
-                    </A>
-                    .
-                  </div>
-                </Show>
-                <Show when={error() && !alreadyExists()}>
-                  <div id={errorId} class="auth-form__error" role="alert">
-                    {error()}
-                  </div>
-                </Show>
-                <label class="auth-form__label" for={nameId}>
-                  Name
-                  <input
-                    ref={(el) => requestAnimationFrame(() => el.focus())}
-                    id={nameId}
-                    class="auth-form__input"
-                    type="text"
-                    autocomplete="name"
-                    placeholder="Your name"
-                    value={name()}
-                    onInput={(e) => setName(e.currentTarget.value)}
-                    required
-                    aria-describedby={error() ? errorId : undefined}
-                  />
-                </label>
-                <label class="auth-form__label" for={emailId}>
-                  Email
-                  <input
-                    id={emailId}
-                    class="auth-form__input"
-                    type="email"
-                    autocomplete="email"
-                    placeholder="you@example.com"
-                    value={email()}
-                    onInput={(e) => setEmail(e.currentTarget.value)}
-                    required
-                    aria-describedby={error() ? errorId : undefined}
-                  />
-                </label>
-                <label class="auth-form__label" for={passwordId}>
-                  Password
-                  <input
-                    id={passwordId}
-                    class="auth-form__input"
-                    type="password"
-                    autocomplete="new-password"
-                    placeholder="Create a password"
-                    value={password()}
-                    onInput={(e) => setPassword(e.currentTarget.value)}
-                    required
-                    minLength={8}
-                    aria-describedby={error() ? errorId : undefined}
-                  />
-                </label>
-                <button class="auth-form__submit" type="submit" disabled={loading()}>
-                  {loading() ? <span class="spinner" /> : 'Create account'}
-                </button>
-              </form>
-              <div class="auth-footer">
-                <span>Already have an account? </span>
-                <A href={appendSearch('/login', location.search)} class="auth-footer__link">
-                  Sign in
-                </A>
-              </div>
             </>
           }
         >

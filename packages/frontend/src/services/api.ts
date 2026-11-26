@@ -11,6 +11,7 @@ export * from './api/free-models.js';
 export * from './api/model-params.js';
 export * from './api/playground.js';
 export * from './api/version.js';
+export * from './api/admin.js';
 export {
   getProviders as getGlobalProviders,
   getProviderUsage as getGlobalProviderUsage,

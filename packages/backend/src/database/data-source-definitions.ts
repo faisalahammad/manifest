@@ -59,6 +59,7 @@ import { AddAgentMessagesDirectUsageIndex1802900000000 } from './migrations/1802
 import { CoverRequestsLogFilters1803000000000 } from './migrations/1803000000000-CoverRequestsLogFilters';
 import { CoverHarnessRequestsIndex1803100000000 } from './migrations/1803100000000-CoverHarnessRequestsIndex';
 import { CreateCacheInvalidations1803200000000 } from './migrations/1803200000000-CreateCacheInvalidations';
+import { AddInstanceAdminSettings1803400000000 } from './migrations/1803400000000-AddInstanceAdminSettings';
 import { AddKeyFailoverIndex1803300000000 } from './migrations/1803300000000-AddKeyFailoverIndex';
 import { InitialSchema1771464895790 } from './migrations/1771464895790-InitialSchema';
 import { HashApiKeys1771500000000 } from './migrations/1771500000000-HashApiKeys';
@@ -358,4 +359,5 @@ export const migrations = [
   CoverHarnessRequestsIndex1803100000000,
   CreateCacheInvalidations1803200000000,
   AddKeyFailoverIndex1803300000000,
+  AddInstanceAdminSettings1803400000000,
 ];

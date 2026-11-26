@@ -45,6 +45,11 @@ vi.mock('../../src/services/api/billing.js', () => ({
   getBillingStatus: (...args: unknown[]) => mockGetBillingStatus(...args),
 }));
 
+const mockGetAdminStatus = vi.fn();
+vi.mock('../../src/services/api/admin.js', () => ({
+  getAdminStatus: (...args: unknown[]) => mockGetAdminStatus(...args),
+}));
+
 // Local providers only exist on self-hosted installs; the Sidebar hides the
 // Local nav entry in cloud. Default to self-hosted so the legacy link
 // assertions keep applying; cloud tests flip the flag.
@@ -85,6 +90,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockPathname = '/overview';
   mockIsSelfHosted = true;
+  mockGetAdminStatus.mockResolvedValue({ isSuperAdmin: false });
   mockGetBillingStatus.mockResolvedValue({
     enabled: false,
     plan: 'free',
@@ -173,6 +179,31 @@ describe('Sidebar — global nav links', () => {
       '/integrations/cli',
       '/playground',
     ]);
+  });
+
+  it('shows Instance settings to the super admin', async () => {
+    mockGetAdminStatus.mockResolvedValue({ isSuperAdmin: true });
+    mockPathname = '/instance-settings';
+    const { container } = render(() => <Sidebar />);
+    await waitFor(() =>
+      expect(container.querySelector('a[href="/instance-settings"]')).not.toBeNull(),
+    );
+    const link = container.querySelector('a[href="/instance-settings"]')!;
+    expect(link.getAttribute('aria-current')).toBe('page');
+    expect(screen.getByText('ADMIN')).toBeDefined();
+  });
+
+  it('hides Instance settings from everyone else, and when the status check fails', async () => {
+    const { container, unmount } = render(() => <Sidebar />);
+    await waitFor(() => expect(mockGetAdminStatus).toHaveBeenCalled());
+    expect(container.querySelector('a[href="/instance-settings"]')).toBeNull();
+    unmount();
+
+    mockGetAdminStatus.mockRejectedValue(new Error('offline'));
+    const second = render(() => <Sidebar />);
+    await waitFor(() => expect(mockGetAdminStatus).toHaveBeenCalledTimes(2));
+    expect(second.container.querySelector('a[href="/instance-settings"]')).toBeNull();
+    expect(second.container.querySelector('a[href="/instance-settings"]')).toBeNull();
   });
 
   it('hides the MCP entry when the backend runs without the MCP server', async () => {
