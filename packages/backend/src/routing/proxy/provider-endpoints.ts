@@ -312,6 +312,13 @@ export const PROVIDER_ENDPOINTS: Record<string, ProviderEndpoint> = {
     format: 'openai',
     ...openaiStreamUsage,
   },
+  tokenharbor: {
+    baseUrl: 'https://tokenharbor.ai',
+    buildHeaders: openaiHeaders,
+    buildPath: openaiPath,
+    format: 'openai',
+    ...openaiStreamUsage,
+  },
   'cline-pass': {
     baseUrl: 'https://api.cline.bot',
     buildHeaders: openaiHeaders,

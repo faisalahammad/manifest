@@ -90,6 +90,12 @@ export const PROVIDER_CATALOG: readonly ProviderCatalogEntry[] = [
     authTypes: ['api_key', 'subscription'],
   },
   {
+    id: 'tokenharbor',
+    displayName: 'Token Harbor',
+    aliases: ['token-harbor', 'token harbor'],
+    authTypes: ['subscription'],
+  },
+  {
     id: 'gemini',
     displayName: 'Google',
     aliases: ['google'],

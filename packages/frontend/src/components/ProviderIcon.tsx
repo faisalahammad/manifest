@@ -395,6 +395,19 @@ export function providerIcon(id: string, size: number = 20): JSX.Element | null 
         />
       );
 
+    /* ── Token Harbor ─────────────────────────────── */
+    case 'tokenharbor':
+      return (
+        <img
+          src="/icons/providers/tokenharbor.png"
+          alt=""
+          width={size}
+          height={size}
+          style={{ ...s, display: 'block', 'object-fit': 'contain', 'border-radius': '4px' }}
+          aria-hidden="true"
+        />
+      );
+
     /* ── Fireworks AI ─────────────────────────────── */
     case 'fireworks':
       return (

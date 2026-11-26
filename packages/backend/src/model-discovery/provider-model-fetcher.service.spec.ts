@@ -25,6 +25,7 @@ describe('ProviderModelFetcherService', () => {
       'deepseek',
       'byteplus',
       'commandcode',
+      'tokenharbor',
       'fireworks',
       'groq',
       'huggingface',
@@ -3342,6 +3343,60 @@ describe('ProviderModelFetcherService', () => {
           capabilityCode: true,
         }),
       ]);
+    });
+  });
+
+  describe('tokenharbor provider', () => {
+    it('fetches the /v1/models catalog with Bearer auth, namespaces ids and maps prices', async () => {
+      fetchSpy.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: 'claude-haiku-5.5',
+              label: 'Claude Haiku 5.5',
+              context_length: 200000,
+              tool_call: true,
+              pricing: { input_usd_per_1m: 1, output_usd_per_1m: 5 },
+            },
+            { id: 'mimo-v2.5:free', context_length: null, tool_call: false },
+            { id: '' },
+          ],
+        }),
+      });
+
+      const result = await service.fetch('tokenharbor', 'thk_live_test', 'subscription');
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'https://tokenharbor.ai/v1/models',
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: 'Bearer thk_live_test' }),
+        }),
+      );
+      expect(result).toEqual([
+        expect.objectContaining({
+          id: 'tokenharbor/claude-haiku-5.5',
+          displayName: 'Claude Haiku 5.5',
+          provider: 'tokenharbor',
+          contextWindow: 200000,
+          inputPricePerToken: 0.000001,
+          outputPricePerToken: 0.000005,
+          capabilityCode: true,
+        }),
+        expect.objectContaining({
+          id: 'tokenharbor/mimo-v2.5:free',
+          displayName: 'tokenharbor/mimo-v2.5:free',
+          provider: 'tokenharbor',
+          inputPricePerToken: null,
+          outputPricePerToken: null,
+          capabilityCode: false,
+        }),
+      ]);
+    });
+
+    it('returns an empty list when the body has no data array', async () => {
+      fetchSpy.mockResolvedValue({ ok: true, json: async () => ({}) });
+      expect(await service.fetch('tokenharbor', 'thk_live_test', 'subscription')).toEqual([]);
     });
   });
 

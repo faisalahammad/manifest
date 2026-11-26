@@ -242,6 +242,18 @@ export const SHARED_PROVIDERS: readonly SharedProviderEntry[] = [
     keyPlaceholder: 'user_...',
   },
   {
+    id: 'tokenharbor',
+    displayName: 'Token Harbor',
+    aliases: ['token-harbor', 'token harbor'],
+    openRouterPrefixes: [],
+    requiresApiKey: false,
+    localOnly: false,
+    color: '#0B5FFF',
+    keyPrefix: 'thk_',
+    minKeyLength: 20,
+    keyPlaceholder: 'thk_live_...',
+  },
+  {
     id: 'gemini',
     displayName: 'Google',
     aliases: ['google'],

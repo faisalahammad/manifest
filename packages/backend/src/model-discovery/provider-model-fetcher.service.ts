@@ -54,6 +54,7 @@ const BYTEPLUS_CODING_MODELS_URL = 'https://ark.ap-southeast.bytepluses.com/api/
 const GEMINI_DEFAULT_CONTEXT = 1000000;
 const MINIMAX_SUBSCRIPTION_MODELS_URL = 'https://api.minimax.io/anthropic/v1/models?limit=100';
 const COMMAND_CODE_MODELS_URL = 'https://api.commandcode.ai/provider/v1/models';
+const TOKEN_HARBOR_MODELS_URL = 'https://tokenharbor.ai/v1/models';
 const XIAOMI_MIMO_MODELS_URL = 'https://api.xiaomimimo.com/v1/models';
 const XIAOMI_TOKEN_PLAN_MODELS_URL = `${getXiaomiTokenPlanBaseUrl()}/v1/models`;
 const QWEN_TOKEN_PLAN_MODELS_URL =
@@ -358,6 +359,34 @@ const parseCommandCode = createModelParser<CommandCodeModelEntry>({
   contextWindow: (entry) => entry.context_length ?? DEFAULT_CONTEXT_WINDOW,
   capabilityCode: true,
 });
+
+interface TokenHarborModelEntry extends OpenAIModelEntry {
+  label?: string;
+  context_length?: number | null;
+  tool_call?: boolean;
+  pricing?: { input_usd_per_1m?: number | null; output_usd_per_1m?: number | null };
+}
+
+const parseTokenHarbor = (body: unknown, provider: string): DiscoveredModel[] => {
+  const arr = (body as { data?: unknown })?.data;
+  if (!Array.isArray(arr)) return [];
+  return (arr as TokenHarborModelEntry[])
+    .filter((entry) => typeof entry?.id === 'string' && entry.id.length > 0)
+    .map((entry) => {
+      const id = `tokenharbor/${entry.id}`;
+      return {
+        id,
+        displayName: entry.label || id,
+        provider,
+        contextWindow: entry.context_length ?? DEFAULT_CONTEXT_WINDOW,
+        inputPricePerToken: perMillionToPerToken(entry.pricing?.input_usd_per_1m),
+        outputPricePerToken: perMillionToPerToken(entry.pricing?.output_usd_per_1m),
+        capabilityReasoning: false,
+        capabilityCode: entry.tool_call !== false,
+        qualityScore: 3,
+      };
+    });
+};
 
 const parseBytePlusCodingPlan = (body: unknown, provider: string): DiscoveredModel[] => {
   const known = new Set(getSubscriptionKnownModels('byteplus') ?? []);
@@ -936,6 +965,11 @@ export const PROVIDER_CONFIGS: Record<string, FetcherConfig> = {
     endpoint: COMMAND_CODE_MODELS_URL,
     buildHeaders: bearerHeaders,
     parse: parseCommandCode,
+  },
+  tokenharbor: {
+    endpoint: TOKEN_HARBOR_MODELS_URL,
+    buildHeaders: bearerHeaders,
+    parse: parseTokenHarbor,
   },
   cerebras: {
     endpoint: 'https://api.cerebras.ai/v1/models',
