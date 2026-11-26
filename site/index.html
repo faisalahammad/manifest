@@ -5,72 +5,212 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TierGate · Self-host your LLM gateway</title>
 <meta name="description" content="Set up TierGate, the open-source LLM router, on Docker, a VPS, Dokploy or Coolify.">
+<meta name="theme-color" content="#07090f">
 <link rel="icon" href="favicon.ico">
 <style>
   :root {
-    --bg: #0d1017; --panel: #151a24; --line: #262d3b; --text: #e8eaf0; --muted: #9aa3b5;
-    --blue: #5865ff; --teal: #2be1b7; --code: #0a0d13;
+    --bg: #07090f; --bg2: #0c0f18; --panel: rgba(255,255,255,.035); --panel-solid: #11151f;
+    --line: rgba(255,255,255,.08); --line2: rgba(255,255,255,.14);
+    --text: #eef0f6; --muted: #98a0b3; --dim: #6b7386;
+    --blue: #5b63ff; --violet: #9b6bff; --teal: #2be1b7; --code: #090c13;
+    --mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+    --radius: 16px;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  a { color: var(--teal); }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
-  header { padding: 56px 0 32px; text-align: center; }
-  header img { height: 56px; }
-  header p { color: var(--muted); font-size: 1.15rem; margin: 18px auto 24px; max-width: 620px; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: var(--teal); text-decoration-color: rgba(43,225,183,.35); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--teal); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .narrow { max-width: 820px; }
+
+  /* Background glow + dot grid */
+  .bg { position: absolute; inset: 0 0 auto 0; height: 980px; pointer-events: none; z-index: 0; overflow: hidden; }
+  .bg::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 24px 24px; mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%); }
+  .bg::after { content: ""; position: absolute; left: 50%; top: -260px; width: 1100px; height: 760px; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(91,99,255,.38), rgba(155,107,255,.16) 55%, transparent 80%); filter: blur(20px); }
+
+  /* Floating pill nav */
+  .topbar { position: sticky; top: 0; z-index: 20; padding: 20px 0 0; }
+  .pill { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 20px; border: 1px solid var(--line2); border-radius: 999px; background: rgba(12,15,24,.72); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); box-shadow: 0 10px 40px -12px rgba(0,0,0,.6); }
+  .pill .logo { display: flex; align-items: center; margin-right: auto; }
+  .pill .logo img { height: 26px; display: block; }
+  .pill nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+  .pill nav::-webkit-scrollbar { display: none; }
+  .pill nav a { padding: 8px 14px; border-radius: 999px; color: var(--muted); text-decoration: none; font-size: .9rem; font-weight: 500; white-space: nowrap; transition: color .15s, background .15s; }
+  .pill nav a:hover { color: var(--text); background: rgba(255,255,255,.05); }
+  .pill nav a.active { color: var(--text); background: rgba(255,255,255,.09); }
+  .gh { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; background: var(--text); color: #0b0d14; font-weight: 600; font-size: .9rem; text-decoration: none; white-space: nowrap; }
+  .gh svg { width: 16px; height: 16px; }
+
+  /* Hero */
+  .hero { position: relative; z-index: 1; padding-top: 104px; padding-bottom: 40px; text-align: center; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 8px; border: 1px solid var(--line2); border-radius: 999px; background: var(--panel); font-size: .85rem; color: var(--muted); }
+  .eyebrow b { font: 600 .72rem/1 var(--mono); letter-spacing: .04em; color: #0b0d14; background: var(--teal); padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+  .hero h1 { font-size: clamp(2.4rem, 6vw, 4.4rem); line-height: 1.04; letter-spacing: -.035em; font-weight: 750; margin: 28px auto 22px; max-width: 900px; }
+  .grad { background: linear-gradient(100deg, #fff 10%, #b9bcff 45%, var(--teal) 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p.sub { color: var(--muted); font-size: 1.2rem; margin: 0 auto 36px; max-width: 640px; }
   .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .btn { padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid var(--line); color: var(--text); }
-  .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
-  nav.tabs { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); }
-  nav.tabs .wrap { display: flex; gap: 4px; overflow-x: auto; }
-  nav.tabs a { padding: 14px 16px; color: var(--muted); text-decoration: none; font-weight: 600; white-space: nowrap; border-bottom: 2px solid transparent; }
-  nav.tabs a:hover { color: var(--text); }
-  nav.tabs a.active { color: var(--text); border-color: var(--teal); }
-  section { padding: 40px 0 8px; scroll-margin-top: 56px; }
-  h2 { font-size: 1.6rem; margin: 0 0 6px; }
-  h3 { font-size: 1.05rem; margin: 28px 0 8px; }
-  .lead { color: var(--muted); margin: 0 0 8px; }
-  ol { padding-left: 22px; } li { margin: 6px 0; }
-  code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--panel); padding: 2px 6px; border-radius: 4px; }
-  pre { position: relative; background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 10px 0 16px; }
-  pre code { background: none; padding: 0; font-size: 0.86rem; line-height: 1.55; }
-  .copy { position: absolute; top: 8px; right: 8px; background: var(--panel); color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; font-size: 0.75rem; cursor: pointer; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 12px; text-decoration: none; font-weight: 600; border: 1px solid var(--line2); color: var(--text); background: var(--panel); transition: transform .15s, border-color .15s, box-shadow .15s; }
+  .btn:hover { transform: translateY(-1px); border-color: rgba(255,255,255,.28); }
+  .btn.primary { background: linear-gradient(180deg, #6d74ff, var(--blue)); border-color: rgba(255,255,255,.18); color: #fff; box-shadow: 0 0 0 1px rgba(91,99,255,.4), 0 12px 32px -8px rgba(91,99,255,.7); }
+
+  /* Glowing terminal */
+  .term-wrap { position: relative; max-width: 780px; margin: 64px auto 0; }
+  .term-wrap::before { content: ""; position: absolute; inset: -2px; border-radius: 20px; background: linear-gradient(120deg, rgba(91,99,255,.7), rgba(155,107,255,.4), rgba(43,225,183,.6)); filter: blur(28px); opacity: .45; z-index: -1; }
+  .term { border: 1px solid var(--line2); border-radius: 18px; background: rgba(9,12,19,.92); overflow: hidden; text-align: left; }
+  .term-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .term-bar i { width: 11px; height: 11px; border-radius: 50%; background: #2a2f3c; }
+  .term-bar span { margin-left: 10px; font: .78rem var(--mono); color: var(--dim); }
+  .term pre { margin: 0; border: 0; border-radius: 0; background: transparent; padding: 22px 24px; }
+  .term pre code { font-size: .9rem; line-height: 1.8; }
+  .c-dim { color: var(--dim); } .c-teal { color: var(--teal); } .c-vio { color: #b9a2ff; } .c-ok { color: #7ee2a8; }
+
+  /* Platform cards */
+  .platforms { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 72px 0 0; text-align: left; }
+  .card { display: block; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)); text-decoration: none; color: var(--text); transition: border-color .2s, transform .2s, background .2s; }
+  .card:hover { border-color: rgba(91,99,255,.6); transform: translateY(-3px); background: linear-gradient(180deg, rgba(91,99,255,.12), rgba(255,255,255,.015)); }
+  .card .ico { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; background: rgba(91,99,255,.14); border: 1px solid rgba(91,99,255,.35); margin-bottom: 18px; }
+  .card .ico svg { width: 20px; height: 20px; stroke: #b9bcff; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .card h3 { margin: 0 0 4px; font-size: 1.05rem; }
+  .card p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+  .card .go { display: block; margin-top: 16px; font: .78rem var(--mono); color: var(--dim); transition: color .2s; }
+  .card:hover .go { color: var(--teal); }
+
+  /* Docs sections */
+  main { position: relative; z-index: 1; padding: 96px 0 0; }
+  section { padding: 36px 40px 28px; margin: 0 0 24px; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.008)); scroll-margin-top: 104px; }
+  .label { display: inline-block; font: 600 .74rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; }
+  h2 { font-size: 1.85rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 8px; }
+  section h3 { font-size: 1.05rem; margin: 30px 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 10px; font-size: 1.05rem; }
+  section > ol { list-style: none; counter-reset: step; padding: 0; margin: 20px 0; }
+  section > ol > li { counter-increment: step; position: relative; padding: 0 0 18px 48px; margin: 0; }
+  section > ol > li::before { content: counter(step); position: absolute; left: 0; top: -1px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; font: 600 .8rem var(--mono); color: var(--text); background: var(--panel-solid); border: 1px solid var(--line2); }
+  section > ol > li::after { content: ""; position: absolute; left: 15px; top: 34px; bottom: 4px; width: 1px; background: var(--line); }
+  section > ol > li:last-child::after { display: none; }
+  code { font: .86em var(--mono); background: rgba(255,255,255,.06); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; }
+  pre { position: relative; background: var(--code); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 12px 0 16px; }
+  pre code { background: none; border: 0; padding: 0; font-size: .85rem; line-height: 1.65; }
+  .copy { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--line2); border-radius: 8px; padding: 4px 10px; font: .72rem var(--mono); cursor: pointer; opacity: 0; transition: opacity .15s, color .15s; }
+  pre:hover .copy, .copy:focus { opacity: 1; }
   .copy:hover { color: var(--text); }
-  .note { background: var(--panel); border-left: 3px solid var(--teal); padding: 12px 16px; border-radius: 0 8px 8px 0; color: var(--muted); margin: 16px 0; }
-  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 0.95rem; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
-  th { color: var(--muted); font-weight: 600; }
-  footer { border-top: 1px solid var(--line); margin-top: 48px; padding: 24px 0 40px; color: var(--muted); font-size: 0.9rem; text-align: center; }
+  @media (hover: none) { .copy { opacity: 1; } }
+  .note { display: flex; gap: 12px; background: rgba(43,225,183,.06); border: 1px solid rgba(43,225,183,.22); padding: 14px 18px; border-radius: 12px; color: #c4d6d1; margin: 18px 0; font-size: .95rem; }
+  .note::before { content: "!"; flex: none; width: 20px; height: 20px; margin-top: 2px; display: grid; place-items: center; border-radius: 50%; background: var(--teal); color: #07090f; font: 700 .75rem var(--mono); }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 12px 0 18px; font-size: .95rem; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  th { color: var(--muted); font-weight: 600; background: rgba(255,255,255,.03); font-size: .85rem; }
+
+  /* Footer */
+  footer { position: relative; z-index: 1; margin-top: 120px; border-top: 1px solid var(--line); background: linear-gradient(180deg, var(--bg2), var(--bg)); }
+  .foot { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 40px; padding: 80px 24px 56px; }
+  .foot img { height: 26px; }
+  .foot p { color: var(--muted); font-size: .92rem; margin: 16px 0 20px; max-width: 300px; }
+  .status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--line2); border-radius: 999px; font-size: .8rem; color: var(--muted); }
+  .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 10px var(--teal); }
+  .foot h4 { margin: 4px 0 16px; font: 600 .72rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .foot ul { list-style: none; padding: 0; margin: 0; }
+  .foot li { margin: 0 0 10px; }
+  .foot ul a { color: var(--text); text-decoration: none; font-size: .95rem; opacity: .85; }
+  .foot ul a:hover { opacity: 1; color: var(--teal); }
+  .legal { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 24px 24px 48px; border-top: 1px solid var(--line); font: .74rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+  .legal a { color: var(--dim); text-decoration: none; }
+  .legal a:hover { color: var(--text); }
+
+  @media (max-width: 860px) {
+    .platforms { grid-template-columns: repeat(2, 1fr); }
+    .foot { grid-template-columns: 1fr 1fr; }
+    .foot > div:first-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    .topbar { padding-top: 12px; }
+    .pill { flex-wrap: wrap; border-radius: 22px; padding: 10px 10px 6px 16px; }
+    .pill nav { order: 3; width: 100%; margin: 4px -4px 0; }
+    .gh span { display: none; }
+    .hero { padding-top: 64px; padding-bottom: 24px; }
+    .eyebrow { font-size: .78rem; }
+    .platforms { grid-template-columns: 1fr; }
+    section { padding: 28px 20px 20px; border-radius: 16px; }
+    section > ol > li { padding-left: 42px; }
+    .foot { grid-template-columns: 1fr; gap: 32px; padding: 56px 16px 40px; }
+    .legal { padding: 20px 16px 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
 </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true"></div>
 
-<header class="wrap">
-  <img src="logo.svg" alt="TierGate">
-  <p>One OpenAI-compatible endpoint for all your AI agents. Every request goes to the cheapest model that can handle it. Self-hosted, open source, MIT licensed.</p>
+<div class="topbar">
+  <div class="wrap">
+    <div class="pill">
+      <a class="logo" href="#top" aria-label="TierGate home"><img src="logo.svg" alt="TierGate"></a>
+      <nav aria-label="Sections">
+        <a href="#docker">Docker</a>
+        <a href="#vps">VPS</a>
+        <a href="#dokploy">Dokploy</a>
+        <a href="#coolify">Coolify</a>
+        <a href="#connect">Connect</a>
+        <a href="#upgrade">Upgrade</a>
+      </nav>
+      <a class="gh" href="https://github.com/faisalahammad/tiergate">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>GitHub</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<header class="hero wrap" id="top">
+  <span class="eyebrow"><b>OPEN SOURCE</b> Self-hosted LLM gateway</span>
+  <h1><span class="grad">Every request, routed to the cheapest model that can handle it.</span></h1>
+  <p class="sub">One OpenAI-compatible endpoint for all your AI agents. Run it on your laptop, a VPS, Dokploy or Coolify in about five minutes.</p>
   <div class="btns">
-    <a class="btn primary" href="#docker">Get started</a>
-    <a class="btn" href="https://github.com/faisalahammad/tiergate">GitHub</a>
-    <a class="btn" href="https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md">Full guide</a>
+    <a class="btn primary" href="#docker">Get started →</a>
+    <a class="btn" href="https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md">Read the full guide</a>
+  </div>
+
+  <div class="term-wrap">
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i><span>~/tiergate</span></div>
+<pre><code><span class="c-dim"># install and start</span>
+<span class="c-teal">$</span> curl -sSLO https://raw.githubusercontent.com/faisalahammad/tiergate/main/docker/install.sh
+<span class="c-teal">$</span> bash install.sh
+<span class="c-ok">✓</span> TierGate is up at <span class="c-vio">http://localhost:2099</span>
+
+<span class="c-dim"># point any agent at it</span>
+<span class="c-teal">$</span> curl localhost:2099/v1/chat/completions -H "Authorization: Bearer mnfst_..." \
+    -d '{"model":"auto","messages":[{"role":"user","content":"Say hi"}]}'</code></pre>
+    </div>
+  </div>
+
+  <div class="platforms">
+    <a class="card" href="#docker">
+      <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="9" rx="2"/><path d="M7 11V7h4v4M11 7V4h4v7"/></svg></div>
+      <h3>Docker</h3><p>One command on macOS, Windows or Linux.</p><span class="go">5 min →</span>
+    </a>
+    <a class="card" href="#vps">
+      <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></div>
+      <h3>VPS</h3><p>Ubuntu, Debian or Oracle Cloud, with Caddy HTTPS.</p><span class="go">15 min →</span>
+    </a>
+    <a class="card" href="#dokploy">
+      <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg></div>
+      <h3>Dokploy</h3><p>Paste a compose file, add a domain, deploy.</p><span class="go">10 min →</span>
+    </a>
+    <a class="card" href="#coolify">
+      <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg></div>
+      <h3>Coolify</h3><p>Secrets and URL generated for you.</p><span class="go">10 min →</span>
+    </a>
   </div>
 </header>
 
-<nav class="tabs">
-  <div class="wrap">
-    <a href="#docker">Docker</a>
-    <a href="#vps">VPS</a>
-    <a href="#dokploy">Dokploy</a>
-    <a href="#coolify">Coolify</a>
-    <a href="#connect">Connect an agent</a>
-    <a href="#upgrade">Upgrade</a>
-  </div>
-</nav>
-
-<main class="wrap">
+<main class="wrap narrow">
 
 <section id="docker">
-  <h2>Docker (local machine)</h2>
+  <span class="label">01 · Local machine</span>
+  <h2>Docker</h2>
   <p class="lead">Runs on macOS, Windows or Linux. You need Docker Desktop or Docker Engine 20.10+ with Compose v2.</p>
 
   <h3>Option A: the installer</h3>
@@ -85,10 +225,11 @@ curl -sSLf https://raw.githubusercontent.com/faisalahammad/tiergate/main/docker/
 printf 'BETTER_AUTH_SECRET=%s\nMANIFEST_ENCRYPTION_KEY=%s\n' "$(openssl rand -hex 32)" "$(openssl rand -hex 32)" &gt; .env
 docker compose up -d</code></pre>
   <p>Wait until <code>docker compose ps</code> shows both containers <code>healthy</code> (first boot takes up to 90 seconds), then open <a href="http://localhost:2099">http://localhost:2099</a>. The first account you create is the admin.</p>
-  <div class="note">Keep a copy of <code>.env</code>. <code>MANIFEST_ENCRYPTION_KEY</code> encrypts your stored provider keys. If you lose it, they can not be decrypted.</div>
+  <div class="note"><span>Keep a copy of <code>.env</code>. <code>MANIFEST_ENCRYPTION_KEY</code> encrypts your stored provider keys. If you lose it, they can not be decrypted.</span></div>
 </section>
 
 <section id="vps">
+  <span class="label">02 · Your own server</span>
   <h2>VPS (Ubuntu, Debian, Oracle Cloud...)</h2>
   <p class="lead">1 vCPU and 1 GB RAM is enough. amd64 and arm64 (Ampere) images are both published.</p>
   <ol>
@@ -116,6 +257,7 @@ sudo systemctl reload caddy</code></pre></li>
 </section>
 
 <section id="dokploy">
+  <span class="label">03 · Self-hosted PaaS</span>
   <h2>Dokploy</h2>
   <p class="lead">Dokploy runs the stack as a Docker Compose service and its Traefik proxy handles the domain and HTTPS.</p>
   <ol>
@@ -129,10 +271,11 @@ BETTER_AUTH_URL=https://ai.example.com</code></pre></li>
     <li>In <strong>Domains</strong>, add <code>ai.example.com</code> with service <code>tiergate</code>, container port <code>2099</code>, HTTPS on and the Let's Encrypt certificate.</li>
     <li>Click <strong>Deploy</strong>. When the logs show the app is listening, open your domain and create the admin account.</li>
   </ol>
-  <div class="note">Do not change <code>POSTGRES_PASSWORD</code> after the first deploy. Postgres only reads it when the volume is created.</div>
+  <div class="note"><span>Do not change <code>POSTGRES_PASSWORD</code> after the first deploy. Postgres only reads it when the volume is created.</span></div>
 </section>
 
 <section id="coolify">
+  <span class="label">04 · Self-hosted PaaS</span>
   <h2>Coolify</h2>
   <p class="lead">Coolify generates the URL, database password and secrets for you with its magic variables.</p>
   <ol>
@@ -146,6 +289,7 @@ BETTER_AUTH_URL=https://ai.example.com</code></pre></li>
 </section>
 
 <section id="connect">
+  <span class="label">05 · Use it</span>
   <h2>Connect an agent</h2>
   <ol>
     <li>In the dashboard, open <strong>Providers</strong> and connect at least one: an API key, a subscription, or a local server like Ollama.</li>
@@ -165,8 +309,9 @@ BETTER_AUTH_URL=https://ai.example.com</code></pre></li>
 </section>
 
 <section id="upgrade">
+  <span class="label">06 · Stay current</span>
   <h2>Upgrade</h2>
-  <p>Back up the database first. Migrations run by themselves when the new version starts.</p>
+  <p class="lead">Back up the database first. Migrations run by themselves when the new version starts.</p>
 <pre><code>docker compose exec -T postgres pg_dump -U manifest manifest | gzip &gt; tiergate-$(date +%F).sql.gz
 docker compose pull &amp;&amp; docker compose up -d</code></pre>
   <p>On Dokploy or Coolify, click <strong>Redeploy</strong>. Coming from Manifest? Run the installer with <code>--upgrade --dir "$PWD"</code> in your existing install folder. Your <code>.env</code> and data are kept. See the <a href="https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md#8-move-from-manifest-to-tiergate">migration steps</a>.</p>
@@ -174,14 +319,47 @@ docker compose pull &amp;&amp; docker compose up -d</code></pre>
 
 </main>
 
-<footer class="wrap">
-  TierGate is a fork of <a href="https://github.com/mnfst/manifest">Manifest</a>, MIT licensed. ·
-  <a href="https://github.com/faisalahammad/tiergate">Source</a> ·
-  <a href="https://github.com/faisalahammad/tiergate/issues">Issues</a>
+<footer>
+  <div class="wrap foot">
+    <div>
+      <img src="logo.svg" alt="TierGate">
+      <p>Self-hosted LLM gateway that routes every AI agent request to the cheapest model that can handle it.</p>
+      <span class="status"><i></i>MIT licensed · free forever</span>
+    </div>
+    <div>
+      <h4>Setup</h4>
+      <ul>
+        <li><a href="#docker">Docker</a></li>
+        <li><a href="#vps">VPS</a></li>
+        <li><a href="#dokploy">Dokploy</a></li>
+        <li><a href="#coolify">Coolify</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Docs</h4>
+      <ul>
+        <li><a href="https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md">Self-hosting guide</a></li>
+        <li><a href="#connect">Connect an agent</a></li>
+        <li><a href="#upgrade">Upgrade</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <ul>
+        <li><a href="https://github.com/faisalahammad/tiergate">Source code</a></li>
+        <li><a href="https://github.com/faisalahammad/tiergate/issues">Issues</a></li>
+        <li><a href="https://github.com/mnfst/manifest">Manifest (upstream)</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap legal">
+    <span>TierGate · fork of <a href="https://github.com/mnfst/manifest">Manifest</a></span>
+    <span>MIT License</span>
+  </div>
 </footer>
 
 <script>
-  document.querySelectorAll('pre').forEach(pre => {
+  document.querySelectorAll('main pre').forEach(pre => {
     const b = document.createElement('button');
     b.className = 'copy'; b.type = 'button'; b.textContent = 'Copy';
     b.onclick = () => navigator.clipboard.writeText(pre.querySelector('code').innerText).then(() => {
@@ -189,7 +367,7 @@ docker compose pull &amp;&amp; docker compose up -d</code></pre>
     });
     pre.appendChild(b);
   });
-  const links = [...document.querySelectorAll('nav.tabs a')];
+  const links = [...document.querySelectorAll('.pill nav a')];
   const spy = new IntersectionObserver(entries => entries.forEach(e => {
     if (e.isIntersecting) links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
   }), { rootMargin: '-40% 0px -55% 0px' });
