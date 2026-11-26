@@ -50,6 +50,7 @@ export const SUBSCRIPTION_PROVIDER_KEY_URLS: Record<string, string> = {
   byteplus: 'https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey',
   'cline-pass': 'https://app.cline.bot/settings/api-keys',
   commandcode: 'https://commandcode.ai/studio',
+  tokenharbor: 'https://tokenharbor.ai/dashboard/api-keys',
   nous: 'https://portal.nousresearch.com',
   qwen: 'https://home.qwencloud.com/api-keys',
   moonshot: 'https://www.kimi.com/code/console',

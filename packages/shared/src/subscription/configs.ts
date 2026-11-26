@@ -342,6 +342,18 @@ export const SUBSCRIPTION_PROVIDER_CONFIGS: Readonly<
       supportsBatching: false,
     }),
   }),
+  tokenharbor: Object.freeze({
+    supportsSubscription: true as const,
+    subscriptionLabel: 'Token Harbor Pass',
+    subscriptionAuthMode: 'token' as const,
+    subscriptionKeyPlaceholder: 'Paste your Token Harbor API key',
+    // Model list is fetched dynamically from Token Harbor's /v1/models catalog.
+    subscriptionCapabilities: Object.freeze({
+      maxContextWindow: 200000,
+      supportsPromptCaching: true,
+      supportsBatching: false,
+    }),
+  }),
   'cline-pass': Object.freeze({
     supportsSubscription: true as const,
     subscriptionLabel: 'ClinePass subscription',

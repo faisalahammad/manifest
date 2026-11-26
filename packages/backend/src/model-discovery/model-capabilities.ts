@@ -31,6 +31,7 @@ const STREAMING_ENDPOINT_PROVIDERS = new Set([
   'opencode-zen',
   'openrouter',
   'qwen',
+  'tokenharbor',
   'xai',
   'xiaomi',
   'zai',

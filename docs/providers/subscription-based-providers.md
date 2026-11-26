@@ -1,28 +1,29 @@
 # Subscription-based providers
 
-Reuse a paid plan you already have: ChatGPT Plus, Claude Max, GitHub Copilot, ModelArk Coding Plan, Command Code, Qwen Token Plan, Xiaomi MiMo Token Plan, Kimi Coding Plan, GLM Coding Plan, Google sign-in, MiniMax Coding Plan, Kiro, Grok, Ollama Cloud, or OpenCode Go.
+Reuse a paid plan you already have: ChatGPT Plus, Claude Max, GitHub Copilot, ModelArk Coding Plan, Command Code, Qwen Token Plan, Xiaomi MiMo Token Plan, Kimi Coding Plan, GLM Coding Plan, Google sign-in, MiniMax Coding Plan, Kiro, Grok, Ollama Cloud, OpenCode Go, or Token Harbor Pass.
 
 If you already pay for one of the plans below, Manifest can route through that subscription instead of an API key. Auth is browser OAuth, device code, or a subscription token depending on the provider.
 
 ## Supported subscriptions
 
-| Provider                                                    | Plan                        | Auth flow            | Model catalog                                        |
-| ----------------------------------------------------------- | --------------------------- | -------------------- | ---------------------------------------------------- |
-| [OpenAI](https://openai.com)                                | ChatGPT Plus/Pro/Team       | OAuth (browser)      | Fixed ChatGPT and Codex model list                   |
-| [Anthropic](https://www.anthropic.com)                      | Claude Max / Pro            | Setup token          | `claude-opus-4`, `claude-sonnet-4`, `claude-haiku-4` |
-| [GitHub Copilot](https://github.com/features/copilot)       | GitHub Copilot subscription | Device code          | Fixed Copilot model list                             |
-| [BytePlus](https://www.byteplus.com/en/activity/codingplan) | ModelArk Coding Plan        | Subscription token   | Fixed ModelArk Coding Plan model list                |
-| [Command Code](https://commandcode.ai/studio)               | Command Code subscription   | Subscription token   | Dynamic Provider API catalog                         |
-| [Qwen](https://home.qwencloud.com/api-keys)                 | Qwen Token Plan             | Subscription token   | Dynamic Token Plan catalog                           |
-| [Xiaomi MiMo](https://platform.xiaomimimo.com)              | MiMo Token Plan             | Subscription token   | Fixed MiMo Token Plan model list                     |
-| [Moonshot](https://www.kimi.com/code/console)               | Kimi Coding Plan            | Subscription token   | Fixed Kimi Coding Plan model list                    |
-| [Z.ai](https://z.ai)                                        | GLM Coding Plan             | Subscription token   | Fixed GLM Coding Plan model list                     |
-| [Google](https://ai.google.dev)                             | Sign in with Google         | OAuth (browser)      | Fixed Gemini CodeAssist model list                   |
-| [MiniMax](https://www.minimax.io)                           | MiniMax Coding Plan         | Device code or token | Fixed MiniMax Coding Plan model list                 |
-| [Kiro](https://app.kiro.dev)                                | Kiro subscription           | Device code          | Fixed Kiro model list                                |
-| [xAI](https://x.ai)                                         | Grok subscription           | OAuth (browser)      | Dynamic xAI model catalog                            |
-| [Ollama Cloud](https://ollama.com)                          | Ollama Cloud subscription   | Subscription token   | Dynamic Ollama Cloud tag catalog                     |
-| [OpenCode Go](https://opencode.ai)                          | OpenCode Go (beta)          | Subscription token   | Dynamic OpenCode Go catalog                          |
+| Provider                                                    | Plan                           | Auth flow            | Model catalog                                        |
+| ----------------------------------------------------------- | ------------------------------ | -------------------- | ---------------------------------------------------- |
+| [OpenAI](https://openai.com)                                | ChatGPT Plus/Pro/Team          | OAuth (browser)      | Fixed ChatGPT and Codex model list                   |
+| [Anthropic](https://www.anthropic.com)                      | Claude Max / Pro               | Setup token          | `claude-opus-4`, `claude-sonnet-4`, `claude-haiku-4` |
+| [GitHub Copilot](https://github.com/features/copilot)       | GitHub Copilot subscription    | Device code          | Fixed Copilot model list                             |
+| [BytePlus](https://www.byteplus.com/en/activity/codingplan) | ModelArk Coding Plan           | Subscription token   | Fixed ModelArk Coding Plan model list                |
+| [Command Code](https://commandcode.ai/studio)               | Command Code subscription      | Subscription token   | Dynamic Provider API catalog                         |
+| [Qwen](https://home.qwencloud.com/api-keys)                 | Qwen Token Plan                | Subscription token   | Dynamic Token Plan catalog                           |
+| [Xiaomi MiMo](https://platform.xiaomimimo.com)              | MiMo Token Plan                | Subscription token   | Fixed MiMo Token Plan model list                     |
+| [Moonshot](https://www.kimi.com/code/console)               | Kimi Coding Plan               | Subscription token   | Fixed Kimi Coding Plan model list                    |
+| [Z.ai](https://z.ai)                                        | GLM Coding Plan                | Subscription token   | Fixed GLM Coding Plan model list                     |
+| [Google](https://ai.google.dev)                             | Sign in with Google            | OAuth (browser)      | Fixed Gemini CodeAssist model list                   |
+| [MiniMax](https://www.minimax.io)                           | MiniMax Coding Plan            | Device code or token | Fixed MiniMax Coding Plan model list                 |
+| [Kiro](https://app.kiro.dev)                                | Kiro subscription              | Device code          | Fixed Kiro model list                                |
+| [xAI](https://x.ai)                                         | Grok subscription              | OAuth (browser)      | Dynamic xAI model catalog                            |
+| [Ollama Cloud](https://ollama.com)                          | Ollama Cloud subscription      | Subscription token   | Dynamic Ollama Cloud tag catalog                     |
+| [OpenCode Go](https://opencode.ai)                          | OpenCode Go (beta)             | Subscription token   | Dynamic OpenCode Go catalog                          |
+| [Token Harbor](https://tokenharbor.ai)                      | Agent, Office or Frontier Pass | Subscription token   | Dynamic Token Harbor catalog                         |
 
 ## Connect a subscription
 
@@ -94,6 +95,10 @@ Paste an Ollama Cloud API key. Ollama Cloud accepts generic API-key formats; Man
 ### OpenCode Go
 
 Sign in to OpenCode Go, copy your API key, and paste it into Manifest. Model discovery is dynamic. Depending on the model, Manifest can route through OpenAI-compatible or Anthropic-compatible wire formats.
+
+### Token Harbor
+
+Paste a Token Harbor Universal Key (`thk_live_` prefix) from the Token Harbor dashboard. Requests route through Token Harbor's OpenAI-compatible `/v1/chat/completions` endpoint. Models are discovered dynamically from `/v1/models`, with each model's per-token price. Usage counts against your Pass allowance first, then your wallet.
 
 ## Why mix subscriptions and API keys
 
