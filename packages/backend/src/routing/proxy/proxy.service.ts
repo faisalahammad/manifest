@@ -938,14 +938,14 @@ export class ProxyService {
 
     const models = await this.modelDiscovery.getModelsForAgent(tenantId, agentId);
     const catalogRoute = routeForOpenAiModelId(requestedModel, models);
-    if (catalogRoute) return this.explicitRouting(agentId, tenantId, catalogRoute);
+    if (catalogRoute) return this.explicitRouting(agentId, catalogRoute);
 
     // A bare ID served by both the subscription and api_key connections of
     // one provider is not ambiguous: the flat-fee subscription already covers
     // the request, so route it there instead of silently metering the key.
     if (!requestedModel.includes('/')) {
       const preferred = subscriptionPreferredRoute(requestedModel, models);
-      if (preferred) return this.explicitRouting(agentId, tenantId, preferred);
+      if (preferred) return this.explicitRouting(agentId, preferred);
     }
 
     // A bare ID already present under multiple connections is ambiguous, not
@@ -964,7 +964,7 @@ export class ProxyService {
       return null;
     }
 
-    return this.explicitRouting(agentId, tenantId, route);
+    return this.explicitRouting(agentId, route);
   }
 
   /**
@@ -1017,18 +1017,17 @@ export class ProxyService {
   /**
    * The single funnel for both explicit-model branches (catalog match and
    * uncatalogued passthrough). Neither branch knows about connections, so the
-   * route arrives without a `keyLabel` and would resolve to the first key of
-   * the provider. Pin it here — through the same logic tier routing uses — so
-   * an operator's connection choice survives a request that names a model.
+   * route arrives without a `keyLabel`. Pin it here, through the same logic
+   * tier routing uses, so an operator's connection choice survives a request
+   * that names a model; without a pin it stays Auto and fails over across keys.
    */
   private async explicitRouting(
     agentId: string,
-    tenantId: string,
     route: NonNullable<ResolvedRouting['route']>,
   ): Promise<ResolvedRouting> {
     return {
       tier: 'default' as const,
-      route: await this.resolveService.pinRouteKeyLabel(agentId, tenantId, route),
+      route: await this.resolveService.pinRouteKeyLabel(agentId, route),
       fallback_routes: null,
       response_mode: DEFAULT_RESPONSE_MODE,
       confidence: 1,

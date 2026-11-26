@@ -53,7 +53,6 @@ describe('ResolveService', () => {
       | 'isRouteAvailable'
       | 'hasActiveProvider'
       | 'getAuthType'
-      | 'getDefaultKeyLabel'
       | 'hasRouteCredentials'
     >
   >;
@@ -85,7 +84,6 @@ describe('ResolveService', () => {
       // Default to undefined so resolved routes carry no `keyLabel` unless a
       // test explicitly sets one — keeps assertions on legacy route shapes
       // (no keyLabel) passing.
-      getDefaultKeyLabel: jest.fn().mockResolvedValue(undefined),
       hasRouteCredentials: jest.fn().mockResolvedValue(true),
     };
     specificityService = { getActiveAssignments: jest.fn().mockResolvedValue([]) };
@@ -1220,7 +1218,7 @@ describe('ResolveService', () => {
     it('keeps a label the route already pins', async () => {
       const pinned = { ...route('openai', 'api_key', 'gpt-4o'), keyLabel: 'Explicit' };
 
-      const result = await svc.pinRouteKeyLabel('agent-1', 'tenant-1', pinned);
+      const result = await svc.pinRouteKeyLabel('agent-1', pinned);
 
       expect(result).toBe(pinned);
       expect(tierService.getTiers).not.toHaveBeenCalled();
@@ -1231,84 +1229,46 @@ describe('ResolveService', () => {
         defaultTier({ ...route('OpenAI', 'api_key', 'gpt-4o-mini'), keyLabel: 'Work' }),
       ]);
 
-      const result = await svc.pinRouteKeyLabel(
-        'agent-1',
-        'tenant-1',
-        route('openai', 'api_key', 'gpt-4o'),
-      );
+      const result = await svc.pinRouteKeyLabel('agent-1', route('openai', 'api_key', 'gpt-4o'));
 
       // Model differs on purpose: the pin follows the connection, not the model.
       expect(result).toEqual({ ...route('openai', 'api_key', 'gpt-4o'), keyLabel: 'Work' });
-      expect(providerKeyService.getDefaultKeyLabel).not.toHaveBeenCalled();
     });
 
     it('ignores a default tier pin for a different provider', async () => {
       tierService.getTiers.mockResolvedValue([
         defaultTier({ ...route('anthropic', 'api_key', 'claude-sonnet-4-5'), keyLabel: 'Work' }),
       ]);
-      providerKeyService.getDefaultKeyLabel.mockResolvedValue('Default');
 
-      const result = await svc.pinRouteKeyLabel(
-        'agent-1',
-        'tenant-1',
-        route('openai', 'api_key', 'gpt-4o'),
-      );
+      const result = await svc.pinRouteKeyLabel('agent-1', route('openai', 'api_key', 'gpt-4o'));
 
-      expect(result).toEqual({ ...route('openai', 'api_key', 'gpt-4o'), keyLabel: 'Default' });
+      expect(result).toEqual(route('openai', 'api_key', 'gpt-4o'));
     });
 
     it('ignores a default tier pin for a different auth type', async () => {
       tierService.getTiers.mockResolvedValue([
         defaultTier({ ...route('openai', 'subscription', 'gpt-5.5'), keyLabel: 'Work' }),
       ]);
-      providerKeyService.getDefaultKeyLabel.mockResolvedValue('Default');
 
-      const result = await svc.pinRouteKeyLabel(
-        'agent-1',
-        'tenant-1',
-        route('openai', 'api_key', 'gpt-4o'),
-      );
+      const result = await svc.pinRouteKeyLabel('agent-1', route('openai', 'api_key', 'gpt-4o'));
 
-      expect(result).toEqual({ ...route('openai', 'api_key', 'gpt-4o'), keyLabel: 'Default' });
+      expect(result).toEqual(route('openai', 'api_key', 'gpt-4o'));
     });
 
-    it('falls back to the default connection label when the default tier pins nothing', async () => {
+    it('leaves the route Auto when the default tier pins nothing', async () => {
       tierService.getTiers.mockResolvedValue([
         defaultTier(route('openai', 'api_key', 'gpt-4o-mini')),
       ]);
-      providerKeyService.getDefaultKeyLabel.mockResolvedValue('Default');
 
-      const result = await svc.pinRouteKeyLabel(
-        'agent-1',
-        'tenant-1',
-        route('openai', 'api_key', 'gpt-4o'),
-      );
+      const result = await svc.pinRouteKeyLabel('agent-1', route('openai', 'api_key', 'gpt-4o'));
 
-      expect(result).toEqual({ ...route('openai', 'api_key', 'gpt-4o'), keyLabel: 'Default' });
+      expect(result).toEqual(route('openai', 'api_key', 'gpt-4o'));
     });
 
-    it('falls back to the default connection label when there is no default tier row', async () => {
+    it('leaves the route Auto when there is no default tier row', async () => {
       tierService.getTiers.mockResolvedValue([]);
-      providerKeyService.getDefaultKeyLabel.mockResolvedValue('Only');
 
-      const result = await svc.pinRouteKeyLabel(
-        'agent-1',
-        'tenant-1',
-        route('openai', 'api_key', 'gpt-4o'),
-      );
-
-      expect(result).toEqual({ ...route('openai', 'api_key', 'gpt-4o'), keyLabel: 'Only' });
-    });
-
-    it('leaves the route unlabelled when no connection resolves at all', async () => {
-      tierService.getTiers.mockResolvedValue([defaultTier(null)]);
-      providerKeyService.getDefaultKeyLabel.mockResolvedValue(undefined);
-
-      const result = await svc.pinRouteKeyLabel(
-        'agent-1',
-        'tenant-1',
-        route('openai', 'api_key', 'gpt-4o'),
-      );
+      const result = await svc.pinRouteKeyLabel('agent-1', route('openai', 'api_key', 'gpt-4o'));
 
       expect(result).toEqual(route('openai', 'api_key', 'gpt-4o'));
     });

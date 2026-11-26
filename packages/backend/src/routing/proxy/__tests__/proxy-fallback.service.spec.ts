@@ -68,7 +68,6 @@ describe('ProxyFallbackService', () => {
     providerKeyService = {
       getProviderApiKey: jest.fn(),
       getProviderKeyId: jest.fn().mockResolvedValue('up-fallback'),
-      getDefaultKeyLabel: jest.fn().mockResolvedValue(undefined),
       getAuthType: jest.fn().mockResolvedValue('api_key'),
       findProviderForModel: jest.fn().mockResolvedValue(undefined),
       getProviderRegion: jest.fn().mockResolvedValue(null),
@@ -2388,7 +2387,7 @@ describe('ProxyFallbackService', () => {
       });
       providerKeyService.getAuthType.mockResolvedValue('subscription');
       // The selected row's own label ('Work') resolves the unpinned subscription
-      // credential lookups; getDefaultKeyLabel is no longer consulted.
+      // credential lookups.
       providerKeyService.selectProviderKey.mockResolvedValue({
         apiKey: rawBlob,
         id: 'up-fallback',

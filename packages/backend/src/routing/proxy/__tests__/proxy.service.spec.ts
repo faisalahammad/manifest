@@ -155,7 +155,7 @@ describe('ProxyService — orchestration', () => {
       resolveHeaderTier: jest.fn().mockResolvedValue(null),
       // Default: no connection pin configured — the route passes through.
       // Tests that exercise pinning override this per case.
-      pinRouteKeyLabel: jest.fn(async (_agentId, _tenantId, route: ModelRoute) => route),
+      pinRouteKeyLabel: jest.fn(async (_agentId: string, route: ModelRoute) => route),
     };
     modelDiscovery = {
       getModelsForAgent: jest.fn().mockResolvedValue([]),
@@ -2046,7 +2046,7 @@ describe('ProxyService — orchestration', () => {
       });
 
       it("uses the default tier's pinned connection for a concrete model name", async () => {
-        resolveService.pinRouteKeyLabel.mockImplementation(async (_a, _t, route) => ({
+        resolveService.pinRouteKeyLabel.mockImplementation(async (_a, route) => ({
           ...route,
           keyLabel: 'Work',
         }));
@@ -2059,7 +2059,6 @@ describe('ProxyService — orchestration', () => {
 
         expect(resolveService.pinRouteKeyLabel).toHaveBeenCalledWith(
           'agent-1',
-          'tenant-1',
           expect.objectContaining({ provider: 'openai', authType: 'api_key' }),
         );
         expect(providerKeyService.selectProviderKey).toHaveBeenCalledWith(
@@ -2086,7 +2085,7 @@ describe('ProxyService — orchestration', () => {
       // (selectProviderKey's documented fallback) — the recorded label must
       // then name the row that was really used, not the dangling pin.
       it('records the connection actually used when the pin is stale', async () => {
-        resolveService.pinRouteKeyLabel.mockImplementation(async (_a, _t, route) => ({
+        resolveService.pinRouteKeyLabel.mockImplementation(async (_a, route) => ({
           ...route,
           keyLabel: 'Retired',
         }));
