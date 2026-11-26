@@ -49,7 +49,7 @@ const CraftAgentSetup: Component<Props> = (props) => {
     <div class="setup-agents-card">
       <p class="setup-method__hint">
         In Craft, add an API-key connection and choose the{' '}
-        <code class="setup-model-hint__code">Manifest</code> provider preset. Use model{' '}
+        <code class="setup-model-hint__code">TierGate</code> provider preset. Use model{' '}
         <code class="setup-model-hint__code">auto</code> and paste this API key:
       </p>
 

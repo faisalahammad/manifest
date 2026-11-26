@@ -36,7 +36,7 @@ describe('discovery service', () => {
       'Other',
     ]);
     expect(COMPANY_SIZE_OPTIONS.map((o) => o.label)).toEqual([
-      "I'm not using Manifest for work",
+      "I'm not using TierGate for work",
       '1–20',
       '21–100',
       '101–500',

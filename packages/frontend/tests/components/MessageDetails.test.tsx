@@ -138,7 +138,7 @@ describe('MessageDetails', () => {
     });
   });
 
-  it('surfaces a Manifest config error as origin/type, not a provider fault', async () => {
+  it('surfaces a TierGate config error as origin/type, not a provider fault', async () => {
     mockGetMessageDetails.mockResolvedValue({
       message: {
         ...detailsResponse.message,
@@ -153,7 +153,7 @@ describe('MessageDetails', () => {
     const { container } = render(() => <MessageDetails messageId="msg-1" />);
     await vi.waitFor(() => {
       expect(container.textContent).toContain('Origin');
-      expect(container.textContent).toContain('Manifest · Setup');
+      expect(container.textContent).toContain('TierGate · Setup');
       expect(container.textContent).toContain('Missing API key');
     });
   });
@@ -166,7 +166,7 @@ describe('MessageDetails', () => {
         // The rendered text the caller actually saw — provider name and fix link
         // included — rather than a generic "Provider API key missing".
         error_message:
-          '[🦚 Manifest M100] No anthropic API key yet. Add one here: https://x/routing',
+          '[🦚 TierGate M100] No anthropic API key yet. Add one here: https://x/routing',
         error_code: 'M100',
         error_origin: 'config',
         error_class: 'no_provider_key',
@@ -204,7 +204,7 @@ describe('MessageDetails', () => {
       message: {
         ...detailsResponse.message,
         status: 'error',
-        error_message: '[🦚 Manifest M300] `messages` array is required.',
+        error_message: '[🦚 TierGate M300] `messages` array is required.',
         error_code: 'M300',
         error_origin: 'request',
         error_class: 'invalid_request',
@@ -212,7 +212,7 @@ describe('MessageDetails', () => {
     });
     const { container } = render(() => <MessageDetails messageId="msg-1" />);
     await vi.waitFor(() => {
-      expect(container.textContent).toContain('Manifest · Bad request');
+      expect(container.textContent).toContain('TierGate · Bad request');
     });
     expect(container.textContent).toContain('No provider was called.');
   });

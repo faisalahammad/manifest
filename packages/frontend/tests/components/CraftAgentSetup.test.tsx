@@ -18,9 +18,9 @@ describe("CraftAgentSetup", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the Manifest preset instruction", () => {
+  it("renders the TierGate preset instruction", () => {
     const { container } = render(() => <CraftAgentSetup {...baseProps} />);
-    expect(container.textContent).toContain("Manifest");
+    expect(container.textContent).toContain("TierGate");
     expect(container.textContent).toContain("provider preset");
     expect(container.textContent).toContain("auto");
   });

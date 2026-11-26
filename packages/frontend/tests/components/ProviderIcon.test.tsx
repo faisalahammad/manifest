@@ -46,7 +46,7 @@ describe('providerIcon', () => {
     const img = container.querySelector('img');
     expect(img).not.toBeNull();
     expect(img?.getAttribute('src')).toBe('/icons/manifest.svg');
-    expect(img?.getAttribute('alt')).toBe('Manifest');
+    expect(img?.getAttribute('alt')).toBe('TierGate');
   });
 
   it('returns the Meta logo image for "meta"', () => {

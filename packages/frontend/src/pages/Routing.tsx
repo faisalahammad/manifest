@@ -462,7 +462,7 @@ const Routing: Component = () => {
 
   return (
     <div class="container--lg">
-      <Title>{agentDisplayName() ?? agentName()} Routing - Manifest</Title>
+      <Title>{agentDisplayName() ?? agentName()} Routing - TierGate</Title>
       <Meta
         name="description"
         content={`Configure model routing for ${agentDisplayName() ?? agentName()}.`}

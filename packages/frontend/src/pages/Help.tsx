@@ -4,10 +4,10 @@ import { Title, Meta } from '@solidjs/meta';
 const Help: Component = () => {
   return (
     <div class="container--sm">
-      <Title>Help & Support - Manifest</Title>
+      <Title>Help & Support - TierGate</Title>
       <Meta
         name="description"
-        content="Get help with Manifest. Schedule a call or contact support."
+        content="Get help with TierGate. Schedule a call or contact support."
       />
       <div class="page-header">
         <div>

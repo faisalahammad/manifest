@@ -71,7 +71,7 @@ const CodexSetup: Component<Props> = (props) => {
       </div>
 
       <p class="setup-method__hint">
-        Export your Manifest key, then launch Codex CLI from the same terminal. For Desktop, make
+        Export your TierGate key, then launch Codex CLI from the same terminal. For Desktop, make
         this variable available in the environment that launches the app, then fully quit and reopen
         Codex. An export in a separate terminal does not update a running app.
       </p>

@@ -40,7 +40,7 @@ packages/
 > locally instead of the hosted SPA, clone that repo and set
 > `VITE_WINGMAN_URL=http://localhost:3002` when building the frontend.
 
-Self-hosting is supported via the [Docker image](https://hub.docker.com/r/manifestdotbuild/manifest).
+Self-hosting is supported via the [Docker image](https://github.com/faisalahammad/tiergate/pkgs/container/tiergate).
 
 ## Getting Started
 
@@ -228,11 +228,11 @@ npm run build
 
 ### Cutting a Docker release
 
-Manifest ships as the Docker image at [`manifestdotbuild/manifest`](https://hub.docker.com/r/manifestdotbuild/manifest). Releases are manual:
+Manifest ships as the Docker image at [`ghcr.io/faisalahammad/tiergate`](https://github.com/faisalahammad/tiergate/pkgs/container/tiergate). Releases are manual:
 
 1. After merging PRs with changesets, a `chore: version packages` PR will be open on `main` — merge it to land the version bump in `packages/manifest/package.json` and update `packages/manifest/CHANGELOG.md`.
 2. Go to **GitHub Actions → Docker → Run workflow**, leave the `version` input blank, click Run.
-3. The workflow reads the version from `packages/manifest/package.json` and pushes `manifestdotbuild/manifest:{version}` (plus `{major}.{minor}`, `{major}`, and a `sha-<short>` rollback tag).
+3. The workflow reads the version from `packages/manifest/package.json` and pushes `ghcr.io/faisalahammad/tiergate:{version}` (plus `{major}.{minor}`, `{major}`, and a `sha-<short>` rollback tag).
 
 If you need to retag an older commit or publish a version that doesn't match the current `package.json`, pass a semver string in the `version` input and it overrides the auto-detected value.
 

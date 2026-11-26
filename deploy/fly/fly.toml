@@ -10,7 +10,7 @@ kill_signal = "SIGINT"
 kill_timeout = "30s"
 
 [build]
-  image = "docker.io/manifestdotbuild/manifest:6"
+  image = "ghcr.io/faisalahammad/tiergate:6"
 
 [env]
   PORT = "2099"

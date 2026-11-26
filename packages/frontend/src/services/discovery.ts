@@ -37,7 +37,7 @@ export const PROJECT_TYPE_OPTIONS: DiscoveryOption[] = [
 ];
 
 export const COMPANY_SIZE_OPTIONS: DiscoveryOption[] = [
-  { label: "I'm not using Manifest for work", value: 'not_for_work' },
+  { label: "I'm not using TierGate for work", value: 'not_for_work' },
   { label: '1–20', value: '1-20' },
   { label: '21–100', value: '21-100' },
   { label: '101–500', value: '101-500' },

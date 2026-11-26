@@ -221,7 +221,7 @@ const AnthropicOAuthDetailView: Component<Props> = (props) => {
       <Show when={showConnectFlow()}>
         <div class="anthropic-detail__primary">
           <p class="provider-detail__hint">
-            Sign in with your Claude Pro or Max account. Manifest will route through your
+            Sign in with your Claude Pro or Max account. TierGate will route through your
             subscription with auto-refreshing tokens.
           </p>
           <button

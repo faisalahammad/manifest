@@ -384,7 +384,7 @@ const ERROR_DESCRIPTORS: Record<string, string> = {
   transport: 'Transport',
   config: 'Setup',
   policy: 'Custom limit',
-  internal: 'Manifest error',
+  internal: 'TierGate error',
   request: 'Bad request',
 };
 
@@ -447,7 +447,7 @@ export function StatusCell(item: MessageRow, _agentName: string | undefined): JS
           title={
             planLimit
               ? 'Free plan request limit reached - upgrade to Pro'
-              : 'Manifest usage limit reached - open your limits'
+              : 'TierGate usage limit reached - open your limits'
           }
         >
           {pill.label}

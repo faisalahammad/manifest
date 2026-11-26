@@ -87,10 +87,10 @@ const McpServer: Component = () => {
 
   return (
     <div class="container--lg">
-      <Title>MCP server - Manifest</Title>
+      <Title>MCP server - TierGate</Title>
       <Meta
         name="description"
-        content="Connect Claude, Cursor, Codex and other MCP clients to this Manifest install over OAuth."
+        content="Connect Claude, Cursor, Codex and other MCP clients to this TierGate install over OAuth."
       />
       <div class="page-header">
         <div>
@@ -155,7 +155,7 @@ const McpServer: Component = () => {
           </div>
           <Show when={activeId() === 'vibe'}>
             <p class="integration-panel__desc">
-              For automatic setup, ask your Manifest operator to enable dynamic client registration
+              For automatic setup, ask your TierGate operator to enable dynamic client registration
               with <code>MCP_ALLOW_ANONYMOUS_CLIENT_REGISTRATION=true</code>. Then run this command
               and approve access in your browser.
             </p>

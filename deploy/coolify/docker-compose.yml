@@ -1,6 +1,6 @@
 services:
   manifest:
-    image: manifestdotbuild/manifest:6
+    image: ghcr.io/faisalahammad/tiergate:6
     environment:
       - SERVICE_URL_MANIFEST_2099
       - PORT=2099

@@ -31,7 +31,7 @@ openssl rand -hex 32
 Open the Koyeb deploy link:
 
 ```text
-https://app.koyeb.com/deploy?type=docker&image=docker.io%2Fmanifestdotbuild%2Fmanifest%3A6&name=manifest&service_type=web&ports=2099%3Bhttp%3B%2F&env%5BPORT%5D=2099&env%5BDATABASE_URL%5D=postgres%3A%2F%2FUSER%3APASSWORD%40HOST%2FDB%3Fsslmode%3Drequire&env%5BBETTER_AUTH_SECRET%5D=replace-with-openssl-rand-hex-32&env%5BMANIFEST_ENCRYPTION_KEY%5D=replace-with-different-openssl-rand-hex-32&env%5BBETTER_AUTH_URL%5D=https%3A%2F%2F%7B%7B+KOYEB_PUBLIC_DOMAIN+%7D%7D&env%5BMANIFEST_MODE%5D=selfhosted&env%5BBIND_ADDRESS%5D=0.0.0.0&env%5BDB_POOL_MAX%5D=8&env%5BAUTH_DB_POOL_MAX%5D=4&env%5BREQUEST_RECORDING_STORAGE%5D=s3&env%5BREQUEST_RECORDING_S3_BUCKET%5D=replace-with-private-bucket&env%5BREQUEST_RECORDING_S3_ENDPOINT%5D=https%3A%2F%2Fs3.example.com&env%5BREQUEST_RECORDING_S3_REGION%5D=us-east-1&env%5BREQUEST_RECORDING_S3_ACCESS_KEY_ID%5D=replace-with-limited-access-key&env%5BREQUEST_RECORDING_S3_SECRET_ACCESS_KEY%5D=replace-with-secret-key&env%5BREQUEST_RECORDING_S3_FORCE_PATH_STYLE%5D=false
+https://app.koyeb.com/deploy?type=docker&image=ghcr.io%2Ffaisalahammad%2Ftiergate%3A6&name=manifest&service_type=web&ports=2099%3Bhttp%3B%2F&env%5BPORT%5D=2099&env%5BDATABASE_URL%5D=postgres%3A%2F%2FUSER%3APASSWORD%40HOST%2FDB%3Fsslmode%3Drequire&env%5BBETTER_AUTH_SECRET%5D=replace-with-openssl-rand-hex-32&env%5BMANIFEST_ENCRYPTION_KEY%5D=replace-with-different-openssl-rand-hex-32&env%5BBETTER_AUTH_URL%5D=https%3A%2F%2F%7B%7B+KOYEB_PUBLIC_DOMAIN+%7D%7D&env%5BMANIFEST_MODE%5D=selfhosted&env%5BBIND_ADDRESS%5D=0.0.0.0&env%5BDB_POOL_MAX%5D=8&env%5BAUTH_DB_POOL_MAX%5D=4&env%5BREQUEST_RECORDING_STORAGE%5D=s3&env%5BREQUEST_RECORDING_S3_BUCKET%5D=replace-with-private-bucket&env%5BREQUEST_RECORDING_S3_ENDPOINT%5D=https%3A%2F%2Fs3.example.com&env%5BREQUEST_RECORDING_S3_REGION%5D=us-east-1&env%5BREQUEST_RECORDING_S3_ACCESS_KEY_ID%5D=replace-with-limited-access-key&env%5BREQUEST_RECORDING_S3_SECRET_ACCESS_KEY%5D=replace-with-secret-key&env%5BREQUEST_RECORDING_S3_FORCE_PATH_STYLE%5D=false
 ```
 
 In the deploy form:
@@ -43,7 +43,7 @@ In the deploy form:
 - Leave `BETTER_AUTH_URL` as `https://{{ KOYEB_PUBLIC_DOMAIN }}`.
 - Leave `PORT`, `MANIFEST_MODE`, `BIND_ADDRESS`, `DB_POOL_MAX`, `AUTH_DB_POOL_MAX`, and `REQUEST_RECORDING_STORAGE=s3` unchanged for a single-instance deploy. Set `REQUEST_RECORDING_S3_FORCE_PATH_STYLE=true` only if your object-storage provider requires path-style URLs.
 
-The button deploys `docker.io/manifestdotbuild/manifest:6` and exposes port `2099` over HTTP.
+The button deploys `ghcr.io/faisalahammad/tiergate:6` and exposes port `2099` over HTTP.
 
 ## Open Manifest
 

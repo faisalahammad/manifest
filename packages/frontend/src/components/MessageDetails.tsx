@@ -134,9 +134,9 @@ export function AutofixSection(props: {
     const summary = explanation()?.summary;
     if (summary) return summary;
     if (!isOriginal())
-      return 'Manifest caught an error, repaired the request, and retried it successfully.';
+      return 'TierGate caught an error, repaired the request, and retried it successfully.';
     return props.sibling
-      ? 'This request failed. Manifest repaired it automatically and retried.'
+      ? 'This request failed. TierGate repaired it automatically and retried.'
       : 'This request failed. Autofix tried but could not find a repair.';
   };
   // One row per edit: Phoenix's per-op detail when present, else our local fallback.
@@ -411,12 +411,12 @@ export default function MessageDetails(props: MessageDetailsProps): JSX.Element 
                                     'The LLM provider rejected the request.'}
                                   {m.error_origin === 'transport' &&
                                     'Network or connection failure.'}
-                                  {m.error_origin === 'config' && 'Manifest configuration issue.'}
+                                  {m.error_origin === 'config' && 'TierGate configuration issue.'}
                                   {m.error_origin === 'policy' &&
-                                    'A Manifest usage limit was reached.'}
-                                  {m.error_origin === 'internal' && 'An unexpected Manifest error.'}
+                                    'A TierGate usage limit was reached.'}
+                                  {m.error_origin === 'internal' && 'An unexpected TierGate error.'}
                                   {m.error_origin === 'request' &&
-                                    'Your agent sent a request Manifest could not route. No provider was called.'}
+                                    'Your agent sent a request TierGate could not route. No provider was called.'}
                                 </span>
                               </td>
                             </tr>

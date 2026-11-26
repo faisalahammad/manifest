@@ -147,7 +147,7 @@ const Workspace: Component = () => {
 
   return (
     <div class="container--lg">
-      <Title>My Harnesses - Manifest</Title>
+      <Title>My Harnesses - TierGate</Title>
       <Meta
         name="description"
         content="View and manage all your harnesses. Monitor usage, requests, and costs."

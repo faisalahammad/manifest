@@ -81,7 +81,7 @@ const SetupModal: Component<{
             </button>
           </div>
           <p class="modal-card__desc">
-            Connect your harness to Manifest to start routing requests.
+            Connect your harness to TierGate to start routing requests.
           </p>
 
           <Show

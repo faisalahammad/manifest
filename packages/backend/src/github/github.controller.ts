@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { Public } from '../common/decorators/public.decorator';
 
-const GITHUB_REPO = 'mnfst/llm-gateway';
+const GITHUB_REPO = 'faisalahammad/tiergate';
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 let cachedStars: number | null = null;

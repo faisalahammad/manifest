@@ -569,7 +569,7 @@ const MessageLog: Component = () => {
 
   /** Resolve provider ID to display name */
   const providerDisplayName = (id: string): string => {
-    if (id === 'manifest') return 'Manifest';
+    if (id === 'manifest') return 'TierGate';
     const prov = PROVIDERS.find((p) => p.id === id);
     if (prov) return prov.name;
     // Custom providers arrive as `custom:<uuid>` — the backend ships a label
@@ -687,7 +687,7 @@ const MessageLog: Component = () => {
   // point of view they share a fix path that has nothing to do with a provider.
   const originOptions = [
     { label: 'All origins', value: '' },
-    { label: 'Manifest', value: 'manifest' },
+    { label: 'TierGate', value: 'manifest' },
     { label: 'Provider', value: 'provider' },
     { label: 'Transport', value: 'transport' },
   ];
@@ -731,8 +731,8 @@ const MessageLog: Component = () => {
     <div class="container--full" onClick={handlePageClick}>
       <Title>
         {params.agentName
-          ? `${agentDisplayName() ?? decodeURIComponent(params.agentName)} Requests - Manifest`
-          : 'Requests - Manifest'}
+          ? `${agentDisplayName() ?? decodeURIComponent(params.agentName)} Requests - TierGate`
+          : 'Requests - TierGate'}
       </Title>
       <Meta
         name="description"

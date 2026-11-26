@@ -410,7 +410,7 @@ const Overview: Component = () => {
   return (
     <div class="container--lg">
       <Title>
-        {agentDisplayName() ?? decodeURIComponent(params.agentName)} Overview - Manifest
+        {agentDisplayName() ?? decodeURIComponent(params.agentName)} Overview - TierGate
       </Title>
       <Meta
         name="description"

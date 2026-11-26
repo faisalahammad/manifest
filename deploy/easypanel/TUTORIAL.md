@@ -19,7 +19,7 @@ If Manifest is available in your Easypanel template catalog:
 1. Open your Easypanel project.
 2. Choose **Templates**.
 3. Search for **Manifest**.
-4. Keep the default image `manifestdotbuild/manifest:6` unless you need to pin another version.
+4. Keep the default image `ghcr.io/faisalahammad/tiergate:6` unless you need to pin another version.
 5. Deploy the template.
 
 The template provisions Manifest, PostgreSQL, a persistent request-recording volume, generated secrets, and a domain proxy on port `2099`.
@@ -41,7 +41,7 @@ Create the Manifest app service:
 1. Click **Create Service**.
 2. Choose **App**.
 3. Set source type to **Docker image**.
-4. Use image `manifestdotbuild/manifest:6`.
+4. Use image `ghcr.io/faisalahammad/tiergate:6`.
 5. Set the proxy port to `2099`.
 6. Add your domain and mark it as the primary domain.
 
@@ -97,7 +97,7 @@ Before publishing a template, smoke test the full first-run flow:
 
 ## What Gets Provisioned
 
-- Manifest Docker image `manifestdotbuild/manifest:6`.
+- Manifest Docker image `ghcr.io/faisalahammad/tiergate:6`.
 - PostgreSQL service.
 - Generated or manually configured session and encryption secrets.
 - HTTPS domain proxy to Manifest port `2099`.

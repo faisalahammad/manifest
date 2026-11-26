@@ -20,7 +20,7 @@ describe("HermesSetup", () => {
 
   it("renders description text", () => {
     const { container } = render(() => <HermesSetup {...defaultProps} />);
-    expect(container.textContent).toContain("Point Hermes at the Manifest endpoint to route requests across multiple models");
+    expect(container.textContent).toContain("Point Hermes at the TierGate endpoint to route requests across multiple models");
   });
 
   it("renders CLI and Hermes onboard tabs", () => {

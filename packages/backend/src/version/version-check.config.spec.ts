@@ -49,14 +49,14 @@ describe('compareVersions', () => {
 });
 
 describe('parseReleaseTag', () => {
-  it('extracts the version from a manifest@X.Y.Z release tag', () => {
-    expect(parseReleaseTag('manifest@6.22.0')).toBe('6.22.0');
+  it('extracts the version from a tiergate@X.Y.Z release tag', () => {
+    expect(parseReleaseTag('tiergate@6.22.0')).toBe('6.22.0');
   });
 
   it('returns null for tags that are not Manifest releases', () => {
     expect(parseReleaseTag('n8n-nodes-manifest-v0.2.1')).toBeNull();
     expect(parseReleaseTag('v5.0.5')).toBeNull();
-    expect(parseReleaseTag('manifest@6.22')).toBeNull();
+    expect(parseReleaseTag('tiergate@6.22')).toBeNull();
     expect(parseReleaseTag(undefined)).toBeNull();
   });
 });
@@ -71,34 +71,34 @@ describe('summarizeReleases', () => {
 
   it('returns the newest version and how many releases are newer than current', () => {
     const body = [
-      release('manifest@6.21.1'),
-      release('manifest@6.21.0'),
-      release('manifest@6.20.0'),
-      release('manifest@6.19.0'),
+      release('tiergate@6.21.1'),
+      release('tiergate@6.21.0'),
+      release('tiergate@6.20.0'),
+      release('tiergate@6.19.0'),
     ];
     expect(summarizeReleases(body, '6.19.0')).toEqual({ latest: '6.21.1', releasesBehind: 3 });
   });
 
   it('reports zero behind when current is the newest', () => {
-    const body = [release('manifest@6.21.1'), release('manifest@6.21.0')];
+    const body = [release('tiergate@6.21.1'), release('tiergate@6.21.0')];
     expect(summarizeReleases(body, '6.21.1')).toEqual({ latest: '6.21.1', releasesBehind: 0 });
   });
 
   it('ignores drafts, pre-releases, and non-Manifest tags', () => {
     const body = [
-      release('manifest@7.0.0', { draft: true }),
-      release('manifest@6.22.0', { prerelease: true }),
+      release('tiergate@7.0.0', { draft: true }),
+      release('tiergate@6.22.0', { prerelease: true }),
       release('n8n-nodes-manifest-v0.2.1'),
-      release('manifest@6.21.1'),
+      release('tiergate@6.21.1'),
     ];
     expect(summarizeReleases(body, '6.21.0')).toEqual({ latest: '6.21.1', releasesBehind: 1 });
   });
 
   it('does not rely on the API ordering to find the newest', () => {
     const body = [
-      release('manifest@6.20.0'),
-      release('manifest@6.21.1'),
-      release('manifest@6.21.0'),
+      release('tiergate@6.20.0'),
+      release('tiergate@6.21.1'),
+      release('tiergate@6.21.0'),
     ];
     expect(summarizeReleases(body, '6.20.0')).toEqual({ latest: '6.21.1', releasesBehind: 2 });
   });
@@ -111,24 +111,28 @@ describe('summarizeReleases', () => {
   });
 
   it('reports an unknown distance when current cannot be parsed', () => {
-    const body = [release('manifest@6.21.1'), release('manifest@6.21.0')];
+    const body = [release('tiergate@6.21.1'), release('tiergate@6.21.0')];
     expect(summarizeReleases(body, 'unknown')).toEqual({ latest: '6.21.1', releasesBehind: null });
   });
 });
 
 describe('release URLs', () => {
   it('points changelogUrlFor at the website anchor for that version', () => {
-    expect(changelogUrlFor('6.22.0')).toBe('https://manifest.build/changelog/#v6-22-0');
+    expect(changelogUrlFor('6.22.0')).toBe(
+      'https://github.com/faisalahammad/tiergate/releases/tag/tiergate%406.22.0',
+    );
   });
 
   it('points githubReleaseUrlFor at the encoded GitHub release tag', () => {
     expect(githubReleaseUrlFor('6.22.0')).toBe(
-      'https://github.com/mnfst/llm-gateway/releases/tag/manifest%406.22.0',
+      'https://github.com/faisalahammad/tiergate/releases/tag/tiergate%406.22.0',
     );
   });
 
   it('exposes the documented upgrade instructions', () => {
-    expect(UPGRADE_DOCS_URL).toBe('https://manifest.build/llm-gateway/docs/self-hosted/#upgrading');
+    expect(UPGRADE_DOCS_URL).toBe(
+      'https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md#upgrade',
+    );
     expect(UPGRADE_COMMAND).toBe('docker compose pull && docker compose up -d');
   });
 });

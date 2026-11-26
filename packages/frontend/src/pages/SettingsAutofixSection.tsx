@@ -64,7 +64,7 @@ const SettingsAutofixSection: Component<{ agentName: () => string }> = (props) =
           <div class="settings-card__label">
             <span class="settings-card__label-title">Autofix failing requests</span>
             <span class="settings-card__label-desc">
-              When a request fails with a fixable error, Manifest repairs it and retries once before
+              When a request fails with a fixable error, TierGate repairs it and retries once before
               falling back, so a bad request gets fixed instead of just failing over.
             </span>
           </div>

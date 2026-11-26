@@ -141,10 +141,10 @@ const FreeModels: Component = () => {
 
   return (
     <div class="container--lg">
-      <Title>Free Models - Manifest</Title>
+      <Title>Free Models - TierGate</Title>
       <Meta
         name="description"
-        content="Free LLM models you can use with Manifest. No credit card required."
+        content="Free LLM models you can use with TierGate. No credit card required."
       />
       <div class="page-header">
         <div>

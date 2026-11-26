@@ -20,7 +20,7 @@ describe("SetupStepAddProvider", () => {
 
   it("renders heading", () => {
     render(() => <SetupStepAddProvider {...defaultProps} />);
-    expect(screen.getByText("Connect your harness to Manifest")).toBeDefined();
+    expect(screen.getByText("Connect your harness to TierGate")).toBeDefined();
   });
 
   it("shows description with auto model", () => {
@@ -79,7 +79,7 @@ describe("SetupStepAddProvider", () => {
     const { container } = render(() => <SetupStepAddProvider {...defaultProps} />);
     const agentTabs = container.querySelectorAll(".panel__tab");
     fireEvent.click(agentTabs[3]); // Craft Agent
-    expect(container.textContent).toContain("Manifest provider preset");
+    expect(container.textContent).toContain("TierGate provider preset");
     expect(container.textContent).toContain("mnfst_YOUR_KEY");
   });
 
@@ -123,7 +123,7 @@ describe("SetupStepAddProvider", () => {
     const { container } = render(() => <SetupStepAddProvider {...defaultProps} />);
     const agentTabs = container.querySelectorAll(".panel__tab");
     fireEvent.click(agentTabs[1]); // Hermes Agent
-    expect(container.textContent).toContain("Point Hermes at the Manifest endpoint");
+    expect(container.textContent).toContain("Point Hermes at the TierGate endpoint");
   });
 
   it("switches back to OpenClaw from Hermes Agent", () => {
@@ -132,7 +132,7 @@ describe("SetupStepAddProvider", () => {
     fireEvent.click(agentTabs[1]); // Hermes
     fireEvent.click(agentTabs[0]); // OpenClaw
     expect(container.textContent).toContain("manifest/auto");
-    expect(container.textContent).not.toContain("Point Hermes at the Manifest endpoint");
+    expect(container.textContent).not.toContain("Point Hermes at the TierGate endpoint");
   });
 
   it("shows CLI and openclaw onboard sub-tabs", () => {
@@ -288,7 +288,7 @@ describe("SetupStepAddProvider", () => {
       const { container } = render(() => (
         <SetupStepAddProvider {...defaultProps} platform="openclaw" />
       ));
-      expect(container.textContent).toContain("Register Manifest in your OpenClaw config");
+      expect(container.textContent).toContain("Register TierGate in your OpenClaw config");
       expect(container.querySelector('[aria-label="Setup method"]')).toBeNull();
     });
 
@@ -296,14 +296,14 @@ describe("SetupStepAddProvider", () => {
       render(() => (
         <SetupStepAddProvider {...defaultProps} platform="openclaw" />
       ));
-      expect(screen.getByText("Connect your OpenClaw harness to Manifest")).toBeDefined();
+      expect(screen.getByText("Connect your OpenClaw harness to TierGate")).toBeDefined();
     });
 
     it("shows HermesSetup directly when platform is hermes", () => {
       const { container } = render(() => (
         <SetupStepAddProvider {...defaultProps} platform="hermes" />
       ));
-      expect(container.textContent).toContain("Point Hermes at the Manifest endpoint");
+      expect(container.textContent).toContain("Point Hermes at the TierGate endpoint");
       expect(container.querySelector('[aria-label="Setup method"]')).toBeNull();
     });
 
@@ -311,7 +311,7 @@ describe("SetupStepAddProvider", () => {
       render(() => (
         <SetupStepAddProvider {...defaultProps} platform="hermes" />
       ));
-      expect(screen.getByText("Connect your Hermes harness to Manifest")).toBeDefined();
+      expect(screen.getByText("Connect your Hermes harness to TierGate")).toBeDefined();
     });
 
     it("shows NanobotSetup directly when platform is nanobot", () => {
@@ -328,14 +328,14 @@ describe("SetupStepAddProvider", () => {
       render(() => (
         <SetupStepAddProvider {...defaultProps} platform="nanobot" />
       ));
-      expect(screen.getByText("Connect your Nanobot harness to Manifest")).toBeDefined();
+      expect(screen.getByText("Connect your Nanobot harness to TierGate")).toBeDefined();
     });
 
     it("shows CraftAgentSetup directly when platform is craft", () => {
       const { container } = render(() => (
         <SetupStepAddProvider {...defaultProps} platform="craft" />
       ));
-      expect(container.textContent).toContain("Manifest provider preset");
+      expect(container.textContent).toContain("TierGate provider preset");
       expect(container.textContent).toContain("mnfst_YOUR_KEY");
       // No top-level Agents/Toolkits tabs in filtered mode.
       expect(container.querySelector('[aria-label="Setup method"]')).toBeNull();
@@ -345,14 +345,14 @@ describe("SetupStepAddProvider", () => {
       render(() => (
         <SetupStepAddProvider {...defaultProps} platform="craft" />
       ));
-      expect(screen.getByText("Connect your Craft harness to Manifest")).toBeDefined();
+      expect(screen.getByText("Connect your Craft harness to TierGate")).toBeDefined();
     });
 
     it("shows n8n setup guidance with docs and credential values", () => {
       const { container } = render(() => (
         <SetupStepAddProvider {...defaultProps} platform="n8n" keyPrefix="mnfst_abc" />
       ));
-      expect(screen.getByText("Connect n8n to Manifest")).toBeDefined();
+      expect(screen.getByText("Connect n8n to TierGate")).toBeDefined();
       expect(container.textContent).toContain("n8n-nodes-manifest");
       expect(container.textContent).toContain("Manifest Chat Model node");
       expect(container.textContent).toContain("Create or select Manifest credentials");
@@ -404,7 +404,7 @@ describe("SetupStepAddProvider", () => {
       render(() => (
         <SetupStepAddProvider {...defaultProps} platform="claude-code" />
       ));
-      expect(screen.getByText("Connect Claude Code to Manifest")).toBeDefined();
+      expect(screen.getByText("Connect Claude Code to TierGate")).toBeDefined();
     });
 
     it("shows OpenCodeSetup directly when platform is opencode", () => {
@@ -420,7 +420,7 @@ describe("SetupStepAddProvider", () => {
       render(() => (
         <SetupStepAddProvider {...defaultProps} platform="opencode" />
       ));
-      expect(screen.getByText("Connect OpenCode to Manifest")).toBeDefined();
+      expect(screen.getByText("Connect OpenCode to TierGate")).toBeDefined();
     });
 
     it("shows CodexSetup directly when platform is codex", () => {
@@ -436,7 +436,7 @@ describe("SetupStepAddProvider", () => {
       render(() => (
         <SetupStepAddProvider {...defaultProps} platform="codex" />
       ));
-      expect(screen.getByText("Connect Codex to Manifest")).toBeDefined();
+      expect(screen.getByText("Connect Codex to TierGate")).toBeDefined();
     });
 
     it("shows OpenAI SDK snippet when platform is openai-sdk", () => {
@@ -507,14 +507,14 @@ describe("SetupStepAddProvider", () => {
       const { container } = render(() => (
         <SetupStepAddProvider {...defaultProps} platform="openclaw" />
       ));
-      expect(container.textContent).toContain("Connect your OpenClaw harness to Manifest");
+      expect(container.textContent).toContain("Connect your OpenClaw harness to TierGate");
     });
 
     it("does not show description text in filtered mode", () => {
       const { container } = render(() => (
         <SetupStepAddProvider {...defaultProps} platform="openclaw" />
       ));
-      expect(container.textContent).not.toContain("Point your harness at the Manifest endpoint");
+      expect(container.textContent).not.toContain("Point your harness at the TierGate endpoint");
     });
   });
 });

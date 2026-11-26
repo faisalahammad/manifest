@@ -105,7 +105,7 @@ describe("SetupModal", () => {
     const { container } = render(() => (
       <SetupModal open={true} agentName="test-agent" onClose={onClose} />
     ));
-    expect(container.textContent).toContain("Connect your harness to Manifest");
+    expect(container.textContent).toContain("Connect your harness to TierGate");
   });
 
   it("closes on overlay click", () => {

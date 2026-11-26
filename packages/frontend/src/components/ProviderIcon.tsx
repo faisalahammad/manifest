@@ -12,7 +12,7 @@ export function providerIcon(id: string, size: number = 20): JSX.Element | null 
     /* ── Manifest ────────────────────────────────── */
     case 'manifest':
       return (
-        <img src="/icons/manifest.svg" alt="Manifest" style={{ ...s, 'border-radius': '3px' }} />
+        <img src="/icons/manifest.svg" alt="TierGate" style={{ ...s, 'border-radius': '3px' }} />
       );
 
     /* ── Meta ────────────────────────────────────── */

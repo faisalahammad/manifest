@@ -753,10 +753,10 @@ const Welcome: Component = () => {
 
   return (
     <div class="welcome">
-      <Title>Welcome - Manifest</Title>
+      <Title>Welcome - TierGate</Title>
       <Meta
         name="description"
-        content="Connect your AI harness and send its first reliable request through Manifest."
+        content="Connect your AI harness and send its first reliable request through TierGate."
       />
 
       {/* ── Sidebar: activation progress + steps ───── */}
@@ -764,7 +764,7 @@ const Welcome: Component = () => {
         <div class="welcome__sidebar-top">
           <img
             src="/logotype-white.svg"
-            alt="Manifest LLM Gateway"
+            alt="TierGate"
             class="welcome__logo-mark welcome__logo-light"
           />
           <img src="/logotype-dark.svg" alt="" class="welcome__logo-mark welcome__logo-dark" />
@@ -851,7 +851,7 @@ const Welcome: Component = () => {
                 <p class="welcome__eyebrow">{eyebrow('harness')}</p>
                 <h1 class="welcome__panel-title">Create your first harness</h1>
                 <p class="welcome__panel-desc">
-                  A harness represents the agent or application whose requests Manifest will route,
+                  A harness represents the agent or application whose requests TierGate will route,
                   repair and observe.
                 </p>
               </div>
@@ -930,7 +930,7 @@ const Welcome: Component = () => {
                             </div>
                             <div class="model-params__label-hint">
                               Repair eligible failing requests before falling back. Failed requests
-                              are sent to Manifest Autofix for diagnosis; provider authorization
+                              are sent to TierGate Autofix for diagnosis; provider authorization
                               credentials are never sent.
                             </div>
                           </div>
@@ -1307,7 +1307,7 @@ const Welcome: Component = () => {
                 <p class="welcome__eyebrow">{eyebrow('activate')}</p>
                 <h1 class="welcome__panel-title">Connect your harness and go live</h1>
                 <p class="welcome__panel-desc">
-                  Point {harnessName().trim() || 'your agent'} at Manifest with the instructions
+                  Point {harnessName().trim() || 'your agent'} at TierGate with the instructions
                   below, then send one message. We detect the first successful request
                   automatically.
                 </p>
@@ -1327,7 +1327,7 @@ const Welcome: Component = () => {
               </section>
 
               <p class="welcome__panel-desc">
-                Once configured, send a message from your agent. Manifest detects the first
+                Once configured, send a message from your agent. TierGate detects the first
                 successful request automatically.
               </p>
 
@@ -1363,7 +1363,7 @@ const Welcome: Component = () => {
                       <Show when={requestCheckError()}>
                         <p class="welcome__availability-note" role="status">
                           We couldn’t verify a request just now. Confirm that your agent can reach
-                          Manifest, then try again.
+                          TierGate, then try again.
                         </p>
                       </Show>
                       <Show when={waitedLong() && !latestAgentRequest()}>
@@ -1381,7 +1381,7 @@ const Welcome: Component = () => {
                           <strong>We received the request, but it failed.</strong>
                           <p>
                             {latestAgentRequest()?.error_message ||
-                              `Manifest recorded status “${latestAgentRequest()?.status}”. Fix the issue and send another message.`}
+                              `TierGate recorded status “${latestAgentRequest()?.status}”. Fix the issue and send another message.`}
                           </p>
                           <Show when={errorDocCode()}>
                             <a
@@ -1405,7 +1405,7 @@ const Welcome: Component = () => {
                     <div>
                       <strong>Your harness is live.</strong>
                       <p class="welcome__section-desc">
-                        Manifest successfully routed the first real request
+                        TierGate successfully routed the first real request
                         <Show when={latestAgentRequest()?.model}>
                           {' '}
                           to {latestAgentRequest()?.model}

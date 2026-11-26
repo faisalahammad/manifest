@@ -861,7 +861,7 @@ All pricing comes from a single source:
 
 ## Releases
 
-Most workspace packages are **not published to npm**: `packages/backend`, `packages/frontend`, `packages/shared`, and `packages/manifest` are all `private: true`. Manifest itself ships as the Docker image at `manifestdotbuild/manifest` (built from `docker/Dockerfile`).
+Most workspace packages are **not published to npm**: `packages/backend`, `packages/frontend`, `packages/shared`, and `packages/manifest` are all `private: true`. Manifest itself ships as the Docker image at `ghcr.io/faisalahammad/tiergate` (built from `docker/Dockerfile`).
 
 `packages/cli` is the exception: it publishes to npm as **`mnfst-gateway-cli`**. The name is unscoped and gateway-qualified: the bare `mnfst` belongs to an unrelated project, `manifest` is the Manifest SDK, and a `@mnfst` scope would need an npm organization that does not exist (a scoped publish fails with a 404). The binary stays `mnfst`. Its version **tracks the Manifest release** — it has no changeset target of its own and stays in the `.changeset/config.json` ignore list. The `publish-npm` job in `release.yml` runs on the same `should_publish` gate as the Docker image: it stamps the version from `packages/manifest/package.json` onto all three files that carry it (`packages/cli/package.json`, `src/version.ts`, and the generated `SKILL_VERSION` in `src/skill-content.gen.ts`, which `skill-content.spec.ts` pins to package.json) via `npm run set-version --workspace=packages/cli`, builds shared then the CLI, and publishes with provenance. Re-running the workflow for an already-published version is a no-op. Publishing needs the `NPM_TOKEN` repository secret.
 
@@ -891,7 +891,7 @@ Changesets are **not** required on every PR — they're optional and only meanin
 Merging the `chore: version packages` PR to `main` automatically publishes a new Docker image — no manual step required.
 
 1. Merge the pending `chore: version packages` PR. `release.yml` detects the version bump in `packages/manifest/package.json` (by diffing `HEAD~1` against `HEAD`) and calls `docker.yml` as a reusable workflow.
-2. The `publish` job reads `packages/manifest/package.json`, resolves the version automatically, and pushes `manifestdotbuild/manifest:{version}` + `{major}.{minor}` + `{major}` + `sha-<short>` to Docker Hub. The image is multi-arch (amd64 + arm64) and cosign-signed.
+2. The `publish` job reads `packages/manifest/package.json`, resolves the version automatically, and pushes `ghcr.io/faisalahammad/tiergate:{version}` + `{major}.{minor}` + `{major}` + `sha-<short>` to Docker Hub. The image is multi-arch (amd64 + arm64) and cosign-signed.
 3. **Manually update the Docker Hub description** on hub.docker.com by copy-pasting the current contents of `docker/DOCKER_README.md`. (Automating this sync hit a wall because `docker-pushrm` and the Docker Hub web API need a personal-user PAT and the existing secrets are scoped to the org — tracked as a follow-up, not blocking releases.)
 
 **Manual override:** `workflow_dispatch` on `Docker → Run workflow` still works for hotfixes and retags. Leave the `version` input blank to use `packages/manifest/package.json`, or pass a semver string to retag an older commit / publish a hotfix version.

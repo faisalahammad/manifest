@@ -8,8 +8,9 @@ import { readManifestVersion, UNKNOWN_VERSION } from '../telemetry/telemetry.con
  * the newest and count how far behind an install is (capped at 100).
  */
 export const RELEASES_PAGE_SIZE = 100;
-export const RELEASES_URL = `https://api.github.com/repos/mnfst/llm-gateway/releases?per_page=${RELEASES_PAGE_SIZE}`;
-export const UPGRADE_DOCS_URL = 'https://manifest.build/llm-gateway/docs/self-hosted/#upgrading';
+export const RELEASES_URL = `https://api.github.com/repos/faisalahammad/tiergate/releases?per_page=${RELEASES_PAGE_SIZE}`;
+export const UPGRADE_DOCS_URL =
+  'https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md#upgrade';
 export const UPGRADE_COMMAND = 'docker compose pull && docker compose up -d';
 
 export interface VersionCheckConfig {
@@ -35,7 +36,7 @@ export function buildVersionCheckConfig(env: NodeJS.ProcessEnv = process.env): V
 }
 
 const STRICT_SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
-const RELEASE_TAG = /^manifest@(\d+\.\d+\.\d+)$/;
+const RELEASE_TAG = /^tiergate@(\d+\.\d+\.\d+)$/;
 
 /**
  * Numeric three-part compare. Changesets only ever emits strict `X.Y.Z`, so
@@ -94,9 +95,9 @@ export function summarizeReleases(body: unknown, current: string): ReleaseSummar
 
 /** Website changelog, scrolled to that version's entry. */
 export function changelogUrlFor(version: string): string {
-  return `https://manifest.build/changelog/#v${version.replace(/\./g, '-')}`;
+  return githubReleaseUrlFor(version);
 }
 
 export function githubReleaseUrlFor(version: string): string {
-  return `https://github.com/mnfst/llm-gateway/releases/tag/${encodeURIComponent(`manifest@${version}`)}`;
+  return `https://github.com/faisalahammad/tiergate/releases/tag/${encodeURIComponent(`tiergate@${version}`)}`;
 }

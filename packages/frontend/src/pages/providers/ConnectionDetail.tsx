@@ -636,7 +636,7 @@ const ConnectionDetail: Component = () => {
   return (
     <div class="container--lg">
       <Show when={hasError()}>
-        <Title>Couldn't load connection | Manifest</Title>
+        <Title>Couldn't load connection | TierGate</Title>
         <div style="padding: 48px 0; text-align: center;">
           <div style="font-size: var(--font-size-base); font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 8px;">
             Couldn't load this connection
@@ -650,7 +650,7 @@ const ConnectionDetail: Component = () => {
         </div>
       </Show>
       <Show when={notFound()}>
-        <Title>Connection not found | Manifest</Title>
+        <Title>Connection not found | TierGate</Title>
         <div style="padding: 48px 0; text-align: center;">
           <div style="font-size: var(--font-size-base); font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 8px;">
             Connection not found
@@ -676,7 +676,7 @@ const ConnectionDetail: Component = () => {
           return (
             <>
               <Title>
-                {providerDisplayName()} / {c.label} | Manifest
+                {providerDisplayName()} / {c.label} | TierGate
               </Title>
 
               {/* Back link */}

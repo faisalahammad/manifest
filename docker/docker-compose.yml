@@ -45,7 +45,7 @@ name: mnfst
 
 services:
   manifest:
-    image: manifestdotbuild/manifest:${MANIFEST_VERSION:-latest}
+    image: ghcr.io/faisalahammad/tiergate:${MANIFEST_VERSION:-latest}
     ports:
       - "${HOST_BIND_ADDRESS:-127.0.0.1}:${HOST_PORT:-${PORT:-2099}}:${PORT:-2099}"
     # Lets the container reach LLM servers running on the host (Ollama,
@@ -155,10 +155,10 @@ services:
       - SENTRY_DSN=${SENTRY_DSN:-}
       - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-}
       - SENTRY_RELEASE=${SENTRY_RELEASE:-}
-      # Anonymous usage telemetry (opt-out). Set MANIFEST_TELEMETRY_DISABLED=1
-      # to disable, or point TELEMETRY_ENDPOINT at your own collector. See
+      # Anonymous usage telemetry. Off by default in TierGate. Set
+      # MANIFEST_TELEMETRY_DISABLED=0 to send it, or point TELEMETRY_ENDPOINT at your own collector. See
       # https://manifest.build/llm-gateway/docs/self-hosted/#telemetry for the payload shape.
-      - MANIFEST_TELEMETRY_DISABLED=${MANIFEST_TELEMETRY_DISABLED:-0}
+      - MANIFEST_TELEMETRY_DISABLED=${MANIFEST_TELEMETRY_DISABLED:-1}
       - TELEMETRY_ENDPOINT=${TELEMETRY_ENDPOINT:-}
       # Daily Harness usage rollup. Reads stay off until backfill parity passes.
       - AGENT_USAGE_DAILY_WORKER=${AGENT_USAGE_DAILY_WORKER:-}

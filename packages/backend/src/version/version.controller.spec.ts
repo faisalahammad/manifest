@@ -8,9 +8,10 @@ describe('VersionController', () => {
     latest: '6.22.0',
     update_available: true,
     releases_behind: 1,
-    release_url: 'https://manifest.build/changelog/#v6-22-0',
-    github_release_url: 'https://github.com/mnfst/llm-gateway/releases/tag/manifest%406.22.0',
-    upgrade_docs_url: 'https://manifest.build/llm-gateway/docs/self-hosted/#upgrading',
+    release_url: 'https://github.com/faisalahammad/tiergate/releases/tag/tiergate%406.22.0',
+    github_release_url: 'https://github.com/faisalahammad/tiergate/releases/tag/tiergate%406.22.0',
+    upgrade_docs_url:
+      'https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md#upgrade',
     upgrade_command: 'docker compose pull && docker compose up -d',
     check_enabled: true,
     checked_at: '2026-09-04T09:00:00.000Z',

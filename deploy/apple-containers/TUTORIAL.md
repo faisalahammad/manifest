@@ -140,10 +140,10 @@ First, back up the database:
 container exec mnfst-postgres pg_dump -U manifest manifest > manifest-backup-$(date +%F).sql
 ```
 
-The script always launches `manifestdotbuild/manifest:latest`, but `container run` uses the locally cached copy of that tag. To upgrade to a new release, pull the image explicitly and re-run `up`:
+The script always launches `ghcr.io/faisalahammad/tiergate:latest`, but `container run` uses the locally cached copy of that tag. To upgrade to a new release, pull the image explicitly and re-run `up`:
 
 ```bash
-container image pull manifestdotbuild/manifest:latest
+container image pull ghcr.io/faisalahammad/tiergate:latest
 ./deploy/apple-containers/start.sh up
 ```
 

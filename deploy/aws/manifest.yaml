@@ -14,7 +14,7 @@ Parameters:
     ConstraintDescription: Use up to 40 lowercase letters, numbers, and hyphens, starting with a letter.
   ImageUrl:
     Type: String
-    Default: docker.io/manifestdotbuild/manifest:6
+    Default: ghcr.io/faisalahammad/tiergate:6
     Description: Manifest container image to deploy.
   ContainerPort:
     Type: Number

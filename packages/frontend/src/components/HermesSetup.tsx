@@ -75,7 +75,7 @@ const HermesSetup: Component<Props> = (props) => {
   return (
     <div class="setup-agents-card">
       <p class="setup-step__desc">
-        Point Hermes at the Manifest endpoint to route requests across multiple models.
+        Point Hermes at the TierGate endpoint to route requests across multiple models.
       </p>
 
       <div

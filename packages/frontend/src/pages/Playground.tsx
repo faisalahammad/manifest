@@ -472,7 +472,7 @@ const Playground: Component<PlaygroundProps & Partial<RouteSectionProps>> = (pro
       style={props.embedded ? undefined : { 'padding-bottom': `${promptHeight() + 48}px` }}
     >
       <Show when={!props.embedded}>
-        <Title>Playground · Manifest</Title>
+        <Title>Playground · TierGate</Title>
         <Meta
           name="description"
           content="Compare models side by side for cost, speed, and quality."

@@ -14,14 +14,14 @@ function getOpenCodeConfig(baseUrl: string, apiKey: string): string {
   "provider": {
     "manifest": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "Manifest",
+      "name": "TierGate",
       "options": {
         "baseURL": "${baseUrl}",
         "apiKey": "${apiKey}"
       },
       "models": {
         "auto": {
-          "name": "Manifest Auto"
+          "name": "TierGate Auto"
         }
       }
     }

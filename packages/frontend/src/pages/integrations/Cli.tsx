@@ -39,7 +39,7 @@ const Cli: Component = () => {
 
   return (
     <div class="container--lg">
-      <Title>CLI - Manifest</Title>
+      <Title>CLI - TierGate</Title>
       <Meta
         name="description"
         content="Install the mnfst CLI and manage harnesses, providers, routing and request logs from the terminal."
@@ -58,7 +58,7 @@ const Cli: Component = () => {
           <div class="panel__title">1. Install</div>
           <p class="integration-panel__desc">
             The package is <code>mnfst-gateway-cli</code>, but the command you type is{' '}
-            <code>mnfst</code>. Its version tracks the Manifest release it ships with.
+            <code>mnfst</code>. Its version tracks the TierGate release it ships with.
           </p>
           <CodeBlock code={`npm install -g ${PACKAGE}`} language="bash" />
         </div>
@@ -92,7 +92,7 @@ const Cli: Component = () => {
         </p>
         <CodeBlock code={EXAMPLE} language="bash" />
         <p class="integration-panel__desc" style="margin-top: var(--gap-md); margin-bottom: 0;">
-          To use Manifest tools in Vibe Code, follow the <a href="/integrations/mcp">MCP setup</a>.
+          To use TierGate tools in Vibe Code, follow the <a href="/integrations/mcp">MCP setup</a>.
         </p>
       </div>
     </div>

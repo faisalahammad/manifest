@@ -3,7 +3,7 @@ import type { Component } from 'solid-js';
 
 const OauthError: Component = () => (
   <>
-    <Title>MCP authorization error - Manifest</Title>
+    <Title>MCP authorization error - TierGate</Title>
     <div class="auth-header">
       <h1 class="auth-header__title">Cannot authorize this MCP client</h1>
       <p class="auth-header__subtitle">

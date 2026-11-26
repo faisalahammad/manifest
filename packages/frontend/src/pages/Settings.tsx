@@ -143,7 +143,7 @@ const Settings: Component = () => {
 
   return (
     <div class="container--sm">
-      <Title>{agentDisplayName() ?? agentName()} Settings - Manifest</Title>
+      <Title>{agentDisplayName() ?? agentName()} Settings - TierGate</Title>
       <Meta
         name="description"
         content={`Configure settings for ${agentDisplayName() ?? agentName()}.`}
@@ -248,7 +248,7 @@ const Settings: Component = () => {
           <div class="settings-card__body">
             <span class="settings-card__label-title">Harness API key</span>
             <span class="settings-card__label-desc" style="font-size: 14px;">
-              This key authenticates your harness's requests to Manifest. Rotating it generates a
+              This key authenticates your harness's requests to TierGate. Rotating it generates a
               new key and immediately invalidates the current one.
             </span>
             <div class="settings-card__key-row">

@@ -120,10 +120,10 @@ describe('formatErrorOrigin', () => {
   it('labels Manifest-side origins distinctly from provider/transport', () => {
     expect(formatErrorOrigin('provider')).toBe('Provider');
     expect(formatErrorOrigin('transport')).toBe('Transport');
-    expect(formatErrorOrigin('config')).toBe('Manifest · Setup');
-    expect(formatErrorOrigin('policy')).toBe('Manifest · Limit');
-    expect(formatErrorOrigin('internal')).toBe('Manifest · Internal');
-    expect(formatErrorOrigin('request')).toBe('Manifest · Bad request');
+    expect(formatErrorOrigin('config')).toBe('TierGate · Setup');
+    expect(formatErrorOrigin('policy')).toBe('TierGate · Limit');
+    expect(formatErrorOrigin('internal')).toBe('TierGate · Internal');
+    expect(formatErrorOrigin('request')).toBe('TierGate · Bad request');
   });
   it('returns null for a missing origin', () => {
     expect(formatErrorOrigin(null)).toBeNull();

@@ -91,7 +91,7 @@ const RoutingInstructionModal: Component<Props> = (props) => {
           </div>
           <Show when={isEnable()}>
             <p class="modal-card__desc">
-              Connect your harness to Manifest to start routing requests.
+              Connect your harness to TierGate to start routing requests.
             </p>
           </Show>
 
@@ -100,7 +100,7 @@ const RoutingInstructionModal: Component<Props> = (props) => {
             fallback={
               <>
                 <p style="margin: 0 0 14px; font-size: var(--font-size-sm); color: hsl(var(--muted-foreground)); line-height: 1.5;">
-                  This will stop routing requests through Manifest and restore direct model access
+                  This will stop routing requests through TierGate and restore direct model access
                   in your OpenClaw harness.
                 </p>
 

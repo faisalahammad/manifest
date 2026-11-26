@@ -13,7 +13,7 @@ templates/manifest/meta.yaml
 
 The template provisions:
 
-- Manifest app service from `manifestdotbuild/manifest:6`.
+- Manifest app service from `ghcr.io/faisalahammad/tiergate:6`.
 - PostgreSQL 16 service.
 - Persistent app volume for compressed request recordings.
 - Generated database password, Better Auth secret, and Manifest encryption key.

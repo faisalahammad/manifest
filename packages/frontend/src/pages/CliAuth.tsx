@@ -85,12 +85,12 @@ const CliAuth: Component = () => {
 
   return (
     <div class="auth-layout">
-      <Title>Authorize CLI - Manifest</Title>
+      <Title>Authorize CLI - TierGate</Title>
       <div class="auth-card" style="text-align: center;">
         <div class="auth-logo">
           <img
             src="/logotype-white.svg"
-            alt="Manifest LLM Gateway"
+            alt="TierGate"
             class="auth-logo__img auth-logo__img--light"
           />
           <img src="/logotype-dark.svg" alt="" class="auth-logo__img auth-logo__img--dark" />
@@ -112,7 +112,7 @@ const CliAuth: Component = () => {
             fallback={
               <>
                 <div class="auth-header">
-                  <h1 class="auth-header__title">Authorize the Manifest CLI?</h1>
+                  <h1 class="auth-header__title">Authorize the TierGate CLI?</h1>
                   <p class="auth-header__subtitle">
                     This grants the CLI on this machine full access to your workspace. Revoke it any
                     time by running <code>mnfst logout</code>.

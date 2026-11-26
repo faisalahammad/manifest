@@ -23,7 +23,7 @@ variable "service_name" {
 variable "image_url" {
   description = "Manifest container image to deploy."
   type        = string
-  default     = "docker.io/manifestdotbuild/manifest:6"
+  default     = "ghcr.io/faisalahammad/tiergate:6"
 }
 
 variable "database_tier" {

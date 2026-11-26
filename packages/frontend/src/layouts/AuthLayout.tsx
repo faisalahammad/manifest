@@ -8,7 +8,7 @@ const AuthLayout: ParentComponent = (props) => {
           <a href="https://manifest.build" class="auth-logo__link">
             <img
               src="/logotype-white.svg"
-              alt="Manifest LLM Gateway"
+              alt="TierGate"
               class="auth-logo__img auth-logo__img--light"
             />
             <img src="/logotype-dark.svg" alt="" class="auth-logo__img auth-logo__img--dark" />

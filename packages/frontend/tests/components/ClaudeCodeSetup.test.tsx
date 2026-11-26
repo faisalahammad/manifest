@@ -34,7 +34,7 @@ describe("ClaudeCodeSetup", () => {
     expect(text).toContain("/model claude-opus-5-5[1m]");
   });
 
-  it("renders the JSON settings block with Manifest auto model and ANTHROPIC vars", () => {
+  it("renders the JSON settings block with TierGate auto model and ANTHROPIC vars", () => {
     const { container } = render(() => <ClaudeCodeSetup {...baseProps} />);
     const text = container.textContent ?? "";
     expect(text).toContain('"model": "auto"');

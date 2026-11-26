@@ -6,7 +6,7 @@
   </picture>
 </p>
 <p align="center">
-  <a href="https://hub.docker.com/r/manifestdotbuild/manifest"><img src="https://img.shields.io/docker/pulls/manifestdotbuild/manifest?color=2496ED&label=docker%20pulls" alt="Docker pulls" /></a>
+  <a href="https://github.com/faisalahammad/tiergate/pkgs/container/tiergate"><img src="https://img.shields.io/docker/pulls/ghcr.io/faisalahammad/tiergate?color=2496ED&label=docker%20pulls" alt="Docker pulls" /></a>
   &nbsp;
   <a href="https://github.com/mnfst/llm-gateway/stargazers"><img src="https://img.shields.io/github/stars/mnfst/llm-gateway?style=flat" alt="GitHub stars" /></a>
   &nbsp;
@@ -75,7 +75,7 @@ Three paths, ordered from fastest to most hands-on. All three end in the same pl
 One command. The installer downloads the compose file, generates the secrets, and brings up the stack. First boot pulls the app image and Postgres, so give it up to a couple of minutes.
 
 ```bash
-bash <(curl -sSL https://raw.githubusercontent.com/mnfst/llm-gateway/main/docker/install.sh)
+bash <(curl -sSL https://raw.githubusercontent.com/faisalahammad/tiergate/main/docker/install.sh)
 ```
 
 <details>
@@ -84,7 +84,7 @@ bash <(curl -sSL https://raw.githubusercontent.com/mnfst/llm-gateway/main/docker
 Download the script:
 
 ```bash
-curl -sSLO https://raw.githubusercontent.com/mnfst/llm-gateway/main/docker/install.sh
+curl -sSLO https://raw.githubusercontent.com/faisalahammad/tiergate/main/docker/install.sh
 ```
 
 Review it (optional):
@@ -112,8 +112,8 @@ Same underlying flow as the install script, but you drive it yourself so you can
 1. Download the compose file and the env template into the same directory:
 
 ```bash
-curl -O https://raw.githubusercontent.com/mnfst/llm-gateway/main/docker/docker-compose.yml
-curl -O https://raw.githubusercontent.com/mnfst/llm-gateway/main/docker/.env.example
+curl -O https://raw.githubusercontent.com/faisalahammad/tiergate/main/docker/docker-compose.yml
+curl -O https://raw.githubusercontent.com/faisalahammad/tiergate/main/docker/.env.example
 cp .env.example .env
 ```
 
@@ -168,7 +168,7 @@ docker run -d \
   -e DATABASE_URL=postgresql://user:pass@host:5432/manifest \
   -e BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
   -e BETTER_AUTH_URL=http://localhost:2099 \
-  manifestdotbuild/manifest
+  ghcr.io/faisalahammad/tiergate
 ```
 
 </details>
@@ -184,7 +184,7 @@ docker run -d `
   -e DATABASE_URL=postgresql://user:pass@host:5432/manifest `
   -e BETTER_AUTH_SECRET=$secret `
   -e BETTER_AUTH_URL=http://localhost:2099 `
-  manifestdotbuild/manifest
+  ghcr.io/faisalahammad/tiergate
 ```
 
 </details>
@@ -200,7 +200,7 @@ docker run -d ^
   -e DATABASE_URL=postgresql://user:pass@host:5432/manifest ^
   -e BETTER_AUTH_SECRET=<your-64-char-secret> ^
   -e BETTER_AUTH_URL=http://localhost:2099 ^
-  manifestdotbuild/manifest
+  ghcr.io/faisalahammad/tiergate
 ```
 
 </details>
@@ -244,7 +244,7 @@ three you are most likely to hit on a fresh install.
 Published images are signed with cosign keyless signing (Sigstore). Verify before pulling:
 
 ```bash
-cosign verify manifestdotbuild/manifest:<version> \
+cosign verify ghcr.io/faisalahammad/tiergate:<version> \
   --certificate-identity-regexp="^https://github.com/mnfst/llm-gateway/" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
 ```
@@ -308,7 +308,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Database migrations run automatically on boot, no manual steps. Your data in the `pgdata` volume is preserved across upgrades. Pin to a specific major version (e.g. `manifestdotbuild/manifest:6`) in `docker-compose.yml` if you want control over when major upgrades happen.
+Database migrations run automatically on boot, no manual steps. Your data in the `pgdata` volume is preserved across upgrades. Pin to a specific major version (e.g. `ghcr.io/faisalahammad/tiergate:6`) in `docker-compose.yml` if you want control over when major upgrades happen.
 
 The dashboard checks GitHub once a day for the latest release and shows a "new version available" badge linking to the [changelog](https://manifest.build/changelog/). The check only reads the public release list and sends nothing about your install. To turn it off (for example on an air-gapped host), set `MANIFEST_UPDATE_CHECK_DISABLED=1` in `.env`.
 

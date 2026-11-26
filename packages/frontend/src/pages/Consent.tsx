@@ -104,12 +104,12 @@ const Consent: Component = () => {
 
   return (
     <div class="auth-layout">
-      <Title>Authorize MCP client - Manifest</Title>
+      <Title>Authorize MCP client - TierGate</Title>
       <div class="auth-card" style="text-align: center;">
         <div class="auth-logo">
           <img
             src="/logotype-white.svg"
-            alt="Manifest LLM Gateway"
+            alt="TierGate"
             class="auth-logo__img auth-logo__img--light"
           />
           <img src="/logotype-dark.svg" alt="" class="auth-logo__img auth-logo__img--dark" />
@@ -127,7 +127,7 @@ const Consent: Component = () => {
             <h1 class="auth-header__title">Authorize this MCP client?</h1>
             <p class="auth-header__subtitle">
               <strong>{client()?.client_name || clientId()}</strong> wants to connect to your
-              Manifest workspace.
+              TierGate workspace.
             </p>
             <Show when={client()?.client_uri}>
               <p class="auth-header__subtitle">{client()?.client_uri}</p>

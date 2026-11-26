@@ -1,89 +1,39 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-white.svg" />
-    <source media="(prefers-color-scheme: light)" srcset=".github/assets/logo-dark.svg" />
-    <img src=".github/assets/logo-dark.svg" alt="Manifest LLM Gateway" height="53" title="Manifest LLM Gateway"/>
-  </picture>
+  <img src="packages/frontend/public/logotype-white.svg" alt="TierGate" height="53" title="TierGate"/>
 </p>
 <p align="center">
-AI Agents that don't break
+One OpenAI-compatible endpoint. Every request goes to the cheapest model that can handle it.
 </p>
-
-![manifest-gh](https://github.com/user-attachments/assets/7dd74fc2-f7d6-4558-a95a-014ed754a125)
 
 ---
 
-<p align="center">
-  <a href="https://render.com/deploy?repo=https://github.com/mnfst/llm-gateway" target="_blank" rel="nofollow"><img src="https://img.shields.io/badge/Deploy%20on-Render-46E3B7?style=for-the-badge&amp;logo=render&amp;logoColor=white" alt="Deploy on Render" /></a>
-  <a href="https://railway.com/deploy/wild-wild" target="_blank" rel="nofollow"><img src="https://img.shields.io/badge/Deploy%20on-Railway-0B0D0E?style=for-the-badge&amp;logo=railway&amp;logoColor=white" alt="Deploy on Railway" /></a>
-  <a href="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?stackName=manifest&amp;templateURL=https%3A%2F%2Fmnfst-manifest-deploy-templates.s3.us-east-1.amazonaws.com%2Fmanifest.yaml" target="_blank" rel="nofollow"><img src="https://img.shields.io/badge/Deploy%20on-AWS-232F3E?style=for-the-badge&amp;logo=amazonwebservices&amp;logoColor=white" alt="Deploy on AWS" /></a>
-  <a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fmnfst%2Fllm-gateway&amp;cloudshell_workspace=deploy%2Fgcp&amp;cloudshell_tutorial=TUTORIAL.md&amp;cloudshell_image=gcr.io/ds-artifacts-cloudshell/deploystack_custom_image&amp;shellonly=true" target="_blank" rel="nofollow"><img src="https://img.shields.io/badge/Deploy%20on-GCP-4285F4?style=for-the-badge&amp;logo=googlecloud&amp;logoColor=white" alt="Deploy on GCP" /></a>
-</p>
+## What is TierGate?
 
-<p align="center">
-  <a href="https://github.com/mnfst/llm-gateway/stargazers"><img src="https://img.shields.io/github/stars/mnfst/llm-gateway?style=flat" alt="GitHub stars" /></a>
-  &nbsp;
-  <a href="https://hub.docker.com/r/manifestdotbuild/manifest"><img src="https://img.shields.io/docker/pulls/manifestdotbuild/manifest?color=2496ED&label=docker%20pulls" alt="Docker pulls" /></a>
-  &nbsp;
-  <a href="https://hub.docker.com/r/manifestdotbuild/manifest/tags"><img src="https://img.shields.io/docker/image-size/manifestdotbuild/manifest/latest?color=2496ED&label=image%20size" alt="Docker image size" /></a>
-  &nbsp;
-  <a href="https://github.com/mnfst/llm-gateway/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/mnfst/llm-gateway/ci.yml?branch=main&label=CI" alt="CI status" /></a>
-  &nbsp;
-  <a href="https://app.codecov.io/gh/mnfst/llm-gateway"><img src="https://img.shields.io/codecov/c/github/mnfst/llm-gateway?label=coverage" alt="Codecov" /></a>
-  &nbsp;
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/mnfst/llm-gateway?color=blue" alt="license" /></a>
-  &nbsp;
-  <a href="https://discord.gg/FepAked3W7"><img src="https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white" alt="Discord" /></a>
-</p>
+TierGate is an open-source, self-hosted LLM gateway for AI agents and apps. You connect your API keys, subscriptions, and local models once. Your agent sends `"model": "auto"` to one endpoint, and TierGate picks the model.
 
-<p align="center">
-<a href="https://trendshift.io/repositories/12890" target="_blank"><img src="https://trendshift.io/api/badge/repositories/12890" alt="mnfst%2Fllm-gateway | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-</p>
+- 🧭 Complexity routing: every request is scored and sent to a Simple, Standard, Complex or Reasoning tier
+- 🎯 Task-specific routing: coding, web browsing, data analysis and other task types can have their own models
+- 🔀 Default and custom (header) routing, with up to 5 fallbacks per tier
+- 💾 Full request and response logs for success and error messages
+- 📊 Cost tracking, notifications and limits per agent
 
-## What is Manifest LLM Gateway?
-
-Manifest LLM Gateway is an open-source LLM gateway for AI agents and apps. Connect your API keys, subscriptions, and local models to one OpenAI-compatible endpoint, and each query goes to the right model. No single-provider lock-in.
-
-- 🔀 Custom Routing: API keys, Subscriptions, Local models, Custom providers
-- 💾 Full Body Logs for Success and Error Messages
-- 📊 Track every single dollar, setup notifications and limits
-- 🚑 Fallback on different models when queries fail, Self-heals your bad requests
+TierGate is a fork of [Manifest LLM Gateway](https://github.com/mnfst/llm-gateway). It keeps complexity and task-specific routing turned on for every agent, while upstream is retiring them.
 
 ## Quick start
 
-### Cloud version
-
-Go to [app.manifest.build](https://app.manifest.build). Manifest Cloud is $19/month; the self-hosted gateway below is free.
-
-### Self-hosted
-
-Manifest ships as a [Docker image](https://hub.docker.com/r/manifestdotbuild/manifest). One command:
+TierGate ships as a multi-arch (amd64 and arm64) Docker image: `ghcr.io/faisalahammad/tiergate`.
 
 ```bash
-bash <(curl -sSL https://raw.githubusercontent.com/mnfst/llm-gateway/main/docker/install.sh)
+bash <(curl -sSL https://raw.githubusercontent.com/faisalahammad/tiergate/main/docker/install.sh)
 ```
 
-Open [http://localhost:2099](http://localhost:2099) and sign up — the first account you create becomes the admin. Full self-hosting guide: [docker/DOCKER_README.md](docker/DOCKER_README.md).
+Open [http://localhost:2099](http://localhost:2099) and create the first account. It becomes the admin.
 
-### Deploy with one click
-
-| Platform                                                                      | Notes                                                                                                |
-| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [Railway](https://railway.com/deploy/wild-wild)                               | Best path. Template includes Manifest, PostgreSQL, and S3-compatible storage for request recordings. |
-| [Render](https://render.com/deploy?repo=https://github.com/mnfst/llm-gateway) | Blueprint includes Manifest, PostgreSQL, and a persistent recording disk.                            |
-| [DigitalOcean](deploy/digitalocean/TUTORIAL.md)                               | App Platform and PostgreSQL; provide a private Space for recordings.                                 |
-| [AWS](deploy/aws/TUTORIAL.md)                                                 | CloudFormation provisions ECS, RDS, and a private recording bucket.                                  |
-| [GCP](deploy/gcp/TUTORIAL.md)                                                 | DeployStack provisions Cloud Run, Cloud SQL, and Cloud Storage.                                      |
-
-> Every deployment path now uses durable request-recording storage. Railway, AWS, GCP, and Fly.io provision it natively; Render, Coolify, Easypanel, Docker, and Apple Containers mount persistent storage. DigitalOcean, Heroku, and Koyeb collect external S3-compatible settings during setup. Volume-backed templates are single-instance; use S3-compatible storage before scaling horizontally.
-
-Full deployment guides: [Railway](https://manifest.build/llm-gateway/docs/deploy/railway/), [Render](https://manifest.build/llm-gateway/docs/deploy/render/), [DigitalOcean](https://manifest.build/llm-gateway/docs/deploy/digitalocean/), [AWS](https://manifest.build/llm-gateway/docs/deploy/aws/), [GCP](https://manifest.build/llm-gateway/docs/deploy/gcp/), [Fly.io](https://manifest.build/llm-gateway/docs/deploy/fly/), [Coolify](https://manifest.build/llm-gateway/docs/deploy/coolify/), [Easypanel](https://manifest.build/llm-gateway/docs/deploy/easypanel/), [Heroku](https://manifest.build/llm-gateway/docs/deploy/heroku/), [Koyeb](https://manifest.build/llm-gateway/docs/deploy/koyeb/), and [Apple Containers](deploy/apple-containers/TUTORIAL.md).
-
-> The old npm-based self-hosting path is no longer supported. Use the Docker image or one of the deployment guides above.
+Step-by-step guide for a VPS or your own machine, with HTTPS, backups and upgrades: **[docs/self-hosting.md](docs/self-hosting.md)**.
 
 ## Providers
 
-Manifest connects to **300+ models through 35 built-in provider connections** plus any custom OpenAI/Anthropic-compatible endpoint. Bring your own API key, reuse one of **18 subscription flows**, or run models locally. Everything is routed through the same OpenAI-compatible endpoint — send `"model": "auto"` and Manifest picks the model.
+TierGate connects to **300+ models through 35 built-in provider connections** plus any custom OpenAI/Anthropic-compatible endpoint. Bring your own API key, reuse one of **18 subscription flows**, or run models locally. Everything is routed through the same OpenAI-compatible endpoint — send `"model": "auto"` and TierGate picks the model.
 
 Provider catalogs are discovered dynamically when credentials are connected. The examples below are representative, not exhaustive.
 
@@ -125,15 +75,13 @@ Provider catalogs are discovered dynamically when credentials are connected. The
 | [**Pioneer**](https://pioneer.ai/)                                                       |       ✅        | —                            | OpenAI-compatible and fine-tuned Pioneer models                 |
 | **Custom**                                                                               |       ✅        | —                            | Any `/v1/chat/completions` or `/v1/messages` endpoint           |
 
-## Quick links
+## Links
 
-- [Docs](https://manifest.build/llm-gateway/docs/introduction/)
-- [n8n community node](integrations/n8n-nodes-manifest) — `n8n-nodes-manifest` on npm
-- [Discord](https://discord.com/invite/FepAked3W7)
-- [Discussions](https://github.com/mnfst/llm-gateway/discussions)
+- [Self-hosting guide](docs/self-hosting.md)
+- [Docker reference](docker/DOCKER_README.md)
 - [Contributing](CONTRIBUTING.md)
-- [GitHub](https://github.com/mnfst/llm-gateway)
+- [Upstream project: Manifest LLM Gateway](https://github.com/mnfst/llm-gateway)
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). TierGate is based on Manifest LLM Gateway, which is also MIT licensed. The original copyright notice is kept in [LICENSE](LICENSE).

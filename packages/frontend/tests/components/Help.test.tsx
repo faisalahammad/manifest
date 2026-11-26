@@ -74,7 +74,7 @@ describe("Help", () => {
   it("renders Title metadata", () => {
     const { container } = render(() => <Help />);
     const title = container.querySelector("title");
-    expect(title?.textContent).toContain("Help & Support - Manifest");
+    expect(title?.textContent).toContain("Help & Support - TierGate");
   });
 
   it("renders breadcrumb prompt text", () => {

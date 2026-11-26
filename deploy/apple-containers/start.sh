@@ -317,7 +317,7 @@ cmd_up() {
     --env REQUEST_RECORDING_S3_SECRET_ACCESS_KEY="${REQUEST_RECORDING_S3_SECRET_ACCESS_KEY:-}" \
     --env REQUEST_RECORDING_S3_FORCE_PATH_STYLE="${REQUEST_RECORDING_S3_FORCE_PATH_STYLE:-false}" \
     --env MANIFEST_TELEMETRY_DISABLED="${MANIFEST_TELEMETRY_DISABLED:-0}" \
-    manifestdotbuild/manifest:latest
+    ghcr.io/faisalahammad/tiergate:latest
 
   echo "waiting for manifest to become healthy..."
   attempt=0

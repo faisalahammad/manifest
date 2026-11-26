@@ -51,7 +51,7 @@ describe('VersionCheckService', () => {
   });
 
   it('reports an available update with changelog and release links', async () => {
-    fetchMock.mockResolvedValue(releasesResponse('manifest@6.22.0', 'manifest@6.21.1'));
+    fetchMock.mockResolvedValue(releasesResponse('tiergate@6.22.0', 'tiergate@6.21.1'));
 
     const info = await make().getVersionInfo();
 
@@ -60,8 +60,9 @@ describe('VersionCheckService', () => {
       latest: '6.22.0',
       update_available: true,
       releases_behind: 1,
-      release_url: 'https://manifest.build/changelog/#v6-22-0',
-      github_release_url: 'https://github.com/mnfst/llm-gateway/releases/tag/manifest%406.22.0',
+      release_url: 'https://github.com/faisalahammad/tiergate/releases/tag/tiergate%406.22.0',
+      github_release_url:
+        'https://github.com/faisalahammad/tiergate/releases/tag/tiergate%406.22.0',
       upgrade_docs_url: UPGRADE_DOCS_URL,
       upgrade_command: UPGRADE_COMMAND,
       check_enabled: true,
@@ -72,11 +73,11 @@ describe('VersionCheckService', () => {
   it('counts how many releases sit between current and latest', async () => {
     fetchMock.mockResolvedValue(
       releasesResponse(
-        'manifest@6.22.0',
-        'manifest@6.21.1',
-        'manifest@6.21.0',
-        'manifest@6.20.0',
-        'manifest@6.19.0',
+        'tiergate@6.22.0',
+        'tiergate@6.21.1',
+        'tiergate@6.21.0',
+        'tiergate@6.20.0',
+        'tiergate@6.19.0',
       ),
     );
 
@@ -87,7 +88,7 @@ describe('VersionCheckService', () => {
   });
 
   it('calls the GitHub release-list API with a JSON accept header and a timeout', async () => {
-    fetchMock.mockResolvedValue(releasesResponse('manifest@6.22.0'));
+    fetchMock.mockResolvedValue(releasesResponse('tiergate@6.22.0'));
 
     await make().getVersionInfo();
 
@@ -99,18 +100,20 @@ describe('VersionCheckService', () => {
   });
 
   it('reports no update when already on the latest release', async () => {
-    fetchMock.mockResolvedValue(releasesResponse('manifest@6.21.1', 'manifest@6.21.0'));
+    fetchMock.mockResolvedValue(releasesResponse('tiergate@6.21.1', 'tiergate@6.21.0'));
 
     const info = await make().getVersionInfo();
 
     expect(info.latest).toBe('6.21.1');
     expect(info.update_available).toBe(false);
     expect(info.releases_behind).toBe(0);
-    expect(info.release_url).toBe('https://manifest.build/changelog/#v6-21-1');
+    expect(info.release_url).toBe(
+      'https://github.com/faisalahammad/tiergate/releases/tag/tiergate%406.21.1',
+    );
   });
 
   it('reports no update when running a version newer than the latest release', async () => {
-    fetchMock.mockResolvedValue(releasesResponse('manifest@6.21.0'));
+    fetchMock.mockResolvedValue(releasesResponse('tiergate@6.21.0'));
 
     const info = await make().getVersionInfo();
 
@@ -128,7 +131,7 @@ describe('VersionCheckService', () => {
     const third = service.getVersionInfo();
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
-    resolveFetch(releasesResponse('manifest@6.22.0'));
+    resolveFetch(releasesResponse('tiergate@6.22.0'));
     const results = await Promise.all([first, second, third]);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -155,7 +158,7 @@ describe('VersionCheckService', () => {
   });
 
   it('serves the cached result for 24 hours, then refreshes', async () => {
-    fetchMock.mockResolvedValue(releasesResponse('manifest@6.22.0'));
+    fetchMock.mockResolvedValue(releasesResponse('tiergate@6.22.0'));
     const service = make();
 
     await service.getVersionInfo();
@@ -164,7 +167,7 @@ describe('VersionCheckService', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     Date.now = () => 1_800_000_000_000 + 25 * HOUR_MS;
-    fetchMock.mockResolvedValue(releasesResponse('manifest@6.23.0'));
+    fetchMock.mockResolvedValue(releasesResponse('tiergate@6.23.0'));
     const info = await service.getVersionInfo();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(info.latest).toBe('6.23.0');
@@ -223,14 +226,14 @@ describe('VersionCheckService', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     Date.now = () => 1_800_000_000_000 + 61 * 60 * 1000;
-    fetchMock.mockResolvedValue(releasesResponse('manifest@6.22.0'));
+    fetchMock.mockResolvedValue(releasesResponse('tiergate@6.22.0'));
     const info = await service.getVersionInfo();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(info.latest).toBe('6.22.0');
   });
 
   it('keeps serving the last good result when a refresh fails', async () => {
-    fetchMock.mockResolvedValue(releasesResponse('manifest@6.22.0'));
+    fetchMock.mockResolvedValue(releasesResponse('tiergate@6.22.0'));
     const service = make();
     await service.getVersionInfo();
 
@@ -262,7 +265,7 @@ describe('VersionCheckService', () => {
     await service.getVersionInfo();
 
     Date.now = () => 1_800_000_000_000 + 2 * HOUR_MS;
-    fetchMock.mockResolvedValue(releasesResponse('manifest@6.22.0'));
+    fetchMock.mockResolvedValue(releasesResponse('tiergate@6.22.0'));
     await service.getVersionInfo();
 
     Date.now = () => 1_800_000_000_000 + 27 * HOUR_MS;

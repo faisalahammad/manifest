@@ -87,7 +87,7 @@ if (!root) {
 render(
   () => (
     <MetaProvider>
-      <Title>Manifest</Title>
+      <Title>TierGate</Title>
       <ToastContainer />
       <Router>
         <Route path="/" component={App}>

@@ -618,7 +618,7 @@ const GlobalOverview: Component = () => {
 
   return (
     <div class="container--lg">
-      <Title>Overview | Manifest</Title>
+      <Title>Overview | TierGate</Title>
 
       {/* Add Harness Modal */}
       <AddAgentModal open={addAgentOpen()} onClose={dismissAddAgent} />

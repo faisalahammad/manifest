@@ -431,7 +431,7 @@ const RequestDrawer: Component<RequestDrawerProps> = (props) => {
                         <div class="drawer__body">
                           <Show when={tab() === 'details'}>
                             <div style="color: hsl(var(--muted-foreground));">
-                              Manifest rejected this request before contacting a provider.
+                              TierGate rejected this request before contacting a provider.
                             </div>
                           </Show>
                         </div>
@@ -580,7 +580,7 @@ const RequestDrawer: Component<RequestDrawerProps> = (props) => {
                                     <div style="font-size: var(--font-size-sm); color: hsl(var(--foreground)); margin-bottom: 8px;">
                                       {isSuccessStatus(att().status)
                                         ? 'This Autofix retry recovered the request.'
-                                        : 'Manifest applied a fix and retried, but this attempt failed.'}
+                                        : 'TierGate applied a fix and retried, but this attempt failed.'}
                                     </div>
                                     <Show when={att().autofix_decision?.explanation?.summary}>
                                       <div style="font-size: var(--font-size-xs); color: hsl(var(--muted-foreground)); margin-bottom: 8px;">

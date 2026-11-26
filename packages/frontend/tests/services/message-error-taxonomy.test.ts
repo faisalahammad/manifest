@@ -33,7 +33,7 @@ describe('isPlanRequestLimitMessage', () => {
     ).toBe(false);
   });
 
-  it('does not treat provider billing errors as Manifest plan quota', () => {
+  it('does not treat provider billing errors as TierGate plan quota', () => {
     expect(
       isPlanRequestLimitMessage({
         error_origin: 'provider',

@@ -187,7 +187,7 @@ const Account: Component = () => {
 
   return (
     <div class="account-modal">
-      <Title>Account Preferences - Manifest</Title>
+      <Title>Account Preferences - TierGate</Title>
       <Meta name="description" content="Manage your profile, workspace, and theme preferences." />
       <div class="account-modal__inner">
         <button class="btn btn--ghost btn--sm account-back-btn" onClick={() => navigate(-1)}>
@@ -506,7 +506,7 @@ const Account: Component = () => {
 
         <div class="settings-card">
           <div class="settings-card__body">
-            <p class="settings-card__desc">Choose how Manifest looks for you.</p>
+            <p class="settings-card__desc">Choose how TierGate looks for you.</p>
             <div class="theme-picker">
               <button
                 class="theme-picker__option"

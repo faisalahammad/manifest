@@ -3,7 +3,7 @@ services:
     name: manifest
     runtime: image
     image:
-      url: docker.io/manifestdotbuild/manifest:6
+      url: ghcr.io/faisalahammad/tiergate:6
     plan: starter
     numInstances: 1
     healthCheckPath: /api/v1/health

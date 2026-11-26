@@ -36,7 +36,7 @@ curl -sSf https://<your-coolify-domain>/api/v1/health
 
 ## What Gets Provisioned
 
-- Manifest Docker image `manifestdotbuild/manifest:6`.
+- Manifest Docker image `ghcr.io/faisalahammad/tiergate:6`.
 - PostgreSQL 16 container.
 - Persistent Docker volume for PostgreSQL data.
 - Persistent Docker volume for compressed request recordings at `/data/request-recordings`.

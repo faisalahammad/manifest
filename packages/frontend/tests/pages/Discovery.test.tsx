@@ -60,7 +60,7 @@ describe('Discovery page', () => {
   async function renderForm() {
     const result = render(() => <Discovery />);
     await waitFor(() => {
-      expect(screen.queryByText('Help us understand who uses Manifest')).not.toBeNull();
+      expect(screen.queryByText('Help us understand who uses TierGate')).not.toBeNull();
     });
     return result;
   }
@@ -72,7 +72,7 @@ describe('Discovery page', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
     });
     expect(mockIsDiscoveryRequired).not.toHaveBeenCalled();
-    expect(screen.queryByText('Help us understand who uses Manifest')).toBeNull();
+    expect(screen.queryByText('Help us understand who uses TierGate')).toBeNull();
     // The pending marker is dropped so the guards cannot loop back here.
     expect(mockClearDiscoveryPending).toHaveBeenCalledWith('u1');
   });

@@ -176,10 +176,10 @@ const Register: Component = () => {
 
   return (
     <>
-      <Title>Sign Up - Manifest</Title>
+      <Title>Sign Up - TierGate</Title>
       <Meta
         name="description"
-        content="Create a Manifest account to start monitoring your AI harnesses."
+        content="Create a TierGate account to start monitoring your AI harnesses."
       />
       <Show
         when={!emailSent()}

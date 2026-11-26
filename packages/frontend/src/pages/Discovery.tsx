@@ -96,8 +96,8 @@ const Discovery: Component = () => {
 
   return (
     <div class="auth-layout">
-      <Title>Welcome - Manifest</Title>
-      <Meta name="description" content="Tell us a little about how you use Manifest." />
+      <Title>Welcome - TierGate</Title>
+      <Meta name="description" content="Tell us a little about how you use TierGate." />
       <Show when={!checking()} fallback={<div class="auth-header__subtitle">Loading...</div>}>
         <div class="discovery-card">
           <aside class="discovery-card__intro">
@@ -105,16 +105,16 @@ const Discovery: Component = () => {
               <a href="https://manifest.build" class="auth-logo__link">
                 <img
                   src="/logotype-white.svg"
-                  alt="Manifest LLM Gateway"
+                  alt="TierGate"
                   class="auth-logo__img auth-logo__img--light"
                 />
                 <img src="/logotype-dark.svg" alt="" class="auth-logo__img auth-logo__img--dark" />
               </a>
             </div>
-            <h1 class="discovery-card__title">Help us understand who uses Manifest</h1>
+            <h1 class="discovery-card__title">Help us understand who uses TierGate</h1>
             <div class="discovery-card__desc">
               <p>
-                Manifest is <strong>open source</strong> and self-hosted, so we don't usually know
+                TierGate is <strong>open source</strong> and self-hosted, so we don't usually know
                 who's using it or what they're building.
               </p>
               <p>

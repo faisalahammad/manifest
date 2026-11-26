@@ -107,7 +107,7 @@ const RequestHeadersPopover: Component<Props> = (props) => {
         </header>
 
         <p class="playground-headers__hint">
-          Added to every provider call for this playground. Manifest-managed headers (Authorization,
+          Added to every provider call for this playground. TierGate-managed headers (Authorization,
           Content-Type, x-manifest-*) are ignored.
         </p>
 
@@ -154,7 +154,7 @@ const RequestHeadersPopover: Component<Props> = (props) => {
                   </button>
                   <Show when={blocked()}>
                     <p class="playground-headers__warning">
-                      {entry.key.trim()} is managed by Manifest and will be dropped.
+                      {entry.key.trim()} is managed by TierGate and will be dropped.
                     </p>
                   </Show>
                 </div>

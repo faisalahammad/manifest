@@ -92,7 +92,7 @@ export default function ServicesContactModal(props: ServicesContactModalProps): 
               Does your project need something specific?
             </h2>
             <p class="modal-card__desc">
-              Our team can develop it for you around Manifest LLM Gateway. For example:
+              Our team can develop it for you around TierGate. For example:
             </p>
             <ul class="services-modal__list">
               <For each={[...SERVICES_OFFER]}>{(item) => <li>{item}</li>}</For>

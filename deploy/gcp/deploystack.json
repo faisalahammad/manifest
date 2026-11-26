@@ -26,7 +26,7 @@
       "name": "image_url",
       "prompt": "Manifest image",
       "type": "string",
-      "default": "docker.io/manifestdotbuild/manifest:6"
+      "default": "ghcr.io/faisalahammad/tiergate:6"
     },
     {
       "name": "database_tier",

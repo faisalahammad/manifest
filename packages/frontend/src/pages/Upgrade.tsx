@@ -71,8 +71,8 @@ const Upgrade: Component = () => {
 
   return (
     <div class="account-modal account-modal--standalone">
-      <Title>Upgrade to Pro - Manifest</Title>
-      <Meta name="description" content="Upgrade Manifest to Pro for unlimited routed requests." />
+      <Title>Upgrade to Pro - TierGate</Title>
+      <Meta name="description" content="Upgrade TierGate to Pro for unlimited routed requests." />
       <div class="account-modal__inner account-modal__inner--upgrade">
         <Show when={window.history.length > 1}>
           <button

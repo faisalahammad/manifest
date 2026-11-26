@@ -34,7 +34,7 @@ The deploy script exposes the common settings as environment variables:
 STACK_NAME=manifest \
 SERVICE_NAME=manifest \
 AWS_REGION=us-east-1 \
-IMAGE_URL=docker.io/manifestdotbuild/manifest:6 \
+IMAGE_URL=ghcr.io/faisalahammad/tiergate:6 \
 DATABASE_INSTANCE_CLASS=db.t4g.micro \
 DESIRED_COUNT=1 \
 ./deploy/aws/deploy.sh
