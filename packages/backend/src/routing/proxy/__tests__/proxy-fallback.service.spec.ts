@@ -78,6 +78,8 @@ describe('ProxyFallbackService', () => {
       // only drive getProviderApiKey/getProviderRegion/getProviderKeyId keep
       // working: the apiKey forwarded, the id stamped, and the region all come
       // from this one object. Tests that need divergent rows override it.
+      // Single key unless a test sets several: the hop takes the single-key path.
+      getProviderKeys: jest.fn().mockResolvedValue([]),
       selectProviderKey: jest.fn(
         async (
           tenantId: string,

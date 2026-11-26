@@ -58,6 +58,8 @@ describe('ProxyFallbackService.tryFallbacks — route-aware path', () => {
       // Single key selection per attempt — composed from the legacy mocks so
       // existing setups driving getProviderApiKey/getProviderKeyId/getProviderRegion
       // keep working; apiKey, id, and region all come from this one row.
+      // Single key unless a test sets several: the hop takes the single-key path.
+      getProviderKeys: jest.fn().mockResolvedValue([]),
       selectProviderKey: jest.fn(
         async (
           userId: string,

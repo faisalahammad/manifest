@@ -55,22 +55,30 @@ export class KeyRotationService {
   }
 
   /**
-   * A key failed for a key-scoped reason. Advance past it only while the
-   * cursor still names it, so concurrent requests that failed on the same key
-   * advance the ring once, and a success another request recorded meanwhile
-   * is kept.
+   * A key failed for a key-scoped reason. Move the cursor past it, but only
+   * while the cursor still holds `expectedKeyId`, the value this request last
+   * saw (where it started, or where its own previous advance left it). So
+   * concurrent requests that failed on the same key advance the ring once, and
+   * a success another request recorded meanwhile is kept. Returns the value
+   * the request should expect from now on.
    */
-  recordFailure(ref: KeyRotationRef, keyId: string, keys: RotationKey[]): void {
-    if (keys.length === 0) return;
-    if (this.currentKeyId(ref, keys) !== keyId) return;
-    const index = keys.findIndex((k) => k.id === keyId);
-    this.set(rotationKey(ref), keys[(index + 1) % keys.length].id);
+  recordFailure(
+    ref: KeyRotationRef,
+    expectedKeyId: string,
+    failedKeyId: string,
+    keys: RotationKey[],
+  ): string {
+    if (keys.length === 0 || this.currentKeyId(ref, keys) !== expectedKeyId) return expectedKeyId;
+    const index = keys.findIndex((k) => k.id === failedKeyId);
+    const next = keys[(index + 1) % keys.length].id;
+    this.set(rotationKey(ref), next);
+    return next;
   }
 
   /**
    * A request tried every eligible key and all failed: start the next request
    * from the first key again, unless another request moved the cursor since
-   * (`expectedKeyId` is where this request's own advances left it).
+   * (`expectedKeyId` is what {@link recordFailure} last returned).
    */
   wrap(ref: KeyRotationRef, expectedKeyId: string, keys: RotationKey[]): void {
     if (keys.length === 0) return;

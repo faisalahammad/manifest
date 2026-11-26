@@ -109,6 +109,8 @@ describe('ProxyFallbackService: Bedrock Runtime GPT with a tier reasoning effort
       findProviderForModel: jest.fn().mockResolvedValue(undefined),
       getProviderRegion: jest.fn(async () => providerRegion),
       hasActiveProvider: jest.fn().mockResolvedValue(true),
+      // Single key unless a test sets several: the hop takes the single-key path.
+      getProviderKeys: jest.fn().mockResolvedValue([]),
       selectProviderKey: jest.fn(async () => ({
         apiKey: 'bedrock-api-key-test',
         id: 'up-bedrock',

@@ -28,32 +28,49 @@ describe('KeyRotationService', () => {
   });
 
   it('A fails, B serves, the next request starts at B', () => {
-    svc.recordFailure(ref, 'A', keys);
+    expect(svc.recordFailure(ref, 'A', 'A', keys)).toBe('B');
     svc.recordSuccess(ref, 'B');
     expect(ids(svc.order(ref, keys))).toEqual(['B', 'C', 'A']);
   });
 
   it('wraps from the last key to the first', () => {
     svc.recordSuccess(ref, 'C');
-    svc.recordFailure(ref, 'C', keys);
+    expect(svc.recordFailure(ref, 'C', 'C', keys)).toBe('A');
     expect(svc.currentKeyId(ref, keys)).toBe('A');
   });
 
   it('advances once when concurrent requests fail on the same key', () => {
-    svc.recordFailure(ref, 'A', keys);
-    svc.recordFailure(ref, 'A', keys);
+    expect(svc.recordFailure(ref, 'A', 'A', keys)).toBe('B');
+    // The second request still expects A: its advance is dropped.
+    expect(svc.recordFailure(ref, 'A', 'A', keys)).toBe('A');
     expect(svc.currentKeyId(ref, keys)).toBe('B');
+  });
+
+  it('advances past a key the request skipped', () => {
+    // A is cooled and skipped, B fails: the cursor still holds A, which this
+    // request expects, so it moves past B.
+    expect(svc.recordFailure(ref, 'A', 'B', keys)).toBe('C');
+    expect(svc.currentKeyId(ref, keys)).toBe('C');
   });
 
   it('keeps a success another request recorded meanwhile', () => {
     svc.recordSuccess(ref, 'C');
-    svc.recordFailure(ref, 'A', keys);
+    expect(svc.recordFailure(ref, 'A', 'A', keys)).toBe('A');
     expect(svc.currentKeyId(ref, keys)).toBe('C');
   });
 
   it('ignores a failure when there are no keys', () => {
-    svc.recordFailure(ref, 'A', []);
+    expect(svc.recordFailure(ref, 'A', 'A', [])).toBe('A');
     svc.wrap(ref, 'A', []);
+    expect(svc.currentKeyId(ref, keys)).toBe('A');
+  });
+
+  it('a full failed lap ends where it started, so wrap resets to the first key', () => {
+    svc.recordSuccess(ref, 'B');
+    let expected = 'B';
+    for (const id of ['B', 'C', 'A']) expected = svc.recordFailure(ref, expected, id, keys);
+    expect(expected).toBe('B');
+    svc.wrap(ref, expected, keys);
     expect(svc.currentKeyId(ref, keys)).toBe('A');
   });
 

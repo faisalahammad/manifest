@@ -18,7 +18,9 @@ import type { KiroOauthService } from '../../oauth/kiro/kiro-oauth.service';
 import type { XaiOauthService } from '../../oauth/xai/xai-oauth.service';
 import type { SessionMomentumService } from '../session-momentum.service';
 import type { LimitCheckService } from '../../../notifications/services/limit-check.service';
-import type { ProxyFallbackService } from '../proxy-fallback.service';
+import { ProxyFallbackService } from '../proxy-fallback.service';
+import { KeyRotationService } from '../../routing-core/key-rotation.service';
+import { CredentialRejectionCooldown } from '../credential-rejection-cooldown';
 import type { ThoughtSignatureCache } from '../thought-signature-cache';
 import type { ThinkingBlockCache } from '../thinking-block-cache';
 import { AgentModelParamsService } from '../../routing-core/agent-model-params.service';
@@ -99,6 +101,7 @@ describe('ProxyService — orchestration', () => {
       | 'getProviderKeyId'
       | 'selectProviderKey'
       | 'hasRouteCredentials'
+      | 'getProviderKeys'
     >
   >;
   let openaiOauth: jest.Mocked<Pick<OpenaiOauthService, 'unwrapToken'>>;
@@ -115,8 +118,12 @@ describe('ProxyService — orchestration', () => {
   >;
   let limitCheck: jest.Mocked<Pick<LimitCheckService, 'checkLimits'>>;
   let fallbackService: jest.Mocked<
-    Pick<ProxyFallbackService, 'tryForwardToProvider' | 'retryWireBody' | 'tryFallbacks'>
+    Pick<
+      ProxyFallbackService,
+      'tryForwardToProvider' | 'retryWireBody' | 'tryFallbacks' | 'forwardHop'
+    >
   >;
+  let keyRotation: KeyRotationService;
   let configService: ConfigService;
   let signatureCache: ThoughtSignatureCache;
   let thinkingCache: ThinkingBlockCache;
@@ -167,6 +174,8 @@ describe('ProxyService — orchestration', () => {
         priority: 0,
       }),
       hasRouteCredentials: jest.fn().mockResolvedValue(false),
+      // No multi-key provider by default: the hop takes the single-key path.
+      getProviderKeys: jest.fn().mockResolvedValue([]),
     };
     openaiOauth = { unwrapToken: jest.fn().mockResolvedValue(null) };
     minimaxOauth = { unwrapToken: jest.fn().mockResolvedValue(null) };
@@ -185,7 +194,30 @@ describe('ProxyService — orchestration', () => {
       tryForwardToProvider: jest.fn(),
       retryWireBody: jest.fn(),
       tryFallbacks: jest.fn(),
+      forwardHop: jest.fn(),
     };
+    // The hop runs for real (key selection, failover, warm-up) on top of the
+    // mocked provider call, so primary-path tests keep asserting on
+    // tryForwardToProvider.
+    keyRotation = new KeyRotationService();
+    const hopHost = Object.assign(Object.create(ProxyFallbackService.prototype), {
+      logger: { log: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+      providerKeyService,
+      openaiOauth,
+      minimaxOauth,
+      anthropicOauth,
+      geminiOauth,
+      kiroOauth,
+      xaiOauth,
+      keyRotation,
+      keyFailoverMaxAttempts: 10,
+      rateLimitCooldowns: new Map<string, number>(),
+      credentialRejections: new CredentialRejectionCooldown(),
+      tryForwardToProvider: (opts: unknown) => fallbackService.tryForwardToProvider(opts as never),
+    }) as ProxyFallbackService;
+    fallbackService.forwardHop.mockImplementation((input) =>
+      ProxyFallbackService.prototype.forwardHop.call(hopHost, input),
+    );
     configService = { get: jest.fn().mockReturnValue(undefined) } as unknown as ConfigService;
     signatureCache = {
       retrieve: jest.fn().mockReturnValue(null),
@@ -2935,6 +2967,129 @@ describe('ProxyService — orchestration', () => {
       // tryFallbacks not called because fallbackRoutes is empty.
       expect(fallbackService.tryFallbacks).not.toHaveBeenCalled();
       expect(result.forward.response.status).toBe(500);
+    });
+  });
+
+  describe('key failover on the primary route', () => {
+    const keyRow = (label: string, priority: number) => ({
+      id: `id-${label}`,
+      label,
+      priority,
+      apiKey: `key-${label}`,
+      region: null,
+    });
+    const forwardWith = (status: number) => ({
+      response: new Response(JSON.stringify({ error: { message: `status ${status}` } }), {
+        status,
+      }),
+      isGoogle: false,
+      isAnthropic: false,
+      isChatGpt: false,
+    });
+    const keysUsed = () =>
+      fallbackService.tryForwardToProvider.mock.calls.map(([o]) => o.providerKeyLabel);
+
+    beforeEach(() => {
+      const rows = [keyRow('A', 0), keyRow('B', 1)];
+      providerKeyService.getProviderKeys.mockResolvedValue(rows);
+      providerKeyService.selectProviderKey.mockImplementation(
+        async (_t, _p, _a, label) => rows.find((r) => r.label === label) ?? rows[0],
+      );
+      resolveService.resolve.mockResolvedValue({
+        tier: 'standard',
+        route: route('openai', 'api_key', 'gpt-4o'),
+        fallback_routes: [route('anthropic', 'api_key', 'claude')],
+        confidence: 0.9,
+        score: 5,
+        reason: 'scored',
+      });
+    });
+
+    it('serves from the next key without touching the fallback chain', async () => {
+      fallbackService.tryForwardToProvider
+        .mockResolvedValueOnce(forwardWith(503))
+        .mockResolvedValueOnce(forwardWith(200));
+
+      const result = await svc.proxyRequest(baseOpts());
+
+      expect(keysUsed()).toEqual(['A', 'B']);
+      expect(fallbackService.tryFallbacks).not.toHaveBeenCalled();
+      expect(result.forward.response.status).toBe(200);
+      expect(result.meta.provider_key_label).toBe('B');
+      expect(result.meta.tenantProviderId).toBe('id-B');
+    });
+
+    it('rotates when the primary stream dies before its first byte', async () => {
+      const stream = () => ({
+        ...forwardWith(200),
+        response: new Response(new ReadableStream(), { status: 200 }),
+      });
+      fallbackService.tryForwardToProvider
+        .mockResolvedValueOnce(stream())
+        .mockResolvedValueOnce(stream());
+      mockedPeek
+        .mockResolvedValueOnce({ ok: false, reason: 'empty', message: 'no data' } as never)
+        .mockResolvedValueOnce({ ok: true, stream: new ReadableStream() } as never);
+
+      const result = await svc.proxyRequest(
+        baseOpts({ body: { messages: [{ role: 'user', content: 'hi' }], stream: true } }),
+      );
+
+      expect(keysUsed()).toEqual(['A', 'B']);
+      expect(fallbackService.tryFallbacks).not.toHaveBeenCalled();
+      expect(result.forward.response.status).toBe(200);
+      expect(result.meta.provider_key_label).toBe('B');
+    });
+
+    it('moves to the fallback chain after every key failed, sharing the failover state', async () => {
+      fallbackService.tryForwardToProvider.mockImplementation(async () => forwardWith(429));
+      fallbackService.tryFallbacks.mockResolvedValue({ success: null, failures: [] } as never);
+
+      await svc.proxyRequest(baseOpts());
+
+      expect(keysUsed()).toEqual(['A', 'B']);
+      const failover = fallbackService.tryFallbacks.mock.calls[0][21];
+      expect(failover).toEqual({
+        deadlineAt: expect.any(Number),
+        deadKeyIds: expect.any(Set),
+      });
+    });
+
+    it('fails over across keys for an explicit model too', async () => {
+      resolveService.resolve.mockResolvedValue({
+        tier: 'standard',
+        route: route('openai', 'api_key', 'gpt-4o'),
+        fallback_routes: null,
+        confidence: 1,
+        score: 0,
+        reason: 'explicit_model',
+        explicit_model_override: true,
+      } as never);
+      fallbackService.tryForwardToProvider
+        .mockResolvedValueOnce(forwardWith(401))
+        .mockResolvedValueOnce(forwardWith(200));
+
+      const result = await svc.proxyRequest(baseOpts());
+
+      expect(keysUsed()).toEqual(['A', 'B']);
+      expect(result.forward.response.status).toBe(200);
+    });
+
+    it('keeps a pinned primary route on its key', async () => {
+      resolveService.resolve.mockResolvedValue({
+        tier: 'standard',
+        route: { ...route('openai', 'api_key', 'gpt-4o'), keyLabel: 'A' },
+        fallback_routes: null,
+        confidence: 0.9,
+        score: 5,
+        reason: 'scored',
+      });
+      fallbackService.tryForwardToProvider.mockResolvedValue(forwardWith(503));
+
+      const result = await svc.proxyRequest(baseOpts());
+
+      expect(keysUsed()).toEqual(['A']);
+      expect(result.forward.response.status).toBe(503);
     });
   });
 
