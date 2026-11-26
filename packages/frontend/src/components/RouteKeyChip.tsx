@@ -15,6 +15,11 @@ interface RouteKeyChipProps {
   stopPropagation?: boolean;
 }
 
+/** Unpinned routes try every key of the provider, starting from the one that worked last. */
+export const AUTO_KEY_LABEL = 'Auto (fails over across keys)';
+/** A pinned route uses its key and nothing else. */
+export const PINNED_KEY_HINT = 'this key only';
+
 const RouteKeyChip: Component<RouteKeyChipProps> = (props) => {
   const [open, setOpen] = createSignal(false);
   let containerRef: HTMLSpanElement | undefined;
@@ -31,7 +36,9 @@ const RouteKeyChip: Component<RouteKeyChipProps> = (props) => {
   const stop = (event: Event) => {
     if (props.stopPropagation) event.stopPropagation();
   };
-  const displayLabel = () => props.currentLabel ?? props.keys[0]?.label ?? '';
+  const displayLabel = () => props.currentLabel ?? 'Auto';
+  const describedLabel = () =>
+    props.currentLabel ? `${props.currentLabel} (${PINNED_KEY_HINT})` : AUTO_KEY_LABEL;
   const usedLabels = () => props.usedLabels?.() ?? new Set<string>();
   const buttonStyle = () =>
     `background: hsl(var(--muted) / 0.5); border: 1px solid hsl(var(--border)); border-radius: 999px; padding: 2px 8px; font-size: var(--font-size-xs); color: hsl(var(--muted-foreground)); cursor: pointer; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;${props.leadingMargin ? ' margin-left: 4px;' : ''}`;
@@ -45,8 +52,8 @@ const RouteKeyChip: Component<RouteKeyChipProps> = (props) => {
         class={props.buttonClass}
         aria-haspopup="listbox"
         aria-expanded={open()}
-        aria-label={`API key for ${props.modelLabel}: currently ${displayLabel()}. Click to change.`}
-        title={displayLabel()}
+        aria-label={`API key for ${props.modelLabel}: currently ${describedLabel()}. Click to change.`}
+        title={describedLabel()}
         disabled={props.disabled}
         onClick={(event) => {
           stop(event);
@@ -72,7 +79,7 @@ const RouteKeyChip: Component<RouteKeyChipProps> = (props) => {
                 }}
                 style="width: 100%; text-align: left; background: none; border: none; padding: 4px 6px; cursor: pointer; border-radius: 4px; font-size: var(--font-size-xs); color: hsl(var(--muted-foreground)); border-bottom: 1px solid hsl(var(--border)); margin-bottom: 2px; padding-bottom: 6px;"
               >
-                Clear pin
+                {AUTO_KEY_LABEL}
               </button>
             </li>
           </Show>
@@ -80,9 +87,7 @@ const RouteKeyChip: Component<RouteKeyChipProps> = (props) => {
             {(key) => {
               const isUsedElsewhere = () => usedLabels().has(key.label.toLowerCase());
               const isSelected = () =>
-                props.currentLabel
-                  ? props.currentLabel.toLowerCase() === key.label.toLowerCase()
-                  : displayLabel().toLowerCase() === key.label.toLowerCase();
+                (props.currentLabel ?? '').toLowerCase() === key.label.toLowerCase();
               const shouldPick = () =>
                 (props.currentLabel ?? '').toLowerCase() !== key.label.toLowerCase();
               return (
@@ -112,6 +117,9 @@ const RouteKeyChip: Component<RouteKeyChipProps> = (props) => {
                       <path d="M12 5a7 7 0 1 0 0 14 7 7 0 1 0 0-14" />
                     </svg>
                     {key.label}
+                    <span style="margin-left: auto; color: hsl(var(--muted-foreground));">
+                      {PINNED_KEY_HINT}
+                    </span>
                   </button>
                 </li>
               );

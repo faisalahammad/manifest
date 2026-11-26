@@ -3,6 +3,7 @@ import {
   Show,
   createMemo,
   createEffect,
+  createResource,
   createSignal,
   on,
   onMount,
@@ -16,11 +17,15 @@ import { validateApiKey, validateSubscriptionKey } from '../services/provider-ut
 import {
   connectProvider,
   disconnectProvider,
+  getProviderKeyStatus,
   renameProviderKey,
+  resetProviderKeyRotation,
   revokeOpenaiOAuth,
   type AuthType,
+  type ProviderKeyStatus,
   type RoutingProvider,
 } from '../services/api.js';
+import { formatErrorClass, formatTimeAgo } from '../services/formatters.js';
 import {
   getRoutingProviderApiKeyUrl,
   getSubscriptionProviderKeyUrl,
@@ -814,9 +819,48 @@ interface KeyChainViewProps {
   onDelete: (label: string) => void;
 }
 
+/** "429 Rate limit · 5m ago": why and when a key last failed. */
+export function describeKeyFailure(status: ProviderKeyStatus): string | null {
+  const failure = status.last_failure;
+  if (!failure) return null;
+  const reason = [failure.http_status, formatErrorClass(failure.error_class)]
+    .filter(Boolean)
+    .join(' ');
+  return [`Last failure: ${reason || 'error'}`, formatTimeAgo(failure.at)]
+    .filter(Boolean)
+    .join(' · ');
+}
+
 const KeyChainView: Component<KeyChainViewProps> = (props) => {
   const [renamingId, setRenamingId] = createSignal<string | null>(null);
   const [renameValue, setRenameValue] = createSignal('');
+  // Re-read whenever the chain changes (add, delete, reorder, rename).
+  const [keyStatus, { mutate: setKeyStatus }] = createResource(
+    () => [props.agentName, props.provId, props.authType(), props.activeKeys().length] as const,
+    async ([agentName, provId, authType]) => {
+      try {
+        return await getProviderKeyStatus(agentName, provId, authType);
+      } catch {
+        // Status is a hint: the list stays usable without it.
+        return undefined;
+      }
+    },
+  );
+  const statusFor = (k: RoutingProvider) => keyStatus()?.keys.find((s) => s.id === k.id);
+
+  const resetRotation = async () => {
+    props.setBusy(true);
+    try {
+      setKeyStatus(await resetProviderKeyRotation(props.agentName, props.provId, props.authType()));
+      toast.success(
+        `Key rotation reset: the next request starts with "${props.activeKeys()[0]?.label}"`,
+      );
+    } catch {
+      // toast handled upstream
+    } finally {
+      props.setBusy(false);
+    }
+  };
 
   const startRename = (k: RoutingProvider) => {
     setRenamingId(k.id);
@@ -844,7 +888,21 @@ const KeyChainView: Component<KeyChainViewProps> = (props) => {
 
   return (
     <div class="provider-detail__field">
-      <label class="provider-detail__label">API Keys</label>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <label class="provider-detail__label">API Keys</label>
+        <button
+          type="button"
+          class="btn btn--outline btn--sm"
+          disabled={props.busy()}
+          onClick={() => void resetRotation()}
+          title="The next request starts with the first key again, and paused keys are tried again."
+        >
+          Reset rotation
+        </button>
+      </div>
+      <p style="margin: 0 0 8px; font-size: var(--font-size-xs); color: hsl(var(--muted-foreground));">
+        Auto routes try these keys in order and move to the next key when one fails.
+      </p>
       <ul
         role="list"
         aria-label={`API keys for ${props.provDef.name}`}
@@ -858,8 +916,17 @@ const KeyChainView: Component<KeyChainViewProps> = (props) => {
                 fallback={
                   <>
                     <div style="flex: 1; min-width: 0;">
-                      <div style="font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                      <div style="font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
                         {k.label}
+                        <Show when={statusFor(k)?.last_served}>
+                          <span
+                            class="trigger-badge"
+                            style="padding: 1px 5px; font-weight: 500;"
+                            title="The key that served the last successful request"
+                          >
+                            Last served
+                          </span>
+                        </Show>
                       </div>
                       <div style="font-size: var(--font-size-xs); color: hsl(var(--muted-foreground));">
                         {[
@@ -869,6 +936,13 @@ const KeyChainView: Component<KeyChainViewProps> = (props) => {
                           .filter(Boolean)
                           .join(' · ')}
                       </div>
+                      <Show when={statusFor(k) && describeKeyFailure(statusFor(k)!)}>
+                        {(text) => (
+                          <div style="font-size: var(--font-size-xs); color: hsl(var(--destructive));">
+                            {text()}
+                          </div>
+                        )}
+                      </Show>
                     </div>
                     <button
                       class="btn btn--outline btn--sm"

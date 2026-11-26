@@ -31,6 +31,7 @@ import {
   getOverviewAgentUsage,
   getOverviewProviderUsage,
 } from '../services/api/analytics.js';
+import { recoveredSaves } from '../services/recovered-saves.js';
 import { usePlanRangeLock } from '../services/plan-range-lock.js';
 import { formatNumber, formatCost } from '../services/formatters.js';
 import { providerIcon } from '../components/ProviderIcon.jsx';
@@ -356,7 +357,7 @@ const GlobalOverview: Component = () => {
     if (!ts) return undefined;
     const picked = ts.keys
       .map((k, i) => ({ k, i }))
-      .filter(({ k }) => k === 'healed' || k === 'fallback');
+      .filter(({ k }) => k === 'healed' || k === 'fallback' || k === 'key_failover');
     return {
       ...ts,
       keys: picked.map(({ k }) => k),
@@ -728,15 +729,15 @@ const GlobalOverview: Component = () => {
               onTabChange={setChartView}
               requestsValue={o().summary.messages.value}
               requestsTrendPct={o().summary.messages.trend_pct}
-              selfHealedValue={
-                (autofixStats()?.autofix_saves.value ?? 0) +
-                (autofixStats()?.fallback_saves?.value ?? 0)
-              }
+              selfHealedValue={(() => {
+                const s = autofixStats();
+                return s ? recoveredSaves(s, 'value') : 0;
+              })()}
               selfHealedTrendPct={(() => {
                 const s = autofixStats();
                 if (!s) return 0;
-                const cur = s.autofix_saves.value + (s.fallback_saves?.value ?? 0);
-                const prev = s.autofix_saves.previous + (s.fallback_saves?.previous ?? 0);
+                const cur = recoveredSaves(s, 'value');
+                const prev = recoveredSaves(s, 'previous');
                 if (prev === 0) return 0;
                 return Math.max(-999, Math.min(999, Math.round(((cur - prev) / prev) * 100)));
               })()}
@@ -1274,7 +1275,7 @@ const GlobalOverview: Component = () => {
                                   {(() => {
                                     // Recovered = successful requests holding a
                                     // recovery attempt (autofix or fallback).
-                                    const link = `/messages?agent=${encodeURIComponent(agent.agent_name)}&range=${effectiveChartRange()}&status=ok&trigger=autofix,fallback`;
+                                    const link = `/messages?agent=${encodeURIComponent(agent.agent_name)}&range=${effectiveChartRange()}&status=ok&trigger=autofix,fallback,key_failover`;
                                     return (
                                       <a
                                         class="count-link"

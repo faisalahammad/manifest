@@ -807,6 +807,7 @@ describe('MessageLog', () => {
     expect(triggerSelect.textContent).toContain('With any recovery attempt');
     expect(triggerSelect.textContent).toContain('With an autofix attempt');
     expect(triggerSelect.textContent).toContain('With a fallback attempt');
+    expect(triggerSelect.textContent).toContain('With a key failover attempt');
     expect(triggerSelect.textContent).toContain('No recovery attempt');
 
     mockGetMessages.mockClear();
@@ -818,7 +819,17 @@ describe('MessageLog', () => {
     });
     expect(mockSetSearchParams).toHaveBeenCalledWith({ trigger: 'fallback' }, { replace: true });
 
-    // 'With any recovery attempt' folds both kinds on the wire, so it matches
+    mockGetMessages.mockClear();
+    await fireEvent.change(selectWithOption(container, 'All attempts'), {
+      target: { value: 'key_failover' },
+    });
+    await vi.waitFor(() => {
+      expect(mockGetMessages).toHaveBeenCalledWith(
+        expect.objectContaining({ trigger: 'key_failover' }),
+      );
+    });
+
+    // 'With any recovery attempt' folds every kind on the wire, so it matches
     // exactly what the recovered-requests deep links send.
     mockGetMessages.mockClear();
     await fireEvent.change(selectWithOption(container, 'All attempts'), {
@@ -826,7 +837,7 @@ describe('MessageLog', () => {
     });
     await vi.waitFor(() => {
       expect(mockGetMessages).toHaveBeenCalledWith(
-        expect.objectContaining({ trigger: 'autofix,fallback' }),
+        expect.objectContaining({ trigger: 'autofix,fallback,key_failover' }),
       );
     });
   });

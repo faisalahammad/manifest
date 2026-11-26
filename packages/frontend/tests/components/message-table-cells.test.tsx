@@ -150,6 +150,14 @@ describe('SelfHealCell', () => {
     expect(container.querySelector('[title]')).toBeNull();
   });
 
+  it('renders a key failover badge when a key of the request was retried', () => {
+    const { container } = renderCell(baseRow({ key_failover: true }));
+    const badge = container.querySelector('[title^="Key failover"]') as HTMLElement;
+    expect(badge).not.toBeNull();
+    expect(badge.querySelector('.key-failover-icon')).not.toBeNull();
+    expect(badge.textContent).toContain('key failover');
+  });
+
   it('renders autofix badge with icon and text when autofix_applied', () => {
     const { container } = renderCell(baseRow({ autofix_applied: true }));
     const badge = container.querySelector('[title="Autofix"]') as HTMLElement;

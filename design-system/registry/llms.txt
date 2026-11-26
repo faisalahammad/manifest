@@ -96,7 +96,7 @@
 --z-toast: 8000
 --z-tooltip: 9999
 
-## Blocks (310 BEM blocks, 1683 classes)
+## Blocks (311 BEM blocks, 1684 classes)
 account-back-btn (agents.css): account-back-btn
 account-email-footer (agents.css): account-email-footer
 account-email-toggle (agents.css): account-email-toggle--disabled
@@ -230,6 +230,7 @@ integration-grid (wizard.css): integration-grid
 integration-panel (wizard.css): integration-panel__desc integration-panel__header integration-panel__tabs
 json-block (request-drawer.css): json-block json-block__size-notice
 json-block-wrap (request-drawer.css): json-block-wrap
+key-failover-icon (data.css): key-failover-icon
 language-json (request-drawer.css): language-json
 limit-block-toggle (limits.css): limit-block-toggle limit-block-toggle__label
 limit-modal (limits.css): limit-modal__row
@@ -487,11 +488,11 @@ workspace-table (agents.css): workspace-table__actions workspace-table__icon wor
 .sidebar { padding: var(--gap-md) 0 }  at controls.css:213 loses to theme.css:784
 .custom-select__option--top > svg { margin-top: calc((18px - 13px) / 2) }  at custom-select.css:137 loses to custom-select.css:142
 .custom-select__option--top > img { margin-top: calc((18px - 13px) / 2) }  at custom-select.css:137 loses to custom-select.css:142
-.tier-badge--fallback { background: hsl(var(--muted-foreground) / 0.1) }  at data.css:299 loses to overview.css:105
-.tier-badge--fallback { color: hsl(var(--muted-foreground)) }  at data.css:300 loses to overview.css:106
-.feed-item { align-items: flex-start }  at data.css:507 loses to theme.css:586
-.feed-item { gap: 12px }  at data.css:508 loses to theme.css:587
-.feed-item { padding: 12px 0 }  at data.css:509 loses to theme.css:588
+.tier-badge--fallback { background: hsl(var(--muted-foreground) / 0.1) }  at data.css:317 loses to overview.css:105
+.tier-badge--fallback { color: hsl(var(--muted-foreground)) }  at data.css:318 loses to overview.css:106
+.feed-item { align-items: flex-start }  at data.css:525 loses to theme.css:586
+.feed-item { gap: 12px }  at data.css:526 loses to theme.css:587
+.feed-item { padding: 12px 0 }  at data.css:527 loses to theme.css:588
 .theme-toggle { width: 2rem }  at layout.css:141 loses to theme.css:951
 .theme-toggle { padding: 0 }  at layout.css:149 loses to theme.css:942
 .modal { box-shadow: var(--card-shadow),

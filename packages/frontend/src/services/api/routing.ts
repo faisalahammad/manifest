@@ -162,6 +162,51 @@ export function reorderProviderKeys(
   );
 }
 
+export interface ProviderKeyFailure {
+  at: string;
+  http_status: number | null;
+  error_class: string | null;
+  error_code: string | null;
+}
+
+/** One key of a provider as Auto routing sees it, read from recorded attempts. */
+export interface ProviderKeyStatus {
+  id: string;
+  label: string;
+  priority: number;
+  /** The key whose call succeeded most recently: the one Auto routes stick to. */
+  last_served: boolean;
+  last_success_at: string | null;
+  last_failure: ProviderKeyFailure | null;
+}
+
+export interface ProviderKeyRotationStatus {
+  provider: string;
+  auth_type: AuthType;
+  keys: ProviderKeyStatus[];
+}
+
+export function getProviderKeyStatus(agentName: string, provider: string, authType?: AuthType) {
+  return fetchJson<ProviderKeyRotationStatus>(
+    routingPath(agentName, `providers/${encodeURIComponent(provider)}/keys/status`),
+    { authType },
+    // Live: the badges must follow the last call, not a cached read.
+    { cache: false },
+  );
+}
+
+/** Next Auto request starts from the first key again; key cooldowns are cleared. */
+export function resetProviderKeyRotation(agentName: string, provider: string, authType?: AuthType) {
+  return fetchMutate<ProviderKeyRotationStatus>(
+    routingPath(agentName, `providers/${encodeURIComponent(provider)}/keys/reset-rotation`),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(authType ? { authType } : {}),
+    },
+  );
+}
+
 /* -- Routing: Copilot Device Login -- */
 
 export interface DeviceCodeResponse {

@@ -29,6 +29,7 @@ const OUTCOME_COLORS: Record<string, string> = {
   healed: '#2632ef', // blue — recovered by Autofix (must not read as success)
   autofix: '#2632ef', // blue — recovered by autofix
   fallback: '#f2c79c', // warm yellow — recovered by fallback
+  key_failover: '#2f8a6b', // green: recovered by the provider's next key
   error: '#EF4444', // --destructive red
   no_fix_found: '#F59E0B', // amber
   resolving: '#D1D5DB',
@@ -71,6 +72,7 @@ function keyLabel(key: string): string {
   if (key === 'autofix') return 'Success - recovered by Autofix';
   if (key === 'auto-fixed') return 'Autofixed';
   if (key === 'fallback') return 'Success - recovered by Fallback';
+  if (key === 'key_failover') return 'Success - recovered by key failover';
   return key.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
 }
 
@@ -86,14 +88,16 @@ export interface ReliabilityChartProps {
 /**
  * Fixed reading order for the disposition series — legend AND bar stacking
  * (bottom to top): Success, then healed via Autofix, then healed via
- * Fallback, then Error. Unknown keys keep their incoming order, after these.
+ * Fallback, then via key failover, then Error. Unknown keys keep their
+ * incoming order, after these.
  */
 const SERIES_ORDER: Record<string, number> = {
   success: 0,
   healed: 1,
   autofix: 1,
   fallback: 2,
-  error: 3,
+  key_failover: 3,
+  error: 4,
 };
 
 function orderTimeseries(d: AutofixTimeseries | undefined): AutofixTimeseries | undefined {

@@ -79,6 +79,23 @@ export function FallbackIcon(): JSX.Element {
   );
 }
 
+export function KeyFailoverIcon(): JSX.Element {
+  return (
+    <span class="key-failover-icon">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="12"
+        height="12"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M7 14a3 3 0 1 1 0-6 3 3 0 0 1 0 6m5.65-4A6 6 0 1 0 12.65 14H17v3h3v-3h2v-4z" />
+      </svg>
+    </span>
+  );
+}
+
 const HEADER_LABELS: Record<MessageColumnKey, string> = {
   date: 'Date',
   message: 'Request',
@@ -345,8 +362,11 @@ export function AttemptsCell(item: MessageRow): JSX.Element {
 export function SelfHealCell(item: MessageRow): JSX.Element {
   const hasAutofix = !!item.autofix_applied;
   const hasFallback = !!item.fallback_from_model;
+  const hasKeyFailover = !!item.key_failover;
 
-  if (!hasAutofix && !hasFallback) return <td style={MONO_XS}>{'\u2014'}</td>;
+  if (!hasAutofix && !hasFallback && !hasKeyFailover) {
+    return <td style={MONO_XS}>{'\u2014'}</td>;
+  }
 
   return (
     <td>
@@ -369,6 +389,16 @@ export function SelfHealCell(item: MessageRow): JSX.Element {
           >
             <FallbackIcon />
             fallback
+          </span>
+        )}
+        {hasKeyFailover && (
+          <span
+            class="trigger-badge"
+            title="Key failover: another key of the same provider was tried"
+            style="padding: 1px 3px;"
+          >
+            <KeyFailoverIcon />
+            key failover
           </span>
         )}
       </span>

@@ -256,6 +256,31 @@ describe('analytics chart surface components', () => {
     unmount();
   });
 
+  it('places recovery by key failover after fallback, before error', () => {
+    const { container, unmount } = render(() => (
+      <ReliabilityChart
+        timeseries={{
+          range: '7d',
+          by: 'disposition',
+          keys: ['error', 'key_failover', 'fallback', 'success'],
+          buckets: [{ bucket: '2026-06-04', counts: [4, 2, 3, 1] }],
+        }}
+        range="7d"
+        seriesMode="disposition"
+      />
+    ));
+    const legend = [...container.querySelectorAll('.rel-chart__legend-item')].map((e) =>
+      e.textContent?.trim(),
+    );
+    expect(legend).toEqual([
+      'Success',
+      'Success - recovered by Fallback',
+      'Success - recovered by key failover',
+      'Error',
+    ]);
+    unmount();
+  });
+
   it('snaps the cursor and shows the hover tooltip on the disposition chart', () => {
     const { container, unmount } = render(() => (
       <ReliabilityChart
@@ -402,7 +427,7 @@ describe('analytics chart surface components', () => {
     );
     fireEvent.click(screen.getByText('Recovered requests').closest('.overview-stat-card')!);
     expect(routerNavigate).toHaveBeenCalledWith(
-      '/messages?agent=demo-agent&range=7d&status=ok&trigger=autofix,fallback',
+      '/messages?agent=demo-agent&range=7d&status=ok&trigger=autofix,fallback,key_failover',
     );
 
     const failedCard = screen.getByText('Failed requests').closest('.overview-stat-card')!;

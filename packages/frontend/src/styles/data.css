@@ -165,6 +165,22 @@
   color: #fff;
 }
 
+/* Key failover icon: same square, cool tones (same model, the provider's next key) */
+.key-failover-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background:
+    radial-gradient(ellipse 220% 200% at 95% 0%, rgba(73, 207, 202, 0.9) 0%, transparent 50%),
+    radial-gradient(ellipse 130% 110% at 30% 50%, rgba(60, 160, 120, 0.7) 0%, transparent 45%);
+  background-color: #2f8a6b;
+  color: #fff;
+}
+
 /* Compact recovery marks for the Requests filter options: the same table
    squares (shared classes above, so the gradients stay single-source),
    shrunk so a dropdown row keeps its exact height. */
@@ -176,14 +192,16 @@
 }
 
 .recovery-opt-icon .autofix-icon,
-.recovery-opt-icon .fallback-icon {
+.recovery-opt-icon .fallback-icon,
+.recovery-opt-icon .key-failover-icon {
   width: 14px;
   height: 14px;
   border-radius: 3px;
 }
 
 .recovery-opt-icon .autofix-icon svg,
-.recovery-opt-icon .fallback-icon svg {
+.recovery-opt-icon .fallback-icon svg,
+.recovery-opt-icon .key-failover-icon svg {
   width: 9px;
   height: 9px;
 }

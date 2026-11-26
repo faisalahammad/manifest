@@ -1187,15 +1187,16 @@ describe('FallbackList', () => {
       expect(chip.textContent).toContain('Work');
     });
 
-    it("falls back to the first key's label when nothing is pinned", () => {
+    it('shows Auto when nothing is pinned', () => {
       const { container } = render(() => (
         <FallbackList {...multiKeyProps} fallbacks={['model-a']} />
       ));
       const chip = container.querySelector('.fallback-list__key-chip') as HTMLElement;
-      expect(chip.textContent).toContain('Personal');
+      expect(chip.textContent).toContain('Auto');
+      expect(chip.textContent).not.toContain('Personal');
     });
 
-    it('renders a Clear pin option when the row is currently pinned', () => {
+    it('renders an Auto option when the row is currently pinned', () => {
       const { container, getByText } = render(() => (
         <FallbackList
           {...multiKeyProps}
@@ -1207,19 +1208,19 @@ describe('FallbackList', () => {
       ));
       const chip = container.querySelector('.fallback-list__key-chip') as HTMLButtonElement;
       fireEvent.click(chip);
-      expect(getByText('Clear pin')).toBeDefined();
+      expect(getByText('Auto (fails over across keys)')).toBeDefined();
     });
 
-    it('does not render Clear pin when no label is currently set', () => {
+    it('does not render the Auto option when no label is currently set', () => {
       const { container, queryByText } = render(() => (
         <FallbackList {...multiKeyProps} fallbacks={['model-a']} />
       ));
       const chip = container.querySelector('.fallback-list__key-chip') as HTMLButtonElement;
       fireEvent.click(chip);
-      expect(queryByText('Clear pin')).toBeNull();
+      expect(queryByText('Auto (fails over across keys)')).toBeNull();
     });
 
-    it('Clear pin nulls the keyLabel on the structured route and persists', async () => {
+    it('Auto nulls the keyLabel on the structured route and persists', async () => {
       // After the merge, "Clear pin" no longer rewrites the model string —
       // it sets `route.keyLabel` to null on the matching `fallbackRoutes`
       // entry and forwards that structure to setFallbacks.
@@ -1237,7 +1238,7 @@ describe('FallbackList', () => {
       ));
       const chip = container.querySelector('.fallback-list__key-chip') as HTMLButtonElement;
       fireEvent.click(chip);
-      fireEvent.click(getByText('Clear pin'));
+      fireEvent.click(getByText('Auto (fails over across keys)'));
       await Promise.resolve();
       await Promise.resolve();
       expect(onUpdate).toHaveBeenCalledWith(

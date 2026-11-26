@@ -33,6 +33,8 @@ export interface MessageRow {
   duration_ms?: number | null;
   feedback_rating?: string | null;
   autofix_applied?: boolean;
+  /** Some hop of this request was retried on the same provider's next key. */
+  key_failover?: boolean;
   autofix_role?: string | null;
   attempt_count?: number;
 }

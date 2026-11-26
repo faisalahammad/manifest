@@ -11,6 +11,12 @@ const disconnectProviderMock = vi.fn().mockResolvedValue({});
 const revokeOpenaiOAuthMock = vi.fn().mockResolvedValue(undefined);
 const renameProviderKeyMock = vi.fn().mockResolvedValue({});
 const reorderProviderKeysMock = vi.fn().mockResolvedValue([]);
+const getProviderKeyStatusMock = vi.fn().mockResolvedValue({
+  provider: 'openai',
+  auth_type: 'api_key',
+  keys: [],
+});
+const resetProviderKeyRotationMock = vi.fn();
 
 vi.mock('../../src/services/api.js', () => ({
   connectProvider: (...args: unknown[]) => connectProviderMock(...args),
@@ -18,6 +24,8 @@ vi.mock('../../src/services/api.js', () => ({
   revokeOpenaiOAuth: (...args: unknown[]) => revokeOpenaiOAuthMock(...args),
   renameProviderKey: (...args: unknown[]) => renameProviderKeyMock(...args),
   reorderProviderKeys: (...args: unknown[]) => reorderProviderKeysMock(...args),
+  getProviderKeyStatus: (...args: unknown[]) => getProviderKeyStatusMock(...args),
+  resetProviderKeyRotation: (...args: unknown[]) => resetProviderKeyRotationMock(...args),
 }));
 
 vi.mock('../../src/services/provider-utils.js', () => ({
@@ -41,7 +49,10 @@ vi.mock('../../src/services/provider-api-key-urls.js', () => ({
     id === 'ollama-cloud' ? 'https://ollama.com/settings/keys' : undefined,
 }));
 
-import ProviderKeyForm, { AddAnotherKeyAction } from '../../src/components/ProviderKeyForm';
+import ProviderKeyForm, {
+  AddAnotherKeyAction,
+  describeKeyFailure,
+} from '../../src/components/ProviderKeyForm';
 import { suggestNextProviderKeyLabel } from '../../src/services/provider-key-labels';
 
 /* ── Test helpers ───────────────────────────────────────────── */
@@ -864,6 +875,122 @@ describe('ProviderKeyForm', () => {
       ...overrides,
     };
   }
+
+  describe('describeKeyFailure', () => {
+    const status = (last_failure: unknown) =>
+      ({
+        id: 'k',
+        label: 'K',
+        priority: 0,
+        last_served: false,
+        last_success_at: null,
+        last_failure,
+      }) as Parameters<typeof describeKeyFailure>[0];
+
+    it('is empty without a failure', () => {
+      expect(describeKeyFailure(status(null))).toBeNull();
+    });
+
+    it('falls back to "error" when the failure has no status or class, and skips a bad time', () => {
+      expect(
+        describeKeyFailure(
+          status({ at: 'not a time', http_status: null, error_class: null, error_code: null }),
+        ),
+      ).toBe('Last failure: error');
+    });
+  });
+
+  describe('key rotation in list mode', () => {
+    const twoKeys = () => [
+      makeProvider({ id: 'k-a', label: 'Personal', priority: 0 }),
+      makeProvider({ id: 'k-b', label: 'Work', priority: 1 }),
+    ];
+    const statusOf = (overrides: Record<string, unknown> = {}) => ({
+      provider: 'openai',
+      auth_type: 'api_key',
+      keys: [
+        {
+          id: 'k-a',
+          label: 'Personal',
+          priority: 0,
+          last_served: false,
+          last_success_at: null,
+          last_failure: {
+            at: new Date(Date.now() - 5 * 60_000).toISOString(),
+            http_status: 429,
+            error_class: 'rate_limit',
+            error_code: null,
+          },
+        },
+        {
+          id: 'k-b',
+          label: 'Work',
+          priority: 1,
+          last_served: true,
+          last_success_at: new Date().toISOString(),
+          last_failure: null,
+        },
+      ],
+      ...overrides,
+    });
+
+    it('marks the last served key and shows the last failure of each key', async () => {
+      getProviderKeyStatusMock.mockResolvedValueOnce(statusOf());
+      const { findByText, getByText } = mount({
+        provDef: makeProviderDef({ id: 'openai', name: 'OpenAI' }),
+        connected: true,
+        providers: twoKeys(),
+      });
+      expect(await findByText('Last served')).toBeDefined();
+      expect(getByText(/Last failure: 429 .* · 5m ago/)).toBeDefined();
+      expect(getByText(/move to the next key when one fails/)).toBeDefined();
+      expect(getProviderKeyStatusMock).toHaveBeenCalledWith('test-agent', 'openai', 'api_key');
+    });
+
+    it('Reset rotation calls the API and shows the fresh status', async () => {
+      getProviderKeyStatusMock.mockResolvedValueOnce(statusOf());
+      resetProviderKeyRotationMock.mockResolvedValueOnce(
+        statusOf({ keys: statusOf().keys.map((k) => ({ ...k, last_served: false })) }),
+      );
+      const { findByText, getByRole, queryByText } = mount({
+        provDef: makeProviderDef({ id: 'openai', name: 'OpenAI' }),
+        connected: true,
+        providers: twoKeys(),
+      });
+      await findByText('Last served');
+      fireEvent.click(getByRole('button', { name: 'Reset rotation' }));
+      await vi.waitFor(() => expect(queryByText('Last served')).toBeNull());
+      expect(resetProviderKeyRotationMock).toHaveBeenCalledWith('test-agent', 'openai', 'api_key');
+      expect(toastSuccess).toHaveBeenCalledWith(
+        'Key rotation reset: the next request starts with "Personal"',
+      );
+    });
+
+    it('keeps the list usable when the reset fails', async () => {
+      resetProviderKeyRotationMock.mockRejectedValueOnce(new Error('nope'));
+      const { getByRole } = mount({
+        provDef: makeProviderDef({ id: 'openai', name: 'OpenAI' }),
+        connected: true,
+        providers: twoKeys(),
+      });
+      const button = getByRole('button', { name: 'Reset rotation' }) as HTMLButtonElement;
+      fireEvent.click(button);
+      await vi.waitFor(() => expect(button.disabled).toBe(false));
+      expect(toastSuccess).not.toHaveBeenCalledWith(expect.stringContaining('Key rotation'));
+    });
+
+    it('shows no badge when the status cannot be read', async () => {
+      getProviderKeyStatusMock.mockRejectedValueOnce(new Error('offline'));
+      const { queryByText, getByRole } = mount({
+        provDef: makeProviderDef({ id: 'openai', name: 'OpenAI' }),
+        connected: true,
+        providers: twoKeys(),
+      });
+      expect(getByRole('button', { name: 'Reset rotation' })).toBeDefined();
+      await Promise.resolve();
+      expect(queryByText('Last served')).toBeNull();
+    });
+  });
 
   describe('multi-key chain', () => {
     it('shows the legacy single-key view (no list, no Primary badge) when only one key is connected', () => {

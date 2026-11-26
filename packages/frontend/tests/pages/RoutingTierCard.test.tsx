@@ -1291,8 +1291,8 @@ describe('RoutingTierCard', () => {
       ));
       const chip = container.querySelector('.routing-card__key-chip') as HTMLButtonElement | null;
       expect(chip).not.toBeNull();
-      // displayLabel falls back to the first key's label when keyLabel is null
-      expect(chip?.textContent).toContain('Work');
+      // An unpinned primary is Auto: it fails over across the keys.
+      expect(chip?.textContent).toContain('Auto');
     });
 
     it('shows the explicit keyLabel pin from the override route over the first connected key', () => {

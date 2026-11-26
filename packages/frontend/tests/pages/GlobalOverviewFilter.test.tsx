@@ -469,7 +469,7 @@ describe('GlobalOverview filter onUnselectAll', () => {
 
   it('links the recovered-requests count to the scoped Requests log', async () => {
     const { container } = render(() => <GlobalOverview />);
-    const href = '/messages?agent=demo-agent&range=7d&status=ok&trigger=autofix,fallback';
+    const href = '/messages?agent=demo-agent&range=7d&status=ok&trigger=autofix,fallback,key_failover';
     const link = await waitFor(() => {
       const found = [...container.querySelectorAll('a')].find(
         (candidate) => candidate.getAttribute('href') === href,

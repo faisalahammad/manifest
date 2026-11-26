@@ -422,7 +422,7 @@ describe('HeaderTierCard', () => {
     ));
 
     const chip = container.querySelector('.routing-card__key-chip') as HTMLButtonElement;
-    expect(chip.textContent).toContain('Default');
+    expect(chip.textContent).toContain('Auto');
     fireEvent.click(chip);
     fireEvent.click(getByRole('option', { name: /Personal/ }));
 

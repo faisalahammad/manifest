@@ -1829,6 +1829,14 @@
         "request-drawer.css"
       ]
     },
+    "key-failover-icon": {
+      "classes": [
+        "key-failover-icon"
+      ],
+      "files": [
+        "data.css"
+      ]
+    },
     "language-json": {
       "classes": [
         "language-json"
@@ -4773,7 +4781,7 @@
       "prop": "background",
       "value": "hsl(var(--muted-foreground) / 0.1)",
       "file": "data.css",
-      "line": 299,
+      "line": 317,
       "losesTo": "overview.css:105"
     },
     {
@@ -4781,7 +4789,7 @@
       "prop": "color",
       "value": "hsl(var(--muted-foreground))",
       "file": "data.css",
-      "line": 300,
+      "line": 318,
       "losesTo": "overview.css:106"
     },
     {
@@ -4789,7 +4797,7 @@
       "prop": "align-items",
       "value": "flex-start",
       "file": "data.css",
-      "line": 507,
+      "line": 525,
       "losesTo": "theme.css:586"
     },
     {
@@ -4797,7 +4805,7 @@
       "prop": "gap",
       "value": "12px",
       "file": "data.css",
-      "line": 508,
+      "line": 526,
       "losesTo": "theme.css:587"
     },
     {
@@ -4805,7 +4813,7 @@
       "prop": "padding",
       "value": "12px 0",
       "file": "data.css",
-      "line": 509,
+      "line": 527,
       "losesTo": "theme.css:588"
     },
     {
@@ -5036,8 +5044,8 @@
   "stats": {
     "tokens": 79,
     "darkOverrides": 38,
-    "blocks": 310,
-    "classes": 1683,
+    "blocks": 311,
+    "classes": 1684,
     "canonicalRules": 46,
     "ghostRules": 46
   }
