@@ -345,9 +345,15 @@ jobs:
 
       - name: Pull the published baseline image
         run: |
-          docker pull ghcr.io/faisalahammad/tiergate:latest
-          docker tag ghcr.io/faisalahammad/tiergate:latest \
-            ghcr.io/faisalahammad/tiergate:published-baseline
+          baseline=ghcr.io/faisalahammad/tiergate:latest
+          if ! docker pull "$baseline"; then
+            # Until a TierGate image can be pulled, test the other real upgrade
+            # path: from the upstream release this fork started from.
+            baseline=manifestdotbuild/manifest:6.29.4
+            echo "::warning::TierGate image not pullable, upgrading from $baseline instead"
+            docker pull "$baseline"
+          fi
+          docker tag "$baseline" ghcr.io/faisalahammad/tiergate:published-baseline
 
       - name: Build the PR image as ghcr.io/faisalahammad/tiergate:pr-candidate
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
