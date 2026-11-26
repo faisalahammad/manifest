@@ -117,6 +117,15 @@ describe('ProviderService — coverage completion', () => {
       ]);
       expect(routingCache.invalidateAgent).toHaveBeenCalledWith('agent-1');
     });
+    it('reorders a provider with more than five keys', async () => {
+      const labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+      providerRepo.find.mockResolvedValueOnce(
+        labels.map((label, priority) => provRow({ id: label, label, priority })),
+      );
+      const reversed = [...labels].reverse();
+      const out = await svc.reorderKeys('agent-1', 'tenant-1', 'openai', 'api_key', reversed);
+      expect(out.map((r) => [r.label, r.priority])).toEqual(reversed.map((l, i) => [l, i]));
+    });
   });
 
   describe('renameKey', () => {

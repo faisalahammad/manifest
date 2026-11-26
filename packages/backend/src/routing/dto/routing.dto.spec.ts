@@ -6,11 +6,13 @@ import {
   ConnectProviderDto,
   CopilotPollDto,
   ModelRouteDto,
+  ReorderProviderKeysDto,
   SetOverrideDto,
   SetResponseModeDto,
   SetFallbacksDto,
   responseModeFromDto,
 } from './routing.dto';
+import { MAX_KEYS_PER_PROVIDER } from 'manifest-shared';
 
 function toDto(data: Record<string, unknown>): AgentNameParamDto {
   return plainToInstance(AgentNameParamDto, data);
@@ -279,5 +281,27 @@ describe('routing.dto decorator transforms', () => {
     });
     expect(dto.routes).toHaveLength(1);
     expect(await validate(dto)).toHaveLength(0);
+  });
+});
+
+describe('ReorderProviderKeysDto', () => {
+  const labels = (n: number) => Array.from({ length: n }, (_, i) => `Key ${i + 1}`);
+
+  it('accepts more than five labels', async () => {
+    const dto = plainToInstance(ReorderProviderKeysDto, { labels: labels(6) });
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('accepts exactly MAX_KEYS_PER_PROVIDER labels', async () => {
+    const dto = plainToInstance(ReorderProviderKeysDto, { labels: labels(MAX_KEYS_PER_PROVIDER) });
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('rejects more than MAX_KEYS_PER_PROVIDER labels', async () => {
+    const dto = plainToInstance(ReorderProviderKeysDto, {
+      labels: labels(MAX_KEYS_PER_PROVIDER + 1),
+    });
+    const errors = await validate(dto);
+    expect(errors[0].constraints).toHaveProperty('arrayMaxSize');
   });
 });
