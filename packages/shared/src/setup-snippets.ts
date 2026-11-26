@@ -21,7 +21,7 @@ export function getOpenClawSnippet(baseUrl: string, apiKey: string): string {
     baseUrl,
     api: 'openai-completions',
     apiKey,
-    models: [{ id: 'auto', name: 'Manifest Auto' }],
+    models: [{ id: 'auto', name: 'TierGate Auto' }],
   });
   return `openclaw config set models.providers.manifest '${providerJson}'
 openclaw config set agents.defaults.model.primary manifest/auto
@@ -76,7 +76,7 @@ export function getCodexConfigSnippet(baseUrl: string): string {
 model_provider = "manifest"
 
 [model_providers.manifest]
-name = "Manifest"
+name = "TierGate"
 base_url = "${baseUrl}"
 env_key = "MANIFEST_API_KEY"
 wire_api = "responses"`;

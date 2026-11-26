@@ -22,7 +22,7 @@ export function registerRequestTools(
     'manifest_requests_get',
     {
       title: 'Get requests',
-      description: 'List recent Manifest requests (provider attempts) with cursor pagination.',
+      description: 'List recent TierGate requests (provider attempts) with cursor pagination.',
       inputSchema: z.object({
         agent: z.string().min(1).max(100).optional(),
         range: z.enum(RANGE_VALUES).optional(),

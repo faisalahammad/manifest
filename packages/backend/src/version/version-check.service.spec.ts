@@ -213,7 +213,7 @@ describe('VersionCheckService', () => {
     const info = await make().getVersionInfo();
 
     expect(info.latest).toBeNull();
-    expect(warnSpy.mock.calls[0][0]).toContain('no Manifest release');
+    expect(warnSpy.mock.calls[0][0]).toContain('no TierGate release');
   });
 
   it('backs off for an hour after a failure instead of retrying every request', async () => {

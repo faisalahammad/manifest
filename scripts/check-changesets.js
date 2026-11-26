@@ -4,7 +4,7 @@ const path = require('path');
 // Guardrail: every changeset must target a *releasable* package.
 //
 // `.changeset/config.json` ignores manifest-backend / -frontend / -shared and
-// mnfst-gateway-cli (the CLI version tracks the Manifest release), so a
+// mnfst-gateway-cli (the CLI version tracks the TierGate release), so a
 // changeset that targets only those is silently dropped by `changeset version`:
 // it produces no version bump, yet still trips changesets/action into pushing an
 // empty `changeset-release/main` branch. Creating the version PR then fails with

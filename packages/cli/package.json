@@ -1,16 +1,16 @@
 {
   "name": "mnfst-gateway-cli",
   "version": "6.24.0",
-  "description": "Manifest gateway management CLI (mnfst) — configure agents, providers, and routing from the terminal",
+  "description": "TierGate gateway management CLI (mnfst) — configure agents, providers, and routing from the terminal",
   "license": "MIT",
-  "homepage": "https://manifest.build/llm-gateway/docs/cli/",
+  "homepage": "https://github.com/faisalahammad/tiergate/blob/main/packages/cli/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mnfst/llm-gateway.git",
+    "url": "git+https://github.com/faisalahammad/tiergate.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/mnfst/llm-gateway/issues"
+    "url": "https://github.com/faisalahammad/tiergate/issues"
   },
   "keywords": [
     "manifest",

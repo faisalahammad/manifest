@@ -3,8 +3,6 @@ import { Show, createSignal, createResource, type Component } from 'solid-js';
 import { getBillingStatus } from '../services/api/billing.js';
 import { checkIsSelfHosted, checkMcpEnabled } from '../services/setup-status.js';
 import AddAgentModal from './AddAgentModal.jsx';
-import ServicesContactModal from './ServicesContactModal.jsx';
-import { authClient } from '../services/auth-client.js';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -26,8 +24,6 @@ const Sidebar: Component<SidebarProps> = (props) => {
   const location = useLocation();
   const isGlobalActive = makeIsGlobalActive(() => location.pathname);
   const [addModalOpen, setAddModalOpen] = createSignal(false);
-  const [servicesOpen, setServicesOpen] = createSignal(false);
-  const session = authClient.useSession();
   // Local providers only exist on self-hosted installs — a cloud backend
   // can't reach the user's localhost, so the Local entry is hidden there.
   const [selfHosted] = createResource(checkIsSelfHosted);
@@ -177,20 +173,6 @@ const Sidebar: Component<SidebarProps> = (props) => {
 
       <div class="sidebar__spacer" />
 
-      <button type="button" class="sidebar-services" onClick={() => setServicesOpen(true)}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path d="m19.46,5.52c-2.06-2.03-5.29-2.03-7.34,0l-.08.08s-.03.02-.04.03h0s-.11-.11-.11-.11c-2.05-2.03-5.28-2.03-7.34,0-.99.99-1.54,2.29-1.53,3.65,0,1.36.55,2.65,1.54,3.63l6.06,6c.39.38.9.58,1.41.58s1.02-.19,1.41-.58l6.06-6c.99-.98,1.53-2.27,1.54-3.63,0-1.37-.54-2.67-1.53-3.65,0,0,0,0,0,0Zm-8.17,12.58l-6.06-6c-.8-.79-1.24-1.83-1.24-2.92,0-1.1.44-2.15,1.24-2.94.83-.82,1.9-1.23,2.97-1.23s2.13.41,2.96,1.23l.12.11-2.3,2.32c-.74.75-.74,1.96,0,2.71.37.37.86.56,1.36.56s.98-.19,1.36-.56l1.98-1.98,3.89,3.89-1.05,1.04-2.17-2.17c-.2-.2-.51-.2-.71,0s-.2.51,0,.71l2.17,2.17-.8.79-2.16-2.16c-.2-.2-.51-.2-.71,0s-.2.51,0,.71l2.16,2.16-.8.79-2.15-2.15c-.2-.2-.51-.2-.71,0s-.2.51,0,.71l2.15,2.15-.09.09c-.39.38-1.02.38-1.41,0Zm7.46-6l-.48.48-3.89-3.89,1.31-1.31c.2-.2.2-.51,0-.71s-.51-.2-.71,0l-4,4c-.36.36-.94.36-1.3,0s-.36-.94,0-1.29l2.63-2.65s.01,0,.02-.01l.47-.47c1.66-1.64,4.27-1.64,5.94,0,.8.8,1.24,1.84,1.24,2.94,0,1.1-.44,2.13-1.24,2.92Z" />
-        </svg>
-        Custom development
-      </button>
-
       <Show when={!selfHosted() && showUpgrade()}>
         <Show when={hasAllowance()}>
           <div class="sidebar-usage">
@@ -255,12 +237,6 @@ const Sidebar: Component<SidebarProps> = (props) => {
 
       {/* Create-harness modal, opened by the + button next to the Harnesses nav link */}
       <AddAgentModal open={addModalOpen()} onClose={() => setAddModalOpen(false)} />
-      <ServicesContactModal
-        open={servicesOpen()}
-        defaultName={session()?.data?.user?.name ?? ''}
-        defaultEmail={session()?.data?.user?.email ?? ''}
-        onClose={() => setServicesOpen(false)}
-      />
     </nav>
   );
 };

@@ -118,11 +118,11 @@ describe('SocialButtons', () => {
   });
 
   it('accepts a signup-specific callback override', async () => {
-    render(() => <SocialButtons callbackURL="/discovery?next=%2Fwelcome&signup=1" />);
+    render(() => <SocialButtons callbackURL="/welcome?signup=1" />);
     await fireEvent.click(screen.getByText('Continue with GitHub'));
     expect(mockSignInSocial).toHaveBeenCalledWith({
       provider: 'github',
-      callbackURL: '/discovery?next=%2Fwelcome&signup=1',
+      callbackURL: '/welcome?signup=1',
       errorCallbackURL: '/login?oauth=failed',
     });
   });

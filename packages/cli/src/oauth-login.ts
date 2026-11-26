@@ -13,8 +13,8 @@ export function deriveCodeChallenge(codeVerifier: string): string {
   return createHash('sha256').update(codeVerifier).digest('base64url');
 }
 
-const SUCCESS_HTML = `<!doctype html><meta charset="utf-8"><title>Manifest CLI</title><body style="font-family:system-ui;display:grid;place-items:center;height:100vh;margin:0"><div style="text-align:center"><h1>&#10003; Connected</h1><p>You can close this page and return to the terminal.</p></div></body>`;
-const FAILURE_HTML = `<!doctype html><meta charset="utf-8"><title>Manifest CLI</title><body style="font-family:system-ui;display:grid;place-items:center;height:100vh;margin:0"><div style="text-align:center"><h1>Login failed</h1><p>State mismatch &mdash; return to the terminal and retry.</p></div></body>`;
+const SUCCESS_HTML = `<!doctype html><meta charset="utf-8"><title>TierGate CLI</title><body style="font-family:system-ui;display:grid;place-items:center;height:100vh;margin:0"><div style="text-align:center"><h1>&#10003; Connected</h1><p>You can close this page and return to the terminal.</p></div></body>`;
+const FAILURE_HTML = `<!doctype html><meta charset="utf-8"><title>TierGate CLI</title><body style="font-family:system-ui;display:grid;place-items:center;height:100vh;margin:0"><div style="text-align:center"><h1>Login failed</h1><p>State mismatch &mdash; return to the terminal and retry.</p></div></body>`;
 
 /**
  * Open a URL with the platform opener, detached so the CLI never blocks on it.
@@ -149,7 +149,7 @@ export async function browserLogin(
     throw new CliError(
       'network_error',
       `Could not reach ${origin}: ${error instanceof Error ? error.message : String(error)}`,
-      'Check the URL and that the Manifest server is running',
+      'Check the URL and that the TierGate server is running',
     );
   } finally {
     clearTimeout(exchangeTimer);

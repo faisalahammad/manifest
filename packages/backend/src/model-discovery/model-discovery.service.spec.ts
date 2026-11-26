@@ -742,7 +742,7 @@ describe('ModelDiscoveryService', () => {
         ok: false,
         model_count: 0,
         last_fetched_at: null,
-        error: expect.stringContaining('only available in self-hosted Manifest'),
+        error: expect.stringContaining('only available in self-hosted TierGate'),
       });
       expect(providerRepo.find).not.toHaveBeenCalled();
     });

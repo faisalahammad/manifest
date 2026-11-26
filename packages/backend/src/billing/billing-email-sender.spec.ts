@@ -44,10 +44,10 @@ describe('billing-email-sender', () => {
     it('capitalizes "pro"', () => expect(formatPlanName('pro')).toBe('Pro'));
     it('capitalizes "Pro"', () => expect(formatPlanName('Pro')).toBe('Pro'));
     it('capitalizes "free"', () => expect(formatPlanName('free')).toBe('Free'));
-    it('returns Manifest for null', () => expect(formatPlanName(null)).toBe('Manifest'));
-    it('returns Manifest for undefined', () => expect(formatPlanName(undefined)).toBe('Manifest'));
-    it('returns Manifest for empty string', () => expect(formatPlanName('')).toBe('Manifest'));
-    it('returns Manifest for whitespace', () => expect(formatPlanName('  ')).toBe('Manifest'));
+    it('returns TierGate for null', () => expect(formatPlanName(null)).toBe('TierGate'));
+    it('returns TierGate for undefined', () => expect(formatPlanName(undefined)).toBe('TierGate'));
+    it('returns TierGate for empty string', () => expect(formatPlanName('')).toBe('TierGate'));
+    it('returns TierGate for whitespace', () => expect(formatPlanName('  ')).toBe('TierGate'));
     it('capitalizes first letter of unknown plans', () =>
       expect(formatPlanName('starter')).toBe('Starter'));
   });
@@ -68,11 +68,11 @@ describe('billing-email-sender', () => {
     });
 
     it('falls back to the default address', () => {
-      expect(getBillingEmailFrom()).toBe('noreply@manifest.build');
+      expect(getBillingEmailFrom()).toBe('noreply@tiergate.local');
     });
 
     it('falls back when explicit is null', () => {
-      expect(getBillingEmailFrom(null)).toBe('noreply@manifest.build');
+      expect(getBillingEmailFrom(null)).toBe('noreply@tiergate.local');
     });
   });
 
@@ -87,34 +87,34 @@ describe('billing-email-sender', () => {
     });
 
     it('falls back to the default app URL', () => {
-      expect(getBillingAppUrl()).toBe('https://app.manifest.build');
+      expect(getBillingAppUrl()).toBe('http://localhost:2099');
     });
 
     it('falls back when explicit is null', () => {
-      expect(getBillingAppUrl(null)).toBe('https://app.manifest.build');
+      expect(getBillingAppUrl(null)).toBe('http://localhost:2099');
     });
 
     it('returns the default when stripping slashes yields empty', () => {
-      expect(getBillingAppUrl('///')).toBe('https://app.manifest.build');
+      expect(getBillingAppUrl('///')).toBe('http://localhost:2099');
     });
   });
 
   describe('subscriptionEmailSubject', () => {
     it('returns a plan_changed subject', () => {
       expect(subscriptionEmailSubject('plan_changed', 'Pro')).toBe(
-        'Your Manifest plan changed to Pro',
+        'Your TierGate plan changed to Pro',
       );
     });
 
     it('returns a cancellation_confirmed subject', () => {
       expect(subscriptionEmailSubject('cancellation_confirmed', 'Pro')).toBe(
-        'Your Manifest Pro cancellation is scheduled',
+        'Your TierGate Pro cancellation is scheduled',
       );
     });
 
     it('returns a subscription_confirmed subject', () => {
       expect(subscriptionEmailSubject('subscription_confirmed', 'Pro')).toBe(
-        'Your Manifest Pro plan is active',
+        'Your TierGate Pro plan is active',
       );
     });
   });
@@ -122,13 +122,13 @@ describe('billing-email-sender', () => {
   describe('usageEmailSubject', () => {
     it('returns the limit-reached subject', () => {
       expect(usageEmailSubject('requests_limit_reached')).toBe(
-        'Your Manifest monthly request limit has been reached',
+        'Your TierGate monthly request limit has been reached',
       );
     });
 
     it('returns the warning subject', () => {
       expect(usageEmailSubject('requests_warning')).toBe(
-        'Your Manifest workspace has used 80% of monthly requests',
+        'Your TierGate workspace has used 80% of monthly requests',
       );
     });
   });
@@ -150,10 +150,10 @@ describe('billing-email-sender', () => {
       expect(SubscriptionPlanEmail).toHaveBeenCalledWith(props);
       expect(sendEmail).toHaveBeenCalledWith({
         to: 'ada@example.com',
-        subject: 'Your Manifest Pro plan is active',
+        subject: 'Your TierGate Pro plan is active',
         html: '<html>rendered</html>',
         text: 'plain text',
-        from: 'Manifest <noreply@manifest.build>',
+        from: 'TierGate <noreply@tiergate.local>',
       });
     });
 
@@ -171,7 +171,7 @@ describe('billing-email-sender', () => {
 
       expect(sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
-          from: 'Manifest <custom@manifest.build>',
+          from: 'TierGate <custom@manifest.build>',
         }),
       );
     });
@@ -193,10 +193,10 @@ describe('billing-email-sender', () => {
       expect(PlanUsageEmail).toHaveBeenCalledWith(props);
       expect(sendEmail).toHaveBeenCalledWith({
         to: 'ada@example.com',
-        subject: 'Your Manifest monthly request limit has been reached',
+        subject: 'Your TierGate monthly request limit has been reached',
         html: '<html>rendered</html>',
         text: 'plain text',
-        from: 'Manifest <noreply@manifest.build>',
+        from: 'TierGate <noreply@tiergate.local>',
       });
     });
 
@@ -213,8 +213,8 @@ describe('billing-email-sender', () => {
 
       expect(sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
-          from: 'Manifest <custom@manifest.build>',
-          subject: 'Your Manifest workspace has used 80% of monthly requests',
+          from: 'TierGate <custom@manifest.build>',
+          subject: 'Your TierGate workspace has used 80% of monthly requests',
         }),
       );
     });

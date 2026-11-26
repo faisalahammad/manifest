@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
-  Deploy Manifest on AWS with ECS Fargate, RDS PostgreSQL, S3 request
+  Deploy TierGate on AWS with ECS Fargate, RDS PostgreSQL, S3 request
   recording storage, an Application Load Balancer, and Secrets Manager. The load balancer is
   HTTP-only by default; configure TLS with your own domain and ACM
   certificate before sending production auth traffic through it.
@@ -15,13 +15,13 @@ Parameters:
   ImageUrl:
     Type: String
     Default: ghcr.io/faisalahammad/tiergate:6
-    Description: Manifest container image to deploy.
+    Description: TierGate container image to deploy.
   ContainerPort:
     Type: Number
     Default: 2099
     MinValue: 1
     MaxValue: 65535
-    Description: Port exposed by the Manifest container.
+    Description: Port exposed by the TierGate container.
   DesiredCount:
     Type: Number
     Default: 1
@@ -190,7 +190,7 @@ Resources:
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP traffic to Manifest.
+      GroupDescription: Allow HTTP traffic to TierGate.
       SecurityGroupIngress:
         - CidrIp: !Ref AllowedIngressCidr
           FromPort: 80
@@ -204,7 +204,7 @@ Resources:
   ServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow load balancer traffic to the Manifest ECS task.
+      GroupDescription: Allow load balancer traffic to the TierGate ECS task.
       SecurityGroupIngress:
         - FromPort: !Ref ContainerPort
           IpProtocol: tcp
@@ -218,7 +218,7 @@ Resources:
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow Manifest ECS tasks to reach PostgreSQL.
+      GroupDescription: Allow TierGate ECS tasks to reach PostgreSQL.
       SecurityGroupIngress:
         - FromPort: 5432
           IpProtocol: tcp
@@ -232,7 +232,7 @@ Resources:
   DatabaseSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: Private subnets for Manifest PostgreSQL.
+      DBSubnetGroupDescription: Private subnets for TierGate PostgreSQL.
       SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
@@ -240,7 +240,7 @@ Resources:
   DatabasePassword:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: Generated PostgreSQL password for Manifest.
+      Description: Generated PostgreSQL password for TierGate.
       GenerateSecretString:
         ExcludePunctuation: true
         IncludeSpace: false
@@ -249,7 +249,7 @@ Resources:
   BetterAuthSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: Generated Better Auth session secret for Manifest.
+      Description: Generated Better Auth session secret for TierGate.
       GenerateSecretString:
         ExcludePunctuation: true
         IncludeSpace: false
@@ -258,7 +258,7 @@ Resources:
   ManifestEncryptionKey:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: Generated at-rest encryption key for Manifest provider credentials.
+      Description: Generated at-rest encryption key for TierGate provider credentials.
       GenerateSecretString:
         ExcludePunctuation: true
         IncludeSpace: false
@@ -302,7 +302,7 @@ Resources:
   DatabaseUrlSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: DATABASE_URL for Manifest.
+      Description: DATABASE_URL for TierGate.
       SecretString: !Sub "postgresql://${DatabaseUsername}:{{resolve:secretsmanager:${DatabasePassword}:SecretString}}@${Database.Endpoint.Address}:${Database.Endpoint.Port}/${DatabaseName}?uselibpqcompat=true&sslmode=require"
 
   Cluster:
@@ -478,10 +478,10 @@ Resources:
 
 Outputs:
   ServiceUrl:
-    Description: Public Manifest URL.
+    Description: Public TierGate URL.
     Value: !Sub "http://${LoadBalancer.DNSName}"
   HealthCheckUrl:
-    Description: Manifest health check URL.
+    Description: TierGate health check URL.
     Value: !Sub "http://${LoadBalancer.DNSName}/api/v1/health"
   DatabaseEndpoint:
     Description: RDS PostgreSQL endpoint.

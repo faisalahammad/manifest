@@ -25,7 +25,7 @@ function renderSetup(platform: string | null, keyRef: string, canWrite: boolean)
     return template(`${authOrigin}/v1`, keyRef);
   }
   const lines = [
-    "Point your tool's OpenAI-compatible client at Manifest:",
+    "Point your tool's OpenAI-compatible client at TierGate:",
     `  base URL: ${authOrigin}/v1`,
     `  API key:  ${keyRef}`,
   ];
@@ -84,7 +84,7 @@ export function registerEnvironmentTools(
     {
       title: 'Agent environment variables',
       description:
-        'Return the dotenv/shell lines that point a harness at Manifest (MANIFEST_AGENT_KEY + MANIFEST_AGENT_URL).',
+        'Return the dotenv/shell lines that point a harness at TierGate (MANIFEST_AGENT_KEY + MANIFEST_AGENT_URL).',
       inputSchema: z.object({ agent: z.string().min(1), export: z.boolean().optional() }),
     },
     async ({ agent: agentName, export: useExport }) =>
@@ -117,8 +117,8 @@ export function registerGuideTool(server: McpServer): void {
   server.registerTool(
     'manifest_guide',
     {
-      title: 'Manifest operating guide',
-      description: 'Return the recommended workflow for managing a Manifest workspace.',
+      title: 'TierGate operating guide',
+      description: 'Return the recommended workflow for managing a TierGate workspace.',
       inputSchema: z.object({}),
       annotations: { readOnlyHint: true },
     },

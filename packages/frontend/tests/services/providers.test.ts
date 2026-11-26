@@ -490,10 +490,10 @@ describe('PROVIDERS', () => {
   it('exposes Gemini Free as a managed free provider', () => {
     const provider = PROVIDERS.find((entry) => entry.id === 'gemini-free')!;
     expect(provider.name).toBe('Gemini Free');
-    expect(provider.subtitle).toBe('Free Gemini models via Manifest');
+    expect(provider.subtitle).toBe('Free Gemini models via TierGate');
     expect(provider.keyPlaceholder).toBe('sk-...');
     expect(getRoutingProviderApiKeyUrl('gemini-free')).toBe(
-      'https://calendly.com/sebastien-manifest/30min',
+      'https://github.com/faisalahammad/tiergate/issues',
     );
   });
 

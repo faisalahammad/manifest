@@ -39,7 +39,7 @@ export async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
-    logger: new ConsoleLogger({ prefix: 'Manifest' }),
+    logger: new ConsoleLogger({ prefix: 'TierGate' }),
   });
   app.enableShutdownHooks();
   app.useGlobalFilters(new SpaFallbackFilter(process.env['BETTER_AUTH_URL']));
@@ -87,12 +87,9 @@ export async function bootstrap() {
   // the package's default content-type filter.
   app.use(compression({ filter: shouldCompress }));
 
-  // CORS: the dashboard is same-origin, but the hosted Wingman gateway tester
-  // (https://wingman.manifest.build) is a legitimate cross-origin caller of the
-  // gateway routes, so both dev and production allow its origin. Dev also allows
-  // the Vite frontend on :3000 and the local Wingman build at `WINGMAN_PORT`;
-  // production allows the hosted Wingman origin plus any `WINGMAN_CORS_ORIGINS` a
-  // self-hoster opts into.
+  // CORS: the dashboard is same-origin. Dev also allows the Vite frontend on
+  // :3000, the local Wingman build at `WINGMAN_PORT` and the hosted Wingman;
+  // production allows only the `WINGMAN_CORS_ORIGINS` a self-hoster opts into.
   //
   // See `buildCorsOptions` for the rationale behind `credentials: false`, the
   // omitted `allowedHeaders`, and the preflight `maxAge`.

@@ -1,4 +1,4 @@
-# Template Fly.io config for Manifest.
+# Template Fly.io config for TierGate.
 #
 # Replace `manifest-example` with your Fly app name, or run
 # `deploy/fly/deploy.sh` from the repository root to generate a temporary

@@ -10,7 +10,7 @@ describe('PlanPicker', () => {
     expect(screen.getByText('Popular')).toBeDefined();
     expect(screen.getByText('$20')).toBeDefined();
     expect(screen.getAllByText('/month').length).toBeGreaterThan(0);
-    expect(screen.getByText('Manifest Cloud')).toBeDefined();
+    expect(screen.getByText('TierGate Cloud')).toBeDefined();
     expect(screen.getByText('Servers, database and uptime handled by us')).toBeDefined();
     expect(screen.queryByText('Read the self-hosting guide')).toBeNull();
 
@@ -34,9 +34,11 @@ describe('PlanPicker', () => {
     expect(screen.getByText('Self-hosted')).toBeDefined();
     expect(screen.getByText('forever')).toBeDefined();
     expect(screen.getByText('Your data stays on your machine')).toBeDefined();
-    expect(screen.getByText('Community support via Discord')).toBeDefined();
+    expect(screen.getByText('Community support on GitHub')).toBeDefined();
     const guide = screen.getByText('Read the self-hosting guide') as HTMLAnchorElement;
-    expect(guide.getAttribute('href')).toBe('https://manifest.build/llm-gateway/docs/self-hosted');
+    expect(guide.getAttribute('href')).toBe(
+      'https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md',
+    );
 
     const cta = container.querySelector('.plan-picker__cta') as HTMLButtonElement;
     expect(cta.textContent).toBe('Continue without a subscription');
@@ -64,7 +66,7 @@ describe('PlanPicker', () => {
     expect(screen.getByText('SSO / SAML')).toBeDefined();
     const link = container.querySelector('.plan-picker__cta') as HTMLAnchorElement;
     expect(link.textContent).toBe('Talk to sales');
-    expect(link.getAttribute('href')).toBe('https://manifest.build/pricing');
+    expect(link.getAttribute('href')).toBe('https://github.com/faisalahammad/tiergate/issues');
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
   });

@@ -19,6 +19,11 @@ vi.mock('@solidjs/router', () => ({
   useSearchParams: () => [mockSearchParams],
 }));
 
+let mockAutofixAvailable = true;
+vi.mock('../../src/services/setup-status.js', () => ({
+  checkAutofixAvailable: () => Promise.resolve(mockAutofixAvailable),
+}));
+
 import SettingsAutofixSection from '../../src/pages/SettingsAutofixSection';
 
 /** Wait for the initial `getAutofix` resource to settle so the switch's
@@ -36,9 +41,27 @@ describe('SettingsAutofixSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSearchParams = {};
+    mockAutofixAvailable = true;
   });
   afterEach(() => {
     cleanup();
+  });
+
+  it('renders nothing when the install has Autofix switched off', async () => {
+    mockAutofixAvailable = false;
+    mockGetAutofix.mockResolvedValue({ enabled: true });
+    const { container } = render(() => <SettingsAutofixSection agentName={() => 'demo'} />);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(container.querySelector('.settings-switch')).toBeNull();
+    expect(container.textContent).toBe('');
+  });
+
+  it("says that failing requests go to Manifest's service", async () => {
+    mockGetAutofix.mockResolvedValue({ enabled: false });
+    const { container } = render(() => <SettingsAutofixSection agentName={() => 'demo'} />);
+    await waitForLoaded(container);
+    expect(container.textContent).toContain("Manifest's healing service");
+    expect(container.querySelector('a[href*="manifest.build"]')).toBeNull();
   });
 
   it('renders the Autofix title and switch', async () => {
@@ -74,12 +97,15 @@ describe('SettingsAutofixSection', () => {
     expect(btn.getAttribute('aria-checked')).toBe('false');
   });
 
-  it('renders a disabled switch while the config is still loading', () => {
+  it('renders a disabled switch while the config is still loading', async () => {
     mockGetAutofix.mockReturnValue(new Promise(() => {}));
     const { container } = render(() => <SettingsAutofixSection agentName={() => 'demo'} />);
 
-    const btn = container.querySelector('.settings-switch') as HTMLButtonElement;
-    expect(btn).not.toBeNull();
+    const btn = await waitFor(() => {
+      const found = container.querySelector('.settings-switch') as HTMLButtonElement | null;
+      expect(found).not.toBeNull();
+      return found!;
+    });
     expect(btn.hasAttribute('disabled')).toBe(true);
     expect(container.textContent).toContain('Autofix');
   });
@@ -99,18 +125,14 @@ describe('SettingsAutofixSection', () => {
     });
   });
 
-  it('enables directly with the legal line as the consent act (no dialog)', async () => {
+  it('enables directly with the data notice as the consent act (no dialog)', async () => {
     mockGetAutofix.mockResolvedValue({ enabled: false, consented: false });
     mockUpdateAutofix.mockResolvedValue({ enabled: true, consented: true });
     const { container } = render(() => <SettingsAutofixSection agentName={() => 'demo'} />);
 
     const btn = await waitForLoaded(container);
-    // The Terms/Privacy legal line sits under the card, no dialog anywhere.
-    expect(container.textContent).toContain('you agree to Manifest');
-    const terms = screen.getByRole('link', { name: 'Terms' });
-    const privacy = screen.getByRole('link', { name: 'Privacy Policy' });
-    expect(terms.getAttribute('href')).toBe('https://manifest.build/terms');
-    expect(privacy.getAttribute('href')).toBe('https://manifest.build/privacy');
+    // The data notice sits under the card, no dialog anywhere.
+    expect(container.textContent).toContain("Manifest's healing service");
 
     fireEvent.click(btn);
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -124,7 +146,9 @@ describe('SettingsAutofixSection', () => {
     try {
       mockGetAutofix.mockResolvedValue({ enabled: false });
       const { container } = render(() => <SettingsAutofixSection agentName={() => 'demo'} />);
-      expect(container.querySelector('.settings-card--highlight')).not.toBeNull();
+      await waitFor(() =>
+        expect(container.querySelector('.settings-card--highlight')).not.toBeNull(),
+      );
       await vi.advanceTimersByTimeAsync(1_500);
       await waitFor(() =>
         expect(container.querySelector('.settings-card--highlight')).toBeNull(),

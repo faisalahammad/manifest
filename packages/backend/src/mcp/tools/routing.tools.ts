@@ -428,7 +428,7 @@ export function registerRoutingTools(
                 : surface === 'responses'
                   ? parseResponsesSurface(parsed)
                   : parseCompletionSurface(parsed);
-            if (/^\[🦚 Manifest M\d+\]/.test(surfaceResult.reply)) {
+            if (/^\[🦚 (?:TierGate|Manifest) M\d+\]/.test(surfaceResult.reply)) {
               throw new Error(surfaceResult.reply);
             }
             return {

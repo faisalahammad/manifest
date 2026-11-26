@@ -4,7 +4,6 @@ import { authClient } from '../services/auth-client.js';
 import { getAuthDestination, signedOAuthDestination } from '../services/auth-redirects.js';
 import { checkNeedsSetup } from '../services/setup-status.js';
 import { hasPlanBeenChosen } from '../services/plan-selection.js';
-import { getDiscoveryPendingNext } from '../services/discovery.js';
 
 const GuestGuard: ParentComponent = (props) => {
   const session = authClient.useSession();
@@ -30,14 +29,6 @@ const GuestGuard: ParentComponent = (props) => {
       const destination = getAuthDestination(searchParams, location.search);
       if (signedOAuthDestination(location.search) === destination) {
         globalThis.location.assign(destination);
-        return;
-      }
-      // An unfinished discovery step outranks the usual destinations:
-      // browser Back into the auth pages must land on the form, not fall
-      // through to the dashboard.
-      const pendingNext = getDiscoveryPendingNext(s.data.user?.id ?? '');
-      if (pendingNext !== null) {
-        navigate(`/discovery?next=${encodeURIComponent(pendingNext)}`, { replace: true });
         return;
       }
       if (step === 'plan' && !hasPlanBeenChosen(s.data.user?.id ?? '')) {

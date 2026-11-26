@@ -1,9 +1,9 @@
 {
-  "title": "Manifest",
-  "description": "Deploy Manifest on Google Cloud Run with Cloud SQL and durable Cloud Storage request recordings.",
-  "logo": "https://raw.githubusercontent.com/mnfst/llm-gateway/HEAD/.github/assets/logo-dark.svg",
+  "title": "TierGate",
+  "description": "Deploy TierGate on Google Cloud Run with Cloud SQL and durable Cloud Storage request recordings.",
+  "logo": "https://raw.githubusercontent.com/faisalahammad/tiergate/main/site/logo.svg",
   "duration": 15,
-  "documentationLink": "https://manifest.build/llm-gateway/docs/introduction/",
+  "documentationLink": "https://github.com/faisalahammad/tiergate#readme",
   "variables": [
     {
       "name": "project_id",
@@ -24,7 +24,7 @@
     },
     {
       "name": "image_url",
-      "prompt": "Manifest image",
+      "prompt": "TierGate image",
       "type": "string",
       "default": "ghcr.io/faisalahammad/tiergate:6"
     },

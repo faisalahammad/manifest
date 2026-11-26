@@ -42,8 +42,8 @@ const SettingsRecordingSection: Component<{ agentName: () => string }> = (props)
               agent sends. You will find these logs on the Requests page, inside each request.{' '}
               {selfHosted.state === 'ready' &&
                 (selfHosted()
-                  ? "On this self-hosted install, logs stay in your own database and never reach Manifest's cloud."
-                  : 'Logs are stored in your Manifest workspace.')}
+                  ? 'On this self-hosted install, logs stay in your own database and never leave this server.'
+                  : 'Logs are stored in your TierGate workspace.')}
             </span>
           </div>
           <div class="settings-card__control settings-card__control--end">

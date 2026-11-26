@@ -659,7 +659,7 @@ export class ProxyController {
         durationMs,
         apiMode,
       })
-      .catch((e) => this.logger.warn(`Failed to record Manifest stub: ${e}`));
+      .catch((e) => this.logger.warn(`Failed to record TierGate stub: ${e}`));
   }
 
   private async handleProxyError(
@@ -840,7 +840,7 @@ export class ProxyController {
     // envelope so CI pipelines can detect failures instead of treating the
     // friendly stub as success.
     const errorMessage =
-      status >= 500 ? 'Manifest encountered an internal error. Try again shortly.' : message;
+      status >= 500 ? 'TierGate encountered an internal error. Try again shortly.' : message;
     const responseBody = {
       error: {
         message: errorMessage,
@@ -925,7 +925,7 @@ export class ProxyController {
           if (typeof nested === 'string') return nested;
         }
         const code = record.code;
-        if (code === 'PLAN_LIMIT_REQUESTS') return 'Manifest Cloud subscription required';
+        if (code === 'PLAN_LIMIT_REQUESTS') return 'TierGate Cloud subscription required';
         if (typeof code === 'string') return code;
       }
     }
@@ -977,7 +977,7 @@ export class ProxyController {
             }
           : {}),
       })
-      .catch((e) => this.logger.warn(`Failed to record Manifest-blocked request: ${e}`));
+      .catch((e) => this.logger.warn(`Failed to record TierGate-blocked request: ${e}`));
   }
 
   private trackFirstProxyRequest(tenantId: string): void {

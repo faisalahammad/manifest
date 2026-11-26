@@ -31,7 +31,7 @@ describe('MailgunProvider', () => {
 
     const body = (global.fetch as jest.Mock).mock.calls[0][1].body;
     expect(body).toBeInstanceOf(URLSearchParams);
-    expect(body.get('from')).toBe('Manifest <noreply@test.com>');
+    expect(body.get('from')).toBe('TierGate <noreply@test.com>');
     expect(body.get('to')).toBe('user@test.com');
     expect(body.get('subject')).toBe('Test');
     expect(body.get('html')).toBe('<p>Hi</p>');
@@ -140,8 +140,8 @@ describe('MailgunProvider', () => {
     await provider.send({ to: 'user@test.com', subject: 'Test', html: '<p>Hi</p>' });
 
     const body = (global.fetch as jest.Mock).mock.calls[0][1].body as URLSearchParams;
-    expect(body.get('from')).toBe('Manifest <noreply@manifest.build>');
-    expect(body.get('h:Reply-To')).toBe('noreply@manifest.build');
+    expect(body.get('from')).toBe('TierGate <noreply@tiergate.local>');
+    expect(body.get('h:Reply-To')).toBe('noreply@tiergate.local');
   });
 
   it('includes text param when provided alongside all required fields', async () => {
@@ -157,7 +157,7 @@ describe('MailgunProvider', () => {
 
     const body = (global.fetch as jest.Mock).mock.calls[0][1].body as URLSearchParams;
     expect(body.get('text')).toBe('Hi plain');
-    expect(body.get('from')).toBe('Manifest <noreply@test.com>');
+    expect(body.get('from')).toBe('TierGate <noreply@test.com>');
     expect(body.get('to')).toBe('user@test.com');
     expect(body.get('subject')).toBe('Test');
     expect(body.get('html')).toBe('<p>Hi</p>');

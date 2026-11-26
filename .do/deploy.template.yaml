@@ -4,10 +4,10 @@ spec:
   services:
     - name: manifest
       image:
-        registry_type: DOCKER_HUB
-        registry: manifestdotbuild
-        repository: manifest
-        tag: "6"
+        registry_type: GHCR
+        registry: faisalahammad
+        repository: tiergate
+        tag: latest
       instance_count: 1
       instance_size_slug: apps-s-1vcpu-1gb
       http_port: 2099

@@ -442,7 +442,7 @@ export default function MessageDetails(props: MessageDetailsProps): JSX.Element 
                                   {m.error_class === 'no_provider_key' &&
                                     'No API key is configured for this provider.'}
                                   {m.error_class === 'plan_request_limit_exceeded' &&
-                                    'The Manifest Free plan monthly request quota was reached.'}
+                                    'The TierGate Free plan monthly request quota was reached.'}
                                 </span>
                               </td>
                             </tr>

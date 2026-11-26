@@ -16,9 +16,14 @@ export const AUTOFIX_URL = 'https://autofix.manifest.build';
  * developer running the stack locally must never post real failures at the
  * production healer, and a test must never depend on the network.
  *
- * To switch Autofix off entirely, set `AUTOFIX_GLOBAL_ENABLED=false`; that
- * short-circuits in `AutofixService` before any heal call is made.
+ * Autofix is off unless `AUTOFIX_GLOBAL_ENABLED=true`: see
+ * {@link isAutofixGloballyEnabled}.
  */
 export function resolveHealingUrl(nodeEnv: string | undefined): string | undefined {
   return nodeEnv === 'production' ? AUTOFIX_URL : undefined;
+}
+
+/** Opt-in: healing sends failing request bodies to an outside service. */
+export function isAutofixGloballyEnabled(value: string | undefined): boolean {
+  return value === 'true';
 }

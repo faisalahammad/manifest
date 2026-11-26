@@ -98,7 +98,7 @@ describe('Upgrade', () => {
     expect(screen.getByText('365 days of dashboard history')).toBeDefined();
     expect(screen.getByText('Servers, database and uptime handled by us')).toBeDefined();
     expect(screen.queryByText(/Everything in/)).toBeNull();
-    expect(screen.getByText('Manifest Cloud')).toBeDefined();
+    expect(screen.getByText('TierGate Cloud')).toBeDefined();
     expect(screen.getByText('Read the self-hosting guide')).toBeDefined();
     expect(screen.getByText('Enterprise')).toBeDefined();
     expect(screen.getByText("Let's Talk")).toBeDefined();
@@ -110,7 +110,7 @@ describe('Upgrade', () => {
     mockSearchParams = { reason: 'requests' };
     render(() => <Upgrade />);
 
-    await screen.findByText('Manifest Cloud needs a Pro subscription to route requests.');
+    await screen.findByText('TierGate Cloud needs a Pro subscription to route requests.');
   });
 
   it('shows the used-up allowance entry message when the tenant has a positive limit', async () => {

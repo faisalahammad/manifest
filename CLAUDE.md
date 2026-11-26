@@ -1,18 +1,18 @@
-# Manifest Development Guidelines
+# TierGate Development Guidelines
 
 Last updated: 2026-09-14
 
-## What Manifest Is
+## What TierGate Is
 
-Manifest is a smart model router for **AI agents**. It sits between an agent and its LLM providers, scores each request, and routes it to the cheapest model that can handle it. The dashboard tracks logical requests and their provider attempts, costs, and tokens across any agent that speaks OpenAI-compatible HTTP.
+TierGate is a smart model router for **AI agents**. It sits between an agent and its LLM providers, scores each request, and routes it to the cheapest model that can handle it. The dashboard tracks logical requests and their provider attempts, costs, and tokens across any agent that speaks OpenAI-compatible HTTP.
 
 **"Harness" is the dashboard word for an agent.** The UI now labels agents **Harnesses** (nav item "Harnesses", routes under `/harnesses`, categories `AI agent` / `Automation` / `App AI SDK` / `Coding Assistant` from `CATEGORY_LABELS` in `packages/shared/src/agent-type.ts`). This is a **copy-level rename only**: backend code, database tables (`agents`, `agent_messages`, …), API routes (`/api/v1/agents/*`), and entity/service names all still say _agent_. Legacy `/agents/*` dashboard URLs redirect to `/harnesses/*`. When writing UI copy say "harness"; when writing code or API docs keep "agent".
 
-**Product note:** this repo is **Manifest LLM Gateway**, the open-source LLM gateway of Manifest, available and maintained. The dashboard and the READMEs carry no promotion of any other Manifest product: not the self-healing layer at `dashboard.manifest.build` (on hold), and no API Bot banner or sidebar card (removed). `POST /api/v1/waitlist/pivot/claim` stays only for self-hosted versions that still ship the old sidebar card. The sidebar's "Custom development" button opens `ServicesContactModal`, which posts to `POST /api/v1/services/contact`; the backend relays it to `https://manifest.build/api/contact` (mnfst/website `api/contact.js`), which emails the team. Nothing is stored.
+**Product note:** this repo is **TierGate**, a self-hosted fork of [Manifest LLM Gateway](https://github.com/mnfst/llm-gateway). Everything a person reads says TierGate; identifiers (`MANIFEST_*`, `mnfst_`, `X-Manifest-*`, `M###`, package, database and Compose names, the `mnfst` command) keep the upstream names so existing installs upgrade in place. Nothing sends data to Manifest by default: telemetry and Autofix are opt-in, and the discovery form and "Custom development" contact form are removed. `POST /api/v1/waitlist/pivot/claim` stays only for older self-hosted versions.
 
-**Supported agents**: see `AGENT_PLATFORMS` in `packages/shared/src/agent-type.ts` for the current list (OpenClaw, Hermes, Claude Code, OpenCode, generic OpenAI/Anthropic SDK slots, and others — don't duplicate the list here, it grows independently of this doc). OpenClaw remains the deepest integration, but no new code or copy should frame Manifest as OpenClaw-only. When adding examples, prefer "AI agent" as the noun and pick OpenClaw as the worked example rather than the sole target. Manifest is consumed as a generic OpenAI-compatible HTTP endpoint — there are no first-party OpenClaw plugins in this repo anymore.
+**Supported agents**: see `AGENT_PLATFORMS` in `packages/shared/src/agent-type.ts` for the current list (OpenClaw, Hermes, Claude Code, OpenCode, generic OpenAI/Anthropic SDK slots, and others — don't duplicate the list here, it grows independently of this doc). OpenClaw remains the deepest integration, but no new code or copy should frame TierGate as OpenClaw-only. When adding examples, prefer "AI agent" as the noun and pick OpenClaw as the worked example rather than the sole target. TierGate is consumed as a generic OpenAI-compatible HTTP endpoint — there are no first-party OpenClaw plugins in this repo anymore.
 
-Wingman — the gateway tester for sending requests against a Manifest backend while impersonating any of the supported agents (useful for routing/header-classifier reproductions) — lives in its own repo at [`mnfst/wingman`](https://github.com/mnfst/wingman) and is hosted at [`wingman.manifest.build`](https://wingman.manifest.build). The dashboard embeds it as an iframe drawer **in dev mode only** — it is dead-code-eliminated from production / self-hosted bundles via `__DEV_MODE__`. The backend allows the hosted Wingman origin through CORS in both dev and production (production also honors `WINGMAN_CORS_ORIGINS`), while the CSP `frame-src` that permits the drawer iframe stays dev-only; both are wired in `packages/backend/src/cors-csp-config.ts`.
+Wingman — the gateway tester for sending requests against a TierGate backend while impersonating any of the supported agents (useful for routing/header-classifier reproductions) — lives in its own repo at [`mnfst/wingman`](https://github.com/mnfst/wingman) and is hosted at [`wingman.manifest.build`](https://wingman.manifest.build). The dashboard embeds it as an iframe drawer **in dev mode only** — it is dead-code-eliminated from production / self-hosted bundles via `__DEV_MODE__`. The backend allows the hosted Wingman origin through CORS in dev only (production honors `WINGMAN_CORS_ORIGINS` alone), and the CSP `frame-src` that permits the drawer iframe stays dev-only; both are wired in `packages/backend/src/cors-csp-config.ts`.
 
 **Whenever working in dev mode (`/serve`, `npm run dev`, etc.), the Wingman drawer is expected to be available** — open the FAB at the bottom-right of the dashboard (or hit ⌘/Ctrl+Shift+W) and confirm the iframe loads `https://wingman.manifest.build` cleanly. The drawer is part of the dev surface area, so a broken iframe means the dev environment is broken. `/serve` is **dev-only** — never use it to validate production behavior.
 
@@ -41,7 +41,7 @@ This guarantees each session starts with a clean, isolated database and avoids a
 
 ## Testing OpenClaw Integration
 
-To test routing from an OpenClaw agent against a local Manifest dev server, point OpenClaw at the dev server's OpenAI-compatible proxy directly — there is no plugin anymore:
+To test routing from an OpenClaw agent against a local TierGate dev server, point OpenClaw at the dev server's OpenAI-compatible proxy directly — there is no plugin anymore:
 
 ```bash
 # 1. Build and start the backend in cloud mode
@@ -50,7 +50,7 @@ PORT=38238 BIND_ADDRESS=127.0.0.1 \
   node -r dotenv/config packages/backend/dist/main.js
 
 # 2. Configure OpenClaw to use the dev server as a generic OpenAI-compatible provider
-openclaw config set models.providers.manifest '{"baseUrl":"http://localhost:38238/v1","api":"openai-completions","apiKey":"mnfst_YOUR_KEY","models":[{"id":"auto","name":"Manifest Auto"}]}'
+openclaw config set models.providers.manifest '{"baseUrl":"http://localhost:38238/v1","api":"openai-completions","apiKey":"mnfst_YOUR_KEY","models":[{"id":"auto","name":"TierGate Auto"}]}'
 openclaw config set agents.defaults.model.primary manifest/auto
 
 # 3. Restart the gateway
@@ -139,7 +139,6 @@ packages/
 │   │   ├── billing/                         # Stripe billing status + plan limits
 │   │   ├── error-pages/                     # Custom error-page config (internal + public)
 │   │   ├── waitlist/                        # Pivot waiting-list claims + legacy Autofix claim compatibility route
-│   │   ├── discovery/                       # Self-hosted discovery onboarding (forwarded to Peacock)
 │   │   ├── crm-metrics/                     # Cloud-only internal feed: Autofix-healed cohort + waitlist claims + corporate signups (secret-gated)
 │   │   ├── cors-csp-config.ts               # Wingman CORS/CSP origin allowlists
 │   │   ├── sentry/                          # Sentry init-options builder (SENTRY_DSN-gated)
@@ -173,7 +172,6 @@ packages/
 │   │   │   ├── Playground.tsx               # Prompt playground
 │   │   │   ├── ConnectProvider.tsx          # Provider connection flow
 │   │   │   ├── providers/                   # Subscriptions.tsx, Byok.tsx, Local.tsx, ConnectionDetail.tsx, ProviderConnectionsPage.tsx (/providers/* pages)
-│   │   │   ├── Discovery.tsx                # Self-hosted discovery form (one-time, post-signup)
 │   │   │   ├── Welcome.tsx                  # Post-signup welcome flow (+ welcome-helpers.ts)
 │   │   │   ├── FreeModels.tsx               # Free model catalog
 │   │   │   ├── Setup.tsx                    # First-run setup wizard
@@ -199,7 +197,7 @@ packages/
 │   └── tests/
 ├── shared/                           # Shared TypeScript types + helpers (consumed by backend and frontend)
 ├── cli/                              # `mnfst` management CLI (private; bin/mnfst.js, commands/, generated provider catalog + skill content)
-└── manifest/                         # Code-free shell package holding the canonical Manifest version (see Releases)
+└── manifest/                         # Code-free shell package holding the canonical TierGate version (see Releases)
 ```
 
 Beyond `packages/`, the repo root also carries:
@@ -428,7 +426,6 @@ Every resource belongs to a tenant; users only authenticate and (optionally) app
 | POST                      | `/api/v1/waitlist/pivot/claim`                                                                  | Public                                    | Closed pivot waiting-list claim, kept for older self-hosted versions; records origin (cloud/self-hosted)                                                                                                                                          |
 | GET/POST                  | `/api/v1/autofix/status` / `.../enable-all`                                                     | Session/API Key                           | Workspace Autofix coverage + API-only fleet enable (no dashboard caller)                                                                                                                                                                          |
 | GET                       | `/api/v1/overview/autofix-*`                                                                    | Session/API Key                           | Autofix analytics (stats, timeseries, per-agent/provider/model)                                                                                                                                                                                   |
-| POST                      | `/api/v1/discovery/complete`                                                                    | Session/API Key                           | Best-effort self-hosted discovery submission forwarded to Peacock                                                                                                                                                                                 |
 | GET/POST/DELETE           | `/api/v1/internal/error-pages*`                                                                 | Public (`x-internal-secret` header)       | Custom error-page config (Peacock CMS push API)                                                                                                                                                                                                   |
 | GET                       | `/api/v1/internal/crm-metrics*`                                                                 | Public (`x-internal-secret` header)       | **Cloud only.** Autofix-healed user cohort, pivot waitlist claims, and corporate signups, for the outreach CRM (`CRM_METRICS_SECRET`)                                                                                                             |
 | GET/PUT/DELETE            | `/api/v1/agents/:agentName/enabled-providers*`                                                  | Session/API Key                           | Per-agent provider enable/disable + impact preview                                                                                                                                                                                                |
@@ -470,9 +467,9 @@ See `packages/backend/.env.example` for all variables. Key ones:
 - `MANIFEST_ENCRYPTION_KEY_PREVIOUS` — Optional, rotation only. A secret that stored values may still be encrypted under. Decryption always tries `MANIFEST_ENCRYPTION_KEY`, then this, then `BETTER_AUTH_SECRET`, so old rows stay readable. While it is set, one replica rewrites every row found under an older secret onto the current one after boot (`database/secret-reencryption.service.ts`, advisory-locked, never blocks or fails boot); a normal boot without it never scans. Rotation: set the new `MANIFEST_ENCRYPTION_KEY` and `MANIFEST_ENCRYPTION_KEY_PREVIOUS=<old>`, deploy, wait for the log line `Nothing left under an older secret`, then remove `PREVIOUS`. Introducing a dedicated key on an install that used the `BETTER_AUTH_SECRET` fallback: set `MANIFEST_ENCRYPTION_KEY` (old rows keep decrypting via the session secret); to move them onto the new key, set `PREVIOUS` to the session secret's value for one deploy. Request recordings are not rewritten by this pass: they decrypt under the current key only, so a key change leaves older recordings unreadable.
 - `PORT` — Server port. Default: `3001`
 - `BIND_ADDRESS` — Bind address. Default: `127.0.0.1` (use `0.0.0.0` for Railway/Docker)
-- `NODE_ENV` — `development` or `production`. Dev allows broad CORS (local dashboard + Wingman); production allows the hosted Wingman origin plus any `WINGMAN_CORS_ORIGINS` entries.
+- `NODE_ENV` — `development` or `production`. Dev allows broad CORS (local dashboard + Wingman); production allows only the `WINGMAN_CORS_ORIGINS` entries.
 - `CORS_ORIGIN` — Allowed CORS origin (dev). Default: `http://localhost:3000`
-- `WINGMAN_CORS_ORIGINS` — Production only. Extra browser origins allowed to call the gateway (comma-separated). The hosted Wingman (`https://wingman.manifest.build`) is always allowed.
+- `WINGMAN_CORS_ORIGINS` — Production only. Browser origins allowed to call the gateway cross-origin (comma-separated). Empty by default.
 - `BETTER_AUTH_URL` — Base URL for Better Auth. Default: `http://localhost:{PORT}`
 - `FRONTEND_PORT` — Extra trusted origin port for Better Auth.
 - `MCP_ENABLED` — Set `false` to run without the remote MCP server. MCP needs an HTTPS `BETTER_AUTH_URL` (loopback HTTP is fine in dev) because `@better-auth/mcp` validates its protected-resource URL as the plugin is built; a plain-HTTP LAN or tailnet origin turns MCP off **automatically**, so this variable is only for switching it off on an install that could otherwise serve it. See [Remote MCP server](#remote-mcp-server).
@@ -499,7 +496,7 @@ See `packages/backend/.env.example` for all variables. Key ones:
 - `EMAIL_PROVIDER` — Unified email provider: `resend` (recommended), `mailgun`, or `sendgrid`. Used for Better Auth transactional emails and threshold alerts.
 - `EMAIL_API_KEY` — API key for the configured `EMAIL_PROVIDER`.
 - `EMAIL_DOMAIN` — Sending domain (required for Mailgun).
-- `EMAIL_FROM` — Sender address. Default: `noreply@manifest.build`
+- `EMAIL_FROM` — Sender address. Default: `noreply@tiergate.local`
 - `MAILGUN_API_KEY` / `MAILGUN_DOMAIN` / `NOTIFICATION_FROM_EMAIL` — Legacy Mailgun-only variables. Deprecated; use `EMAIL_*` instead. Still honored for backward compatibility.
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — Google OAuth (optional)
 - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` — GitHub OAuth (optional)
@@ -510,27 +507,26 @@ See `packages/backend/.env.example` for all variables. Key ones:
 - `MANIFEST_UPDATE_CHECK_DISABLED` — Set `1` to stop the self-hosted dashboard's daily "new version available" check against GitHub Releases (`GET /api/v1/version`, `version/` module). Separate from the telemetry opt-out: air-gapped installs want no outbound calls at all. Never runs in cloud mode.
 - `MANIFEST_PUBLIC_STATS` — Set `true` to serve the published error pages at `/api/v1/public/error-pages*` without auth (cloud-only marketing use). The name predates the removal of the aggregate usage endpoints; it is kept so existing deployments stay on.
 - `CRM_METRICS_SECRET` — Cloud only. Shared secret for `GET /api/v1/internal/crm-metrics*` (healed-user cohort; the response carries counts only, no provider breakdown — that join cost 1.1s against the route's 1.5s `statement_timeout` at a wide window), sent in the `x-internal-secret` header. Empty by default and anything under 32 chars counts as unset, because this is the only route that exports user email addresses across tenants. Separate from `ERROR_PAGE_PUSH_SECRET` on purpose: different consumer, different credential. Self-hosted installs never register the module and migration `1802200000000` skips its index there, so the feature leaves no trace on their schema or routes.
-- `TELEMETRY_ENDPOINT` — Where self-hosted installs POST the anonymous usage report. Default: `https://telemetry.manifest.build/v1/report`. See [Telemetry](#anonymous-usage-telemetry-self-hosted).
-- `DISCOVERY_ENDPOINT` — Optional override for the discovery submission endpoint. Default: `https://blue.manifest.build/v1/self-hosted/discovery`.
+- `TELEMETRY_ENDPOINT` — Where self-hosted installs POST the anonymous usage report. No default: nothing is sent while it is unset. See [Telemetry](#anonymous-usage-telemetry-self-hosted).
 - `SENTRY_DSN` / `SENTRY_ENVIRONMENT` / `SENTRY_RELEASE` — Opt-in Sentry error monitoring. Unset `SENTRY_DSN` disables Sentry entirely; `SENTRY_ENVIRONMENT` defaults to `NODE_ENV`. See [Error Monitoring](#error-monitoring-sentry-opt-in).
 - `WINGMAN_PORT` — Dev-only. Port a locally-running Wingman build listens on, allowed through CSP `frame-src` and CORS alongside the hosted Wingman origin. Default: backend `PORT` + 1.
 - `AUTH_DB_POOL_MAX` — Connection pool size for Better Auth's own `pg.Pool`, separate from `DB_POOL_MAX`. Default: `5`.
 - `OLLAMA_HOST` — Ollama endpoint for the built-in tile. Defaults to `http://localhost:11434` outside Docker and `http://host.docker.internal:11434` inside the bundled `docker/docker-compose.yml`.
-- The Phoenix healer URL is **not** configurable. It is the `AUTOFIX_URL` constant in `routing/autofix/autofix-healing-config.ts`; production (cloud and self-hosted alike) always heals against it, dev/test always uses the in-process mock. To switch Autofix off, use `AUTOFIX_GLOBAL_ENABLED=false`. See [Autofix](#autofix-self-healing-via-phoenix).
-- `AUTOFIX_HEALING_API_KEY` — Sent as `x-api-key` on every call to Phoenix. Required for a cloud/production Phoenix that enforces a static key; omit it for a keyless dev/test Phoenix. **Self-hosted installs need no key**: with no key set, Manifest announces its anonymous install id instead (see [Autofix](#autofix-self-healing-via-phoenix)).
-- `AUTOFIX_GLOBAL_ENABLED` — Set `false` to disable Autofix for all agents (default on). Companions: `AUTOFIX_TIMEOUT_MS` (per heal call, default `10000`), `AUTOFIX_REPAIRABLE_STATUSES` (default `400,404,422`).
-- `AUTOFIX_REPORT_ALL_4XX` — Set `true` to stream an agent's request-side 4xx (4xx except 401/402/403/429) to Phoenix's `POST /api/heal/observe` as evidence, carrying the full request body. Serves no fix and creates no heal attempt; it only lets Phoenix see the body that failed. Wider than the heal path in scope (not limited to `AUTOFIX_REPAIRABLE_STATUSES`) but **gated to agents with Autofix on** — `AutofixService.isActiveFor()`, the same per-agent flag that healing checks. Turning Autofix on is what consents to sending failing requests to the healing service; the check fails closed. Off by default: a second, deployment-level switch on top. Manifest persists nothing; the body is secret-scrubbed, capped at 256 KB, batched, and dropped under backpressure. Skipped when Autofix already reported the same failure via `/api/heal`. See `routing/autofix/observation-reporter.ts`.
+- The Phoenix healer URL is **not** configurable. It is the `AUTOFIX_URL` constant in `routing/autofix/autofix-healing-config.ts`; production (cloud and self-hosted alike) always heals against it, dev/test always uses the in-process mock. Autofix runs only when `AUTOFIX_GLOBAL_ENABLED=true`. See [Autofix](#autofix-self-healing-via-phoenix).
+- `AUTOFIX_HEALING_API_KEY` — Sent as `x-api-key` on every call to Phoenix. Required for a cloud/production Phoenix that enforces a static key; omit it for a keyless dev/test Phoenix. **Self-hosted installs need no key**: with no key set, TierGate announces its anonymous install id instead (see [Autofix](#autofix-self-healing-via-phoenix)).
+- `AUTOFIX_GLOBAL_ENABLED` — Autofix is off unless this is exactly `true`; while off, the dashboard hides its toggles (`autofixAvailable` on `GET /api/v1/setup/status`). Companions: `AUTOFIX_TIMEOUT_MS` (per heal call, default `10000`), `AUTOFIX_REPAIRABLE_STATUSES` (default `400,404,422`).
+- `AUTOFIX_REPORT_ALL_4XX` — Set `true` to stream an agent's request-side 4xx (4xx except 401/402/403/429) to Phoenix's `POST /api/heal/observe` as evidence, carrying the full request body. Serves no fix and creates no heal attempt; it only lets Phoenix see the body that failed. Wider than the heal path in scope (not limited to `AUTOFIX_REPAIRABLE_STATUSES`) but **gated to agents with Autofix on** — `AutofixService.isActiveFor()`, the same per-agent flag that healing checks. Turning Autofix on is what consents to sending failing requests to the healing service; the check fails closed. Off by default: a second, deployment-level switch on top. TierGate persists nothing; the body is secret-scrubbed, capped at 256 KB, batched, and dropped under backpressure. Skipped when Autofix already reported the same failure via `/api/heal`. See `routing/autofix/observation-reporter.ts`.
 - `REQUEST_RECORDING_STORAGE` / `REQUEST_RECORDING_FILESYSTEM_PATH` / `REQUEST_RECORDING_S3_*` / `REQUEST_RECORDING_RETENTION_DAYS` — Provider Attempt body recording storage + retention. See [Request Recording](#request-recording-provider-attempt-bodies).
-- `CREDITS_BASE_URL` / `CREDITS_MASTER_KEY` / `CREDITS_AUTO_PROVISION_ALLOWLIST` / `CREDITS_GEMINI_FREE_MAX_BUDGET` — Managed free providers (e.g. Gemini Free) via the credits gateway (default base URL `https://credits.manifest.build`; free-provider budget default `10`).
+- `CREDITS_BASE_URL` / `CREDITS_MASTER_KEY` / `CREDITS_AUTO_PROVISION_ALLOWLIST` / `CREDITS_GEMINI_FREE_MAX_BUDGET` — Managed free providers (e.g. Gemini Free) via the credits gateway (no default base URL: off until `CREDITS_BASE_URL` is set; free-provider budget default `10`).
 - `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRO_PRICE_ID` — Billing (cloud only). See `packages/backend/src/billing/`.
 - `PLAN_LIMIT_FREE_REQUESTS` / `PLAN_LIMIT_PRO_REQUESTS` / `PLAN_REQUEST_QUOTA_RESET_AT` — Per-plan request quotas enforced by `plan.service.ts`. The Cloud Free plan ended on 2026-11-02: `free` is the plan id of a tenant without a subscription, its default allowance is `0` (`FREE_PLAN_REQUESTS_PER_MONTH` in `packages/shared/src/plan-limits.ts`), so every `/v1` request from it is refused with M204 "Subscription required" before any provider is contacted. A positive `PLAN_LIMIT_FREE_REQUESTS` or a per-tenant `tenants.limit_overrides.requestsPerMonth` still grants an allowance (case-by-case extensions).
 
 ## Domain Terminology
 
-Manifest terminology is directional:
+TierGate terminology is directional:
 
-- A **Manifest Request** is one logical request from an agent to Manifest and lives in `requests`.
-- A **Provider Attempt** is one request from Manifest to an AI provider and lives in `agent_messages`.
+- A **TierGate Request** is one logical request from an agent to TierGate and lives in `requests`.
+- A **Provider Attempt** is one request from TierGate to an AI provider and lives in `agent_messages`.
 - A **Tenant** is a user's data boundary. It is created from `user.id` on first agent creation.
 - An **Agent** is an AI agent owned by a tenant. It has a unique OTLP ingest key. The dashboard labels agents **Harnesses** (UI copy only — code, DB, and API keep "agent").
 
@@ -547,15 +543,15 @@ Any backend endpoint that returns provider-attempt fields rendered by the fronte
 
 This rule exists because the Overview and Messages pages previously drifted and the Recent Messages badge read `STANDARD` instead of the specificity category (`CODING` etc.) — the frontend already shares the rendering code, so the divergence was purely backend projection drift.
 
-## Manifest's own errors (`M###`)
+## TierGate's own errors (`M###`)
 
-Every failure Manifest itself produces — as opposed to one a provider returned — carries a documented code from `MANIFEST_ERRORS` in `packages/backend/src/common/errors/error-codes.ts`, published at `https://manifest.build/llm-gateway/docs/errors/<code>`.
+Every failure TierGate itself produces — as opposed to one a provider returned — carries a documented code from `MANIFEST_ERRORS` in `packages/backend/src/common/errors/error-codes.ts`, published at `https://github.com/faisalahammad/tiergate/blob/main/docs/errors.md#<code>`.
 
-**Raise them with `ManifestError`** (`common/errors/manifest-error.ts`), never a bare `HttpException`. The type is what lets `proxy.controller.ts` tell "Manifest refused this request" from "the provider returned a 4xx". Before it existed, a malformed body (M300) and a Manifest bug (M500) were both recorded as _provider_ errors and counted against `provider_error_rate`.
+**Raise them with `ManifestError`** (`common/errors/manifest-error.ts`), never a bare `HttpException`. The type is what lets `proxy.controller.ts` tell "TierGate refused this request" from "the provider returned a 4xx". Before it existed, a malformed body (M300) and a TierGate bug (M500) were both recorded as _provider_ errors and counted against `provider_error_rate`.
 
-**Every code is recorded on a Manifest Request**, with four exceptions. `M001`, `M002`, `M003`, and `M005` are raised by `AgentKeyAuthGuard` before a key resolves to a tenant, so there is no agent to attribute a row to — they're listed in `UNRECORDABLE_MANIFEST_CODES` and write nothing. (`M004`, an expired key, _does_ resolve an agent, so the guard stashes it on `request.manifestErrorContext` and `ProxyExceptionFilter` records it.) `__tests__/manifest-error.spec.ts` fails if a new code is neither mapped in `MANIFEST_CODE_TO_REASON` nor declared unrecordable.
+**Every code is recorded on a TierGate Request**, with four exceptions. `M001`, `M002`, `M003`, and `M005` are raised by `AgentKeyAuthGuard` before a key resolves to a tenant, so there is no agent to attribute a row to — they're listed in `UNRECORDABLE_MANIFEST_CODES` and write nothing. (`M004`, an expired key, _does_ resolve an agent, so the guard stashes it on `request.manifestErrorContext` and `ProxyExceptionFilter` records it.) `__tests__/manifest-error.spec.ts` fails if a new code is neither mapped in `MANIFEST_CODE_TO_REASON` nor declared unrecordable.
 
-**`ProxyMessageRecorder.recordManifestBlockedRequest()` is the only writer of Manifest-authored rejected requests.** It creates one `requests` row, stamps `requests.error_code` plus the _rendered_ message (the `[🦚 Manifest M100] No anthropic API key yet. Add one here: …` text the caller saw — not a generic stand-in), and creates zero `agent_messages` rows because no provider was contacted. Do not route these through `recordSuccessMessage` or manufacture a `provider='manifest'` attempt.
+**`ProxyMessageRecorder.recordManifestBlockedRequest()` is the only writer of Manifest-authored rejected requests.** It creates one `requests` row, stamps `requests.error_code` plus the _rendered_ message (the `[🦚 TierGate M100] No anthropic API key yet. Add one here: …` text the caller saw — not a generic stand-in), and creates zero `agent_messages` rows because no provider was contacted. Do not route these through `recordSuccessMessage` or manufacture a `provider='manifest'` attempt.
 
 `M500` is the deliberate exception to "store what the caller saw": the caller gets the friendly "Something broke on our end", while the row stores the raw internal error message. The dashboard is where you go to find out what actually broke, so don't "fix" it to match.
 
@@ -563,11 +559,11 @@ Every failure Manifest itself produces — as opposed to one a provider returned
 
 ### The `request` error origin
 
-`ERROR_ORIGINS` (in `packages/shared/src/error-taxonomy.ts`) has six values. `request` means the caller sent a body Manifest could not route — not the operator's setup (`config`), not a limit they set (`policy`), and not a Manifest bug (`internal`).
+`ERROR_ORIGINS` (in `packages/shared/src/error-taxonomy.ts`) has six values. `request` means the caller sent a body TierGate could not route — not the operator's setup (`config`), not a limit they set (`policy`), and not a TierGate bug (`internal`).
 
 `request` is a member of `MANIFEST_ERROR_ORIGINS`. Do not confuse the error-origin value with the `requests` table: it classifies who caused an error. That membership is load-bearing because it keeps caller-caused failures out of provider reliability metrics and inside the `origin=manifest` filter shorthand. Any new origin that is not a provider round-trip belongs there too.
 
-### Fallback exhaustion is a provider error, not a Manifest code
+### Fallback exhaustion is a provider error, not a TierGate code
 
 When the primary and every fallback fail, the response **says what the provider said**: the message leads with the primary provider's own sentence followed by a one-line summary of every attempt, `source` is always `provider`, and `code` holds only the provider's own code. Exhaustion is a routing outcome, carried by `fallback_exhausted: true` in the body and the `X-Manifest-Fallback-Exhausted` header — it is **not** an error class and gets no `M###` code. Each `attempted_fallbacks[]` entry carries its sanitized `message`, `code`, and `auth_type`, plus a request-scoped `autofix` summary (`{ applied, original_status, retry_status }`) on the primary and on any hop where Phoenix was consulted. The provider-error parsers also understand FastAPI-style `{detail}` bodies (how ChatGPT Codex rejects an unsupported model) and bare `{"error": "…"}` strings, so those no longer collapse to a generic "Bad request to upstream provider".
 
@@ -578,7 +574,7 @@ Opt-in, **per-harness** recording of Provider Attempt request/response bodies, b
 - **Toggle**: `GET/PATCH /api/v1/routing/:agentName/recording` (in `tier.controller.ts`); UI in `pages/SettingsRecordingSection.tsx`. **Default ON for newly created harnesses only** — enabling the feature never changed existing harnesses' settings. Setting changes apply immediately across replicas.
 - **Storage selection** (`REQUEST_RECORDING_STORAGE=auto|s3|filesystem|disabled`, default `auto`): complete S3 credentials win; otherwise self-hosted falls back to the filesystem path (`REQUEST_RECORDING_FILESYSTEM_PATH`, default `/data/request-recordings`). Managed Cloud never silently falls back to ephemeral local disk. S3 config: `REQUEST_RECORDING_S3_BUCKET/ENDPOINT/REGION/ACCESS_KEY_ID/SECRET_ACCESS_KEY/FORCE_PATH_STYLE`.
 - **Encryption at rest**: `MANIFEST_ENCRYPTION_KEY` protects stored provider API keys, OAuth tokens and request recordings, not the rest of the database. Recordings use the **current** key only: the `MANIFEST_ENCRYPTION_KEY_PREVIOUS` re-encryption pass does **not** rewrite them, so after a key change older recordings stay unreadable (on self-hosted, a configured `REQUEST_RECORDING_RETENTION_DAYS` eventually deletes them). Pre-encryption gzip-only recordings stay readable.
-- **Retention**: Manifest Cloud **never deletes recordings** — no plan, trial or subscription status has a retention window, and `REQUEST_RECORDING_RETENTION_DAYS` is ignored there (a boot warning says so). Do not add one back: the recordings are kept on purpose. Self-hosted installs keep them forever too, unless the operator sets `REQUEST_RECORDING_RETENTION_DAYS`; then the nightly cron in `database/request-recording-retention.service.ts` deletes older ones.
+- **Retention**: TierGate Cloud **never deletes recordings** — no plan, trial or subscription status has a retention window, and `REQUEST_RECORDING_RETENTION_DAYS` is ignored there (a boot warning says so). Do not add one back: the recordings are kept on purpose. Self-hosted installs keep them forever too, unless the operator sets `REQUEST_RECORDING_RETENTION_DAYS`; then the nightly cron in `database/request-recording-retention.service.ts` deletes older ones.
 - **Privacy**: inline base64 images are stripped from recordings (and from Phoenix observation payloads).
 - **Code**: `common/services/request-recording-storage.service.ts` (storage backends), `common/utils/request-recording-codec.ts` (gzip + encryption codec), `routing/proxy/attempt-recording.service.ts` + `attempt-recording-capture.ts` (capture in the proxy path).
 - **Deploy templates** provision durable recording storage (see README deploy table). Volume-backed templates are single-instance; use S3-compatible storage before scaling horizontally.
@@ -604,8 +600,8 @@ To add a new font or icon library:
 ## Anonymous Usage Telemetry (self-hosted)
 
 Self-hosted installs (Docker / `node dist/main.js` with `NODE_ENV=production`)
-send one aggregate usage report per 24h to `TELEMETRY_ENDPOINT` (default
-`https://telemetry.manifest.build/v1/report`). The module lives at
+send one aggregate usage report per 24h to `TELEMETRY_ENDPOINT`, only when that
+variable is set (there is no default). The module lives at
 `packages/backend/src/telemetry/`.
 
 **Payload fields (v1) — keep this list minimal**:
@@ -634,15 +630,15 @@ send one aggregate usage report per 24h to `TELEMETRY_ENDPOINT` (default
   command appends one anonymous event to a local spool
   (`~/.config/manifest/telemetry-spool.jsonl`, mode 0600, capped at 500) and the
   spool ships as one envelope per install per day to `/v1/cli-report` on the
-  telemetry host (the very first command flushes immediately; a failed send is
+  telemetry host (`MANIFEST_CLI_TELEMETRY_ENDPOINT`; without it the CLI records nothing) (the very first command flushes immediately; a failed send is
   retried at most hourly). The envelope carries `schema_version`, `anon_id`,
-  `cli_version`, `os`, `target` (`cloud` | `self-hosted` — the class of Manifest
+  `cli_version`, `os`, `target` (`cloud` | `self-hosted` — the class of TierGate
   the install points at, never the URL) and an `events[]` array of
   `{command, ok, duration_ms, agent_runtime?, at}`. Same
   `MANIFEST_TELEMETRY_DISABLED=1` opt-out.
 - Runtime: `platform` (`process.platform`), `arch` (`process.arch`)
 
-User-facing spec: https://manifest.build/llm-gateway/docs/self-hosted/#telemetry
+User-facing spec: https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md#telemetry
 
 **Explicitly never sent**: tenant/user IDs, emails, API keys, prompts,
 message contents, model names, custom provider URLs, OAuth client IDs,
@@ -739,17 +735,19 @@ Still to come (not in this phase): a migration assistant (task-specific → head
 
 ## Autofix (self-healing via Phoenix)
 
-**Autofix** repairs a failing request before the next hop of the fallback chain runs. When an agent request fails with a **repairable request-side 4xx** (default allow-list `400,404,422` — never 401/403/429/5xx), Manifest hands the failed request + normalized provider error to an external healing service (**Phoenix**), gets back a patched request, and resends it **once** on the same transport. It runs **before** `shouldTriggerFallback` on the primary **and on every failed fallback hop** (`proxy-fallback.service.ts` `maybeHealFallback()`): a fallback model that rejects a request-side param can carry its own Phoenix patch, and retrying it in place recovers the request instead of recording a dead hop and burning the rest of the chain. The fallback chain remains the safety net when healing doesn't clear the error. It is available to every tenant and toggled **per agent** (`agents.autofix_enabled`); consent is enforced inside `maybeHeal()` for primary and fallback alike.
+**TierGate: off unless `AUTOFIX_GLOBAL_ENABLED=true`.** The healer is operated by Manifest, the upstream project. The per-agent defaults below apply only once it is on.
+
+**Autofix** repairs a failing request before the next hop of the fallback chain runs. When an agent request fails with a **repairable request-side 4xx** (default allow-list `400,404,422` — never 401/403/429/5xx), TierGate hands the failed request + normalized provider error to an external healing service (**Phoenix**), gets back a patched request, and resends it **once** on the same transport. It runs **before** `shouldTriggerFallback` on the primary **and on every failed fallback hop** (`proxy-fallback.service.ts` `maybeHealFallback()`): a fallback model that rejects a request-side param can carry its own Phoenix patch, and retrying it in place recovers the request instead of recording a dead hop and burning the rest of the chain. The fallback chain remains the safety net when healing doesn't clear the error. It is available to every tenant and toggled **per agent** (`agents.autofix_enabled`); consent is enforced inside `maybeHeal()` for primary and fallback alike.
 
 **Per-agent default is deployment-mode-dependent.** `agents.autofix_enabled` is **nullable**: `NULL` means "no explicit choice — inherit the mode default", which is **ON in cloud, OFF in self-hosted** (resolved by `AutofixService.resolveEnabled()` via `isSelfHosted()`, computed once at boot). An explicit `true`/`false` (the user flipping the Settings toggle) always wins. The `GET/PATCH …/autofix` endpoints return the _resolved_ effective value, so the UI shows the right default state without persisting one. Migration `1799000300000` drops the old blanket `false` default and resets pre-feature `false` rows to `NULL` so they inherit the mode default.
 
-**Scope:** non-streaming responses + streaming that fails before the first byte (a repairable 4xx makes `providerResponse.ok=false` before any client bytes are sent). **One attempt per hop — there is no retry budget.** If the single patched retry still fails, Manifest reports the outcome to Phoenix and hands off to the next fallback.
+**Scope:** non-streaming responses + streaming that fails before the first byte (a repairable 4xx makes `providerResponse.ok=false` before any client bytes are sent). **One attempt per hop — there is no retry budget.** If the single patched retry still fails, TierGate reports the outcome to Phoenix and hands off to the next fallback.
 
-**Explicit models use provider passthrough.** A concrete model that is missing from Manifest's discovered catalog still routes when its provider can be identified and the matching credential is enabled on the harness. The provider—not the cached catalog—is authoritative on whether the model exists. A real provider `model_not_found` response follows the standard `maybeHeal` path, so Phoenix receives the actual provider/auth/protocol/error and any renamed model is re-resolved through the same passthrough logic. M302 remains for requests with no unambiguous connected provider route (for example, an unknown bare ID or a bare ID spanning multiple auth connections); those requests never contacted a provider and are not synthesized into Autofix failures.
+**Explicit models use provider passthrough.** A concrete model that is missing from TierGate's discovered catalog still routes when its provider can be identified and the matching credential is enabled on the harness. The provider—not the cached catalog—is authoritative on whether the model exists. A real provider `model_not_found` response follows the standard `maybeHeal` path, so Phoenix receives the actual provider/auth/protocol/error and any renamed model is re-resolved through the same passthrough logic. M302 remains for requests with no unambiguous connected provider route (for example, an unknown bare ID or a bare ID spanning multiple auth connections); those requests never contacted a provider and are not synthesized into Autofix failures.
 
 **Code:** `packages/backend/src/routing/autofix/`
 
-- `autofix.service.ts` — `maybeHeal()` gates on (globally enabled + repairable status + circuit breaker closed + agent opted in), then `runHealOnce()` does one heal + one reforward. Any throw degrades to the original provider error (never a Manifest 500). The per-agent consent flag is read from the database on every repairable failure so enable and disable changes take effect across all replicas immediately. **Circuit breaker:** after 3 consecutive heal-call transport failures the breaker opens for 30s and `maybeHeal()` skips healing (returns null → straight to fallback), so a slow/down Phoenix stops adding latency to every repairable 4xx; any successful round-trip clears the streak.
+- `autofix.service.ts` — `maybeHeal()` gates on (globally enabled + repairable status + circuit breaker closed + agent opted in), then `runHealOnce()` does one heal + one reforward. Any throw degrades to the original provider error (never a TierGate 500). The per-agent consent flag is read from the database on every repairable failure so enable and disable changes take effect across all replicas immediately. **Circuit breaker:** after 3 consecutive heal-call transport failures the breaker opens for 30s and `maybeHeal()` skips healing (returns null → straight to fallback), so a slow/down Phoenix stops adding latency to every repairable 4xx; any successful round-trip clears the streak.
 - `healing-client.ts` — the `HealingClient` port + `HEALING_CLIENT` DI token. Chosen at boot in `autofix.module.ts` from `NODE_ENV` alone: `HttpHealingClient` against the `AUTOFIX_URL` constant in production, the in-process **`MockHealingClient` in dev/test**. There is no URL to configure, so there is no "healer not wired" state to fall back from — which is why the old inert `NoopHealingClient` is gone. The mock's hardcoded catalog stays off real traffic because it is unreachable in production.
 - `phoenix.types.ts` — the wire contract. `provider-error-normalizer.ts` — turns a raw 4xx body into `{message,type,param,code}`. `autofix.types.ts` — internal `AutofixRecord` / `AutofixChainEntry`.
 - `autofix-health-probe.ts` — on boot (`OnApplicationBootstrap`), in production only, pings Phoenix `GET /api/health` once (fire-and-forget, never blocks/fails boot) and warns if unreachable — so blocked egress or a down Phoenix surfaces at deploy, not on the first repairable 4xx.
@@ -764,11 +762,11 @@ The id is minted lazily by `InstallIdService.getOrCreate()` (exported from `Tele
 
 - `POST /api/heal` — body `{traceId, provider, api, url?, request, response:{statusCode, error:{message,type?,param?,code?}}}`. **`traceId` is required** (Phoenix rejects a body without it) and **the provider error is nested under `response`** (a flat `providerError` is rejected), and `api` is the proxy `apiMode` verbatim (`chat_completions` | `responses` | `messages`). The response is discriminated on `status`: `patched` / `unverified` (both carry `healedBody` + `healAttemptId` → apply the patch and resend; `patched` = verified issue, `unverified` = fresh patch) | `resolving` (Phoenix is still authoring a fix — nothing to resend) | `no_patch`. Also returns `issueId`, `patchId?`, `operations?`.
 - `PATCH /api/heal-attempts/{healAttemptId}` — report the retry outcome `{retryStatusCode, error?}` (`error` required when ≥400). Fire-and-forget; Phoenix decides succeeded/failed. Only possible when a patch handed out a `healAttemptId` — `no_patch`/`resolving` carry none, so those outcomes are **not** reported.
-- `traceId` is stable across the logical request (Manifest reuses the internal `groupId`).
+- `traceId` is stable across the logical request (TierGate reuses the internal `groupId`).
 
-**Recording separates the request verdict from attempt audit.** `requests.autofix_status` is the one outcome for the logical request; only `retry_succeeded` means the request was recovered by Autofix. Actual provider calls remain `agent_messages` rows with their own `status`. When Manifest sends a patched retry, the related attempt rows use `autofix_applied`, `autofix_group_id`, `autofix_role`, and `autofix_operations`; Phoenix's decision metadata is exposed by the entity as `autofix_decision` (`{status,issueId,patchId,healAttemptId,explanation}`) and mapped to the retained physical column `autofix_phoenix`. A Phoenix consultation that produces no patched retry must not create a fake provider attempt.
+**Recording separates the request verdict from attempt audit.** `requests.autofix_status` is the one outcome for the logical request; only `retry_succeeded` means the request was recovered by Autofix. Actual provider calls remain `agent_messages` rows with their own `status`. When TierGate sends a patched retry, the related attempt rows use `autofix_applied`, `autofix_group_id`, `autofix_role`, and `autofix_operations`; Phoenix's decision metadata is exposed by the entity as `autofix_decision` (`{status,issueId,patchId,healAttemptId,explanation}`) and mapped to the retained physical column `autofix_phoenix`. A Phoenix consultation that produces no patched retry must not create a fake provider attempt.
 
-**Frontend:** `pages/SettingsAutofixSection.tsx` — a single on/off toggle in the per-agent **Settings** page (shown for every agent; `services/api/routing.ts` `getAutofix`/`updateAutofix`; `.settings-switch` styling). `components/MessageDetails.tsx` renders the Autofix panel + sibling link.
+**Frontend:** `pages/SettingsAutofixSection.tsx` — a single on/off toggle in the per-agent **Settings** page (shown only while Autofix is available; `services/api/routing.ts` `getAutofix`/`updateAutofix`; `.settings-switch` styling). `components/MessageDetails.tsx` renders the Autofix panel + sibling link.
 
 **Self-hosted consent is once, and rides on the per-agent enable.** On self-hosted, consent is remembered via `install_metadata.autofix_consented_at` — a single nullable column on the existing telemetry singleton. Consent is recorded by **any** enable path: the per-agent `PATCH …/autofix` with `enabled: true` (a disable never mints it), the enable-all endpoint, and the Autofix switch on first agent creation. The singleton row is upserted, minting an `install_id` if telemetry never did — so consent alone never starts telemetry.
 
@@ -780,7 +778,7 @@ The id is minted lazily by `InstallIdService.getOrCreate()` (exported from `Tele
 
 **Endpoints:** `GET/PATCH /api/v1/routing/:agentName/autofix` → `{ enabled, consented }`; `GET /api/v1/autofix/status`; `POST /api/v1/autofix/enable-all`.
 
-**Env:** `AUTOFIX_HEALING_API_KEY` (sent as `x-api-key`; cloud only — self-hosted sends its install id instead), `AUTOFIX_GLOBAL_ENABLED` (`false` disables Autofix everywhere, and is the hard opt-out; default on), `AUTOFIX_TIMEOUT_MS` (per heal call, default `10000`), `AUTOFIX_REPAIRABLE_STATUSES` (default `400,404,422`). The healer URL is the `AUTOFIX_URL` constant, not an env var.
+**Env:** `AUTOFIX_HEALING_API_KEY` (sent as `x-api-key`; cloud only — self-hosted sends its install id instead), `AUTOFIX_GLOBAL_ENABLED` (must be `true` to turn Autofix on; off by default), `AUTOFIX_TIMEOUT_MS` (per heal call, default `10000`), `AUTOFIX_REPAIRABLE_STATUSES` (default `400,404,422`). The healer URL is the `AUTOFIX_URL` constant, not an env var.
 
 ## Providers & Models
 
@@ -861,15 +859,15 @@ All pricing comes from a single source:
 
 ## Releases
 
-Most workspace packages are **not published to npm**: `packages/backend`, `packages/frontend`, `packages/shared`, and `packages/manifest` are all `private: true`. Manifest itself ships as the Docker image at `ghcr.io/faisalahammad/tiergate` (built from `docker/Dockerfile`).
+Most workspace packages are **not published to npm**: `packages/backend`, `packages/frontend`, `packages/shared`, and `packages/manifest` are all `private: true`. TierGate itself ships as the Docker image at `ghcr.io/faisalahammad/tiergate` (built from `docker/Dockerfile`).
 
-`packages/cli` is the exception: it publishes to npm as **`mnfst-gateway-cli`**. The name is unscoped and gateway-qualified: the bare `mnfst` belongs to an unrelated project, `manifest` is the Manifest SDK, and a `@mnfst` scope would need an npm organization that does not exist (a scoped publish fails with a 404). The binary stays `mnfst`. Its version **tracks the Manifest release** — it has no changeset target of its own and stays in the `.changeset/config.json` ignore list. The `publish-npm` job in `release.yml` runs on the same `should_publish` gate as the Docker image: it stamps the version from `packages/manifest/package.json` onto all three files that carry it (`packages/cli/package.json`, `src/version.ts`, and the generated `SKILL_VERSION` in `src/skill-content.gen.ts`, which `skill-content.spec.ts` pins to package.json) via `npm run set-version --workspace=packages/cli`, builds shared then the CLI, and publishes with provenance. Re-running the workflow for an already-published version is a no-op. Publishing needs the `NPM_TOKEN` repository secret.
+`packages/cli` is the exception: it publishes to npm as **`mnfst-gateway-cli`**. The name is unscoped and gateway-qualified: the bare `mnfst` belongs to an unrelated project, `manifest` is the Manifest SDK, and a `@mnfst` scope would need an npm organization that does not exist (a scoped publish fails with a 404). The binary stays `mnfst`. Its version **tracks the TierGate release** — it has no changeset target of its own and stays in the `.changeset/config.json` ignore list. The `publish-npm` job in `release.yml` runs on the same `should_publish` gate as the Docker image: it stamps the version from `packages/manifest/package.json` onto all three files that carry it (`packages/cli/package.json`, `src/version.ts`, and the generated `SKILL_VERSION` in `src/skill-content.gen.ts`, which `skill-content.spec.ts` pins to package.json) via `npm run set-version --workspace=packages/cli`, builds shared then the CLI, and publishes with provenance. Re-running the workflow for an already-published version is a no-op. Publishing needs the `NPM_TOKEN` repository secret.
 
 The one npm-published artifact in the repo is the **n8n community node** `n8n-nodes-manifest` (`integrations/n8n-nodes-manifest/`, currently v0.2.2). It is standalone — outside the npm workspaces, Turborepo, and Changesets — with its own build and publish flow. The repo-root `nodes/` and `credentials/` directories are identical mirrors of its sources (required by n8n's community-node scanner, which looks at the repo root).
 
 ### `packages/manifest/` is the canonical version
 
-`packages/manifest/` is a **code-free shell package** that exists only to hold the canonical "Manifest version". It has no `src/`, no tests, no dependencies — just `package.json`, `README.md`, and (after the first release) a `CHANGELOG.md`. The real backend and frontend live under `packages/backend/` and `packages/frontend/` as before.
+`packages/manifest/` is a **code-free shell package** that exists only to hold the canonical "TierGate version". It has no `src/`, no tests, no dependencies — just `package.json`, `README.md`, and (after the first release) a `CHANGELOG.md`. The real backend and frontend live under `packages/backend/` and `packages/frontend/` as before.
 
 `.changeset/config.json` has `"ignore": ["manifest-backend", "manifest-frontend", "manifest-shared", "mnfst-cli"]`, so when a contributor runs `npx changeset`, **only `manifest` is a selectable target**. Bumps to `manifest-backend` / `manifest-frontend` / `manifest-shared` / `mnfst-cli` are silently discarded. Always target `manifest` regardless of which files you actually changed. A CI check (`scripts/check-changesets.js`, wired into the `changeset-check` job) enforces this: a changeset that targets an ignored package fails the PR, because it makes `changeset version` a no-op and breaks the Release workflow with "No commits between main and changeset-release/main".
 

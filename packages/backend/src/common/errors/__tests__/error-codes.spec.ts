@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import {
   extractManifestErrorCode,
   formatManifestError,
@@ -8,7 +10,12 @@ import {
 
 describe('MANIFEST_ERRORS registry', () => {
   it('exposes the public docs base URL', () => {
-    expect(MANIFEST_ERRORS_DOCS_BASE).toBe('https://manifest.build/llm-gateway/docs/errors');
+    expect(MANIFEST_ERRORS_DOCS_BASE).toBe(
+      'https://github.com/faisalahammad/tiergate/blob/main/docs/errors.md',
+    );
+    expect(formatManifestError('M100')).toContain(
+      'https://github.com/faisalahammad/tiergate/blob/main/docs/errors.md#m100',
+    );
   });
 
   it('every code has a non-empty title and template', () => {
@@ -19,18 +26,38 @@ describe('MANIFEST_ERRORS registry', () => {
     }
   });
 
+  it('documents every code in docs/errors.md', () => {
+    const docs = readFileSync(resolve(__dirname, '../../../../../../docs/errors.md'), 'utf8');
+    for (const code of Object.keys(MANIFEST_ERRORS)) {
+      expect(docs).toMatch(new RegExp(`^## ${code}$`, 'm'));
+    }
+  });
+
   it('every code is unique', () => {
     const codes = Object.keys(MANIFEST_ERRORS);
     expect(new Set(codes).size).toBe(codes.length);
   });
 });
 
+describe('TierGate prefix', () => {
+  it('writes the TierGate prefix', () => {
+    expect(formatManifestError('M300')).toMatch(/^\[🦚 TierGate M300\]/);
+  });
+
+  it('still reads rows stored with the Manifest prefix', () => {
+    expect(extractManifestErrorCode('[🦚 Manifest M100] x')).toBe('M100');
+    expect(extractManifestErrorCode('[🦚 TierGate M100] x')).toBe('M100');
+  });
+});
+
 describe('formatManifestError', () => {
   it('wraps a static template with the peacock prefix and docs URL', () => {
     const out = formatManifestError('M001');
-    expect(out).toContain('[🦚 Manifest M001]');
+    expect(out).toContain('[🦚 TierGate M001]');
     expect(out).toContain('Missing the Authorization header');
-    expect(out).toContain('https://manifest.build/llm-gateway/docs/errors/M001/');
+    expect(out).toContain(
+      'https://github.com/faisalahammad/tiergate/blob/main/docs/errors.md#m001',
+    );
   });
 
   it('interpolates {var} placeholders from the vars object', () => {
@@ -52,7 +79,7 @@ describe('formatManifestError', () => {
 
   it('renders M101 as a missing default model, not missing providers (#2942)', () => {
     const out = formatManifestError('M101', { dashboardUrl: 'https://dash.example/routing' });
-    expect(out).toContain('[🦚 Manifest M101]');
+    expect(out).toContain('[🦚 TierGate M101]');
     expect(out).toContain('This harness has no model to route to yet. Pick a default model here');
     expect(out).toContain('https://dash.example/routing');
   });
@@ -62,23 +89,22 @@ describe('formatManifestError', () => {
       provider: 'openai',
       dashboardUrl: 'https://dash.example/routing',
     });
-    expect(out).toContain('[🦚 Manifest M102]');
+    expect(out).toContain('[🦚 TierGate M102]');
     expect(out).toContain('openai subscription credentials could not be refreshed');
     expect(out).toContain('https://dash.example/routing');
   });
 
   it('appends the docs URL exactly once', () => {
     const out = formatManifestError('M500');
-    const matches =
-      out.match(/https:\/\/manifest\.build\/llm-gateway\/docs\/errors\/M500\//g) ?? [];
+    const matches = out.match(/\/docs\/errors\.md#m500/g) ?? [];
     expect(matches).toHaveLength(1);
   });
 
   it('produces a stable output for every registered code', () => {
     for (const code of Object.keys(MANIFEST_ERRORS) as ManifestErrorCode[]) {
       const out = formatManifestError(code);
-      expect(out.startsWith(`[🦚 Manifest ${code}]`)).toBe(true);
-      expect(out.endsWith(`See ${MANIFEST_ERRORS_DOCS_BASE}/${code}/`)).toBe(true);
+      expect(out.startsWith(`[🦚 TierGate ${code}]`)).toBe(true);
+      expect(out.endsWith(`See ${MANIFEST_ERRORS_DOCS_BASE}#${code.toLowerCase()}`)).toBe(true);
     }
   });
 });
@@ -89,11 +115,11 @@ describe('extractManifestErrorCode', () => {
     expect(extractManifestErrorCode(undefined)).toBeNull();
     expect(extractManifestErrorCode('')).toBeNull();
     expect(extractManifestErrorCode('upstream 500')).toBeNull();
-    expect(extractManifestErrorCode('[Manifest M999] unknown')).toBeNull();
+    expect(extractManifestErrorCode('[TierGate M999] unknown')).toBeNull();
     // A provider body that echoes the code text without the peacock must NOT
     // be mistaken for a Manifest error (guards against provider-error mislabeling).
-    expect(extractManifestErrorCode('[Manifest M100] echoed by an upstream')).toBeNull();
-    expect(extractManifestErrorCode('provider said: Manifest M102 somewhere')).toBeNull();
+    expect(extractManifestErrorCode('[TierGate M100] echoed by an upstream')).toBeNull();
+    expect(extractManifestErrorCode('provider said: TierGate M102 somewhere')).toBeNull();
   });
 
   it('extracts the code from a formatted peacock message', () => {
@@ -101,7 +127,7 @@ describe('extractManifestErrorCode', () => {
       'M102',
     );
     expect(
-      extractManifestErrorCode('[🦚 Manifest M100] No openai API key yet. Add one here: https://x'),
+      extractManifestErrorCode('[🦚 TierGate M100] No openai API key yet. Add one here: https://x'),
     ).toBe('M100');
   });
 

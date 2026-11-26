@@ -112,6 +112,11 @@ vi.mock('manifest-shared', () => ({
   platformIcon: () => undefined,
 }));
 
+vi.mock('../../src/services/setup-status.js', () => ({
+  checkIsSelfHosted: () => Promise.resolve(false),
+  checkAutofixAvailable: () => Promise.resolve(true),
+}));
+
 import Workspace from '../../src/pages/Workspace';
 
 const openModal = () => {
@@ -152,9 +157,10 @@ describe('Workspace AddAgentModal - name validation', () => {
     expect(createBtn.disabled).toBe(true);
   });
 
-  it('does not call createAgent when the user clicks Create with whitespace only', () => {
+  it('does not call createAgent when the user clicks Create with whitespace only', async () => {
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: '   ' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     expect(mockCreateAgent).not.toHaveBeenCalled();
   });
@@ -177,6 +183,7 @@ describe('Workspace AddAgentModal - name validation', () => {
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: 'weird/name' } });
     expect(createBtn.disabled).toBe(false);
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
@@ -190,6 +197,7 @@ describe('Workspace AddAgentModal - name validation', () => {
     mockCreateAgent.mockResolvedValue({ agent: { name: '100%cool' }, apiKey: 'k' });
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: '100%cool' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/harnesses/100%25cool/routing', expect.anything());
@@ -200,6 +208,7 @@ describe('Workspace AddAgentModal - name validation', () => {
     mockCreateAgent.mockResolvedValue({ agent: { name: 'bot-🚀' }, apiKey: 'k' });
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: 'bot-🚀' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
@@ -212,6 +221,7 @@ describe('Workspace AddAgentModal - name validation', () => {
   it('trims surrounding whitespace before submitting the name', async () => {
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: '  spaced-out  ' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockCreateAgent).toHaveBeenCalledWith({
@@ -230,6 +240,7 @@ describe('Workspace AddAgentModal - name validation', () => {
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: longName } });
     expect(createBtn.disabled).toBe(false);
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockCreateAgent).toHaveBeenCalledWith({
@@ -256,6 +267,7 @@ describe('Workspace AddAgentModal - exact createAgent payload', () => {
   it('submits the default category and platform when the user only types a name', async () => {
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: 'Demo Agent' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockCreateAgent).toHaveBeenCalledWith({
@@ -282,6 +294,7 @@ describe('Workspace AddAgentModal - exact createAgent payload', () => {
     fireEvent.click(container.querySelector('[data-testid="pick-app"]')!);
     fireEvent.click(container.querySelector('[data-testid="pick-langchain"]')!);
     fireEvent.input(input, { target: { value: 'my-langchain-agent' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockCreateAgent).toHaveBeenCalledWith({
@@ -298,6 +311,7 @@ describe('Workspace AddAgentModal - exact createAgent payload', () => {
     mockCreateAgent.mockResolvedValue({ agent: { name: 'demo-agent-1' }, apiKey: 'key-xyz' });
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: 'Demo Agent' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/harnesses/demo-agent-1/routing', {
@@ -311,6 +325,7 @@ describe('Workspace AddAgentModal - exact createAgent payload', () => {
     mockCreateAgent.mockResolvedValue({ apiKey: 'k' });
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: 'Fallback Agent' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
@@ -325,6 +340,7 @@ describe('Workspace AddAgentModal - exact createAgent payload', () => {
     mockCreateAgent.mockRejectedValue(new Error('boom'));
     const { input, createBtn } = openModal();
     fireEvent.input(input, { target: { value: 'Demo Agent' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockCreateAgent).toHaveBeenCalled();

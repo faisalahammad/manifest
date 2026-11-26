@@ -1,8 +1,7 @@
 // Single source of truth for the CORS allow-lists and the CSP `frame-src`
-// directive. CORS allows the hosted Wingman gateway tester in both dev and
-// production (it's a legitimate cross-origin caller of the gateway). The CSP
-// `frame-src` — which governs embedding the Wingman drawer in the dashboard —
-// stays dev-only, since that drawer is dead-code-eliminated from production.
+// directive. The hosted Wingman gateway tester is allowed in dev only: both CORS
+// and the CSP `frame-src` that embeds its drawer, which is dead-code-eliminated
+// from production.
 
 export const HOSTED_WINGMAN_ORIGIN = 'https://wingman.manifest.build';
 
@@ -40,10 +39,8 @@ export function buildDevAllowedOrigins({
   );
 }
 
-// Production CORS allow-list. The dashboard is same-origin, but the hosted
-// Wingman gateway tester (https://wingman.manifest.build) is a legitimate
-// cross-origin caller of the gateway routes (`/v1/chat/completions`,
-// `/v1/messages`), so production must allow its origin. Exact match only, and
+// Production CORS allow-list. The dashboard is same-origin, so only origins the
+// operator lists may call the gateway routes cross-origin. Exact match only, and
 // `credentials: false` at the call site keeps this safe: an allow-listed origin
 // still needs the user's own bearer key and no session cookie can ride along.
 export function buildProdAllowedOrigins({ extraOrigins }: ProdOriginBuilderOptions = {}): string[] {
@@ -54,7 +51,7 @@ export function buildProdAllowedOrigins({ extraOrigins }: ProdOriginBuilderOptio
     // match otherwise.
     .map((v) => v.trim().replace(/\/+$/, ''))
     .filter((v) => v.length > 0);
-  return Array.from(new Set([HOSTED_WINGMAN_ORIGIN, ...extras]));
+  return Array.from(new Set(extras));
 }
 
 export function buildFrameSrc({ isDev, wingmanPort }: FrameSrcOptions): string[] {

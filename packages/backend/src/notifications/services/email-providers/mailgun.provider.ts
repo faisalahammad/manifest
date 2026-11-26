@@ -18,7 +18,7 @@ export class MailgunProvider implements EmailProvider {
   constructor(config: EmailProviderConfig) {
     this.apiKey = config.apiKey;
     this.domain = config.domain ?? '';
-    this.defaultFrom = config.fromEmail ?? 'noreply@manifest.build';
+    this.defaultFrom = config.fromEmail ?? 'noreply@tiergate.local';
   }
 
   async send(opts: SendEmailOptions): Promise<boolean> {
@@ -34,7 +34,7 @@ export class MailgunProvider implements EmailProvider {
 
     try {
       const form = new URLSearchParams();
-      form.append('from', opts.from ?? `Manifest <${this.defaultFrom}>`);
+      form.append('from', opts.from ?? `TierGate <${this.defaultFrom}>`);
       form.append('to', opts.to);
       form.append('subject', opts.subject);
       form.append('html', opts.html);

@@ -38,7 +38,7 @@ describe('SettingsRecordingSection', () => {
     expect(container.textContent).toContain('see what your agent sends');
     await waitFor(() =>
       expect(container.textContent).toContain(
-        'logs stay in your own database and never reach',
+        'logs stay in your own database and never leave this server',
       ),
     );
     expect(getRecording).toHaveBeenCalledWith('demo', expect.anything());
@@ -49,7 +49,7 @@ describe('SettingsRecordingSection', () => {
     getRecording.mockResolvedValue({ enabled: false });
     const { container } = render(() => <SettingsRecordingSection agentName={() => 'demo'} />);
     await waitFor(() =>
-      expect(container.textContent).toContain('Logs are stored in your Manifest workspace.'),
+      expect(container.textContent).toContain('Logs are stored in your TierGate workspace.'),
     );
     expect(container.textContent).not.toContain('your own database');
   });

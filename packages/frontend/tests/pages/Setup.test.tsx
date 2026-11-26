@@ -123,7 +123,7 @@ describe('Setup page', () => {
     });
   });
 
-  it('redirects self-hosted admins to the discovery step after setup', async () => {
+  it('redirects self-hosted admins to the dashboard after setup', async () => {
     mockCheckIsSelfHosted.mockResolvedValue(true);
     mockSignInEmail.mockResolvedValue({ data: { user: { id: 'admin1' } } });
     localStorage.removeItem('manifest_discovery_pending_admin1');
@@ -132,10 +132,9 @@ describe('Setup page', () => {
     fireEvent.submit(container.querySelector('form')!);
 
     await waitFor(() => {
-      expect(window.location.href).toBe('/discovery');
+      expect(window.location.href).toBe('/');
     });
-    expect(localStorage.getItem('manifest_discovery_pending_admin1')).toBe('/');
-    localStorage.removeItem('manifest_discovery_pending_admin1');
+    expect(localStorage.getItem('manifest_discovery_pending_admin1')).toBeNull();
   });
 
   it('redirects non-self-hosted admins straight to the dashboard after setup', async () => {
@@ -160,17 +159,14 @@ describe('Setup page', () => {
     });
   });
 
-  it('preserves discovery through a manual login if auto-sign-in fails after setup', async () => {
+  it('sends the admin to login if auto-sign-in fails after setup', async () => {
     mockSignInEmail.mockResolvedValue({ error: { message: 'session failed' } });
     const { container } = await renderSetup();
     fillValidForm();
     fireEvent.submit(container.querySelector('form')!);
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith(
-        '/login?redirect=%2Fdiscovery%3Fnext%3D%252F%26signup%3D1',
-        { replace: true },
-      );
+      expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
     });
   });
 

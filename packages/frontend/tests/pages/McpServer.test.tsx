@@ -152,7 +152,7 @@ describe('MCP server page', () => {
     const { container } = await renderReady();
     expect(container.textContent).toContain('never sees the write');
     const link = container.querySelector(
-      'a[href="https://manifest.build/llm-gateway/docs/integrations/mcp/"]',
+      'a[href="https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md#mcp-server"]',
     );
     expect(link).not.toBeNull();
     expect(link?.getAttribute('rel')).toBe('noopener noreferrer');

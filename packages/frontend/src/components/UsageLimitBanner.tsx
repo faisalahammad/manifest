@@ -72,7 +72,7 @@ const UsageLimitBanner: Component = () => {
       <div class="usage-limit-banner" classList={{ 'usage-limit-banner--danger': atLimit() }}>
         <span class="usage-limit-banner__text">
           {noSubscription()
-            ? 'Manifest Cloud needs a Pro subscription to route requests. Your dashboard and settings are kept.'
+            ? 'TierGate Cloud needs a Pro subscription to route requests. Your dashboard and settings are kept.'
             : atLimit()
               ? "You've reached your monthly limit. Requests are being blocked."
               : `You're limited to ${billing()!.requests.limit!.toLocaleString('en-US')} requests this month. Upgrade for unlimited.`}

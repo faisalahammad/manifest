@@ -300,7 +300,7 @@ const PROVIDER_UI: Record<string, ProviderUIOverlay> = {
   },
   'gemini-free': {
     initial: 'GF',
-    subtitle: 'Free Gemini models via Manifest',
+    subtitle: 'Free Gemini models via TierGate',
     models: [],
   },
   kiro: {

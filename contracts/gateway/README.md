@@ -1,10 +1,10 @@
 # Gateway contracts
 
-These tests protect stable behavior exposed by the Manifest gateway. They run
+These tests protect stable behavior exposed by the TierGate gateway. They run
 against the built application over HTTP and must not import backend source code
 or test helpers.
 
-Run them against a local Manifest instance:
+Run them against a local TierGate instance:
 
 ```sh
 MANIFEST_BASE_URL=http://127.0.0.1:2099 \

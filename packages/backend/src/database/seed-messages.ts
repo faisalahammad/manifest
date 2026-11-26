@@ -60,7 +60,7 @@ const SEED_OUTCOME_SCENARIOS: SeedOutcome[][] = [
   // ── Manifest software limit (origin=policy) — shown, links to the limits page ──
   [wire('error', null, 'Usage limit exceeded', 'limit_exceeded')],
   // ── Manifest internal (origin=internal) ──
-  [wire('error', null, 'Manifest internal error', 'friendly_error')],
+  [wire('error', null, 'TierGate internal error', 'friendly_error')],
   // ── Fallback RECOVERED: a failed Attempt followed by a successful fallback ──
   [
     wire(

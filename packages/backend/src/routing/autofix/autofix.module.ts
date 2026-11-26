@@ -27,7 +27,8 @@ const DEFAULT_TIMEOUT_MS = 10_000;
  *
  * Auth is what differs between the two production modes: cloud sends its
  * static `AUTOFIX_HEALING_API_KEY`, self-hosted announces its anonymous
- * install id. `AUTOFIX_GLOBAL_ENABLED=false` disables the feature outright.
+ * install id. The feature is off unless
+ * `AUTOFIX_GLOBAL_ENABLED=true`.
  */
 @Module({
   imports: [TypeOrmModule.forFeature([Agent, AgentMessage, ManifestRequest]), TelemetryModule],

@@ -6,7 +6,6 @@ import { DEFAULT_URL, configFilePath, loadConfig, normalizeOrigin } from './conf
 import { VERSION } from './version';
 import { detectAgentRuntime } from './agent-runtime';
 
-export const DEFAULT_TELEMETRY_ENDPOINT = 'https://telemetry.manifest.build/v1/cli-report';
 /** Send once per install per day, like the backend's install report. */
 export const FLUSH_INTERVAL_MS = 24 * 60 * 60 * 1000;
 /** After a failed send, leave the endpoint alone for this long. */
@@ -39,7 +38,7 @@ export type TelemetryTarget = 'cloud' | 'self-hosted';
 /**
  * Which class of Manifest a command targets — Cloud or a self-hosted server —
  * never the URL itself. Same precedence as command resolution (`--url`, then
- * MANIFEST_URL, then the active config host, then Cloud). A corrupt config
+ * MANIFEST_URL, then the active config host, then the default). A corrupt config
  * falls through to that default; an unparsable URL is not Cloud.
  */
 export function telemetryTarget(io: CliIo, flagUrl?: string): TelemetryTarget {
@@ -51,7 +50,7 @@ export function telemetryTarget(io: CliIo, flagUrl?: string): TelemetryTarget {
   }
   try {
     const origin = normalizeOrigin(flagUrl ?? io.env['MANIFEST_URL'] ?? activeHost ?? DEFAULT_URL);
-    return origin === normalizeOrigin(DEFAULT_URL) || origin === 'https://gateway.manifest.build'
+    return origin === 'https://app.manifest.build' || origin === 'https://gateway.manifest.build'
       ? 'cloud'
       : 'self-hosted';
   } catch {
@@ -90,8 +89,9 @@ interface FlushState {
 }
 
 /**
- * Anonymous usage telemetry, following the product's install-telemetry
- * doctrine: on by default, opt-out via MANIFEST_TELEMETRY_DISABLED=1, and
+ * Anonymous usage telemetry. Records and sends only when
+ * MANIFEST_CLI_TELEMETRY_ENDPOINT is set; MANIFEST_TELEMETRY_DISABLED=1 opts
+ * out, and there is
  * ONE request per install per day. Each command appends a small event to a
  * local spool (0600, next to the config); the first command that runs 24h
  * after the last flush — or the first command ever, so a new install shows
@@ -266,7 +266,8 @@ export async function reportUsage(
   durationMs: number,
   flagUrl?: string,
 ): Promise<void> {
-  if (telemetryDisabled(io)) return;
+  const endpoint = io.env['MANIFEST_CLI_TELEMETRY_ENDPOINT']?.trim();
+  if (!endpoint || telemetryDisabled(io)) return;
   const now = Date.now();
   // Which coding agent is driving the CLI, when one is — a coarse runtime id
   // ("claude-code"), never a version, path, or anything about the session.
@@ -305,14 +306,19 @@ export async function reportUsage(
       msSince(state.last_flush_at, now) >= FLUSH_INTERVAL_MS || spool.length >= FLUSH_AT_EVENTS;
     const backingOff = msSince(state.last_attempt_at, now) < RETRY_BACKOFF_MS;
     if (!due || backingOff) return;
-    await flush(io, spool, state, now);
+    await flush(io, endpoint, spool, state, now);
   } finally {
     releaseLock(io, token);
   }
 }
 
-async function flush(io: CliIo, events: CliUsageEvent[], state: FlushState, now: number) {
-  const endpoint = io.env['MANIFEST_CLI_TELEMETRY_ENDPOINT'] ?? DEFAULT_TELEMETRY_ENDPOINT;
+async function flush(
+  io: CliIo,
+  endpoint: string,
+  events: CliUsageEvent[],
+  state: FlushState,
+  now: number,
+) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
   let sent = false;

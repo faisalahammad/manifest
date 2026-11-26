@@ -1087,7 +1087,7 @@ describe('ProxyController', () => {
       req.ingestionContext,
       expect.objectContaining({
         httpStatus: 402,
-        errorMessage: 'Manifest Cloud subscription required',
+        errorMessage: 'TierGate Cloud subscription required',
         reason: 'plan_request_limit_exceeded',
         model: 'auto',
       }),
@@ -1965,7 +1965,7 @@ describe('ProxyController', () => {
         choices: expect.arrayContaining([
           expect.objectContaining({
             message: expect.objectContaining({
-              content: expect.stringContaining('[🦚 Manifest M500]'),
+              content: expect.stringContaining('[🦚 TierGate M500]'),
             }),
           }),
         ]),
@@ -2495,7 +2495,7 @@ describe('ProxyController', () => {
           confidence: 1,
           reason: 'no_provider',
           manifest_error_code: 'M101',
-          manifest_error_message: '[🦚 Manifest M101] No providers set up yet.',
+          manifest_error_message: '[🦚 TierGate M101] No providers set up yet.',
         },
         failedFallbacks: [],
       });
@@ -2532,7 +2532,7 @@ describe('ProxyController', () => {
           confidence: 1,
           reason: 'no_provider_key',
           manifest_error_code: 'M100',
-          manifest_error_message: '[🦚 Manifest M100] No anthropic API key yet.',
+          manifest_error_message: '[🦚 TierGate M100] No anthropic API key yet.',
         },
         failedFallbacks: [],
       });
@@ -2549,7 +2549,7 @@ describe('ProxyController', () => {
         expect.objectContaining({
           status: 'failed',
           error_code: 'M100',
-          error_message: '[🦚 Manifest M100] No anthropic API key yet.',
+          error_message: '[🦚 TierGate M100] No anthropic API key yet.',
           error_origin: 'config',
           error_class: 'no_provider_key',
           model: 'auto',
@@ -3034,7 +3034,7 @@ describe('ProxyController', () => {
           choices: expect.arrayContaining([
             expect.objectContaining({
               message: expect.objectContaining({
-                content: expect.stringContaining('[🦚 Manifest M500]'),
+                content: expect.stringContaining('[🦚 TierGate M500]'),
               }),
             }),
           ]),
@@ -3085,7 +3085,7 @@ describe('ProxyController', () => {
           choices: expect.arrayContaining([
             expect.objectContaining({
               message: expect.objectContaining({
-                content: expect.stringContaining('[🦚 Manifest M500]'),
+                content: expect.stringContaining('[🦚 TierGate M500]'),
               }),
             }),
           ]),

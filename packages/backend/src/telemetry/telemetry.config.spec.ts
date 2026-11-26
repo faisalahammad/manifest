@@ -1,14 +1,12 @@
-import {
-  buildTelemetryConfig,
-  DEFAULT_TELEMETRY_ENDPOINT,
-  readManifestVersion,
-} from './telemetry.config';
+import { buildTelemetryConfig, readManifestVersion } from './telemetry.config';
 
 describe('buildTelemetryConfig', () => {
-  it('is enabled in production when no disable flag is set', () => {
-    const cfg = buildTelemetryConfig({ NODE_ENV: 'production' });
+  it('is enabled in production when an endpoint is set and no disable flag is', () => {
+    const cfg = buildTelemetryConfig({
+      NODE_ENV: 'production',
+      TELEMETRY_ENDPOINT: 'http://127.0.0.1:9999/ingest',
+    });
     expect(cfg.enabled).toBe(true);
-    expect(cfg.endpoint).toBe(DEFAULT_TELEMETRY_ENDPOINT);
     expect(cfg.manifestVersion).toEqual(expect.any(String));
   });
 
@@ -29,7 +27,11 @@ describe('buildTelemetryConfig', () => {
 
   it('ignores unrecognised disable values (opt-out must be explicit)', () => {
     expect(
-      buildTelemetryConfig({ NODE_ENV: 'production', MANIFEST_TELEMETRY_DISABLED: 'yes' }).enabled,
+      buildTelemetryConfig({
+        NODE_ENV: 'production',
+        TELEMETRY_ENDPOINT: 'http://127.0.0.1:9999/ingest',
+        MANIFEST_TELEMETRY_DISABLED: 'yes',
+      }).enabled,
     ).toBe(true);
   });
 
@@ -41,14 +43,12 @@ describe('buildTelemetryConfig', () => {
     expect(cfg.endpoint).toBe('http://127.0.0.1:9999/ingest');
   });
 
-  it('falls back to the default endpoint when TELEMETRY_ENDPOINT is blank', () => {
-    // docker-compose forwards unset optional vars as an empty string
-    // (`- TELEMETRY_ENDPOINT=${TELEMETRY_ENDPOINT:-}`). Treating `''` as a
-    // deliberate override would silently POST every report to nowhere.
-    for (const blank of ['', '   ']) {
-      expect(
-        buildTelemetryConfig({ NODE_ENV: 'production', TELEMETRY_ENDPOINT: blank }).endpoint,
-      ).toBe(DEFAULT_TELEMETRY_ENDPOINT);
+  it('is disabled when TELEMETRY_ENDPOINT is unset or blank', () => {
+    // docker-compose forwards unset optional vars as an empty string.
+    for (const blank of [undefined, '', '   ']) {
+      const cfg = buildTelemetryConfig({ NODE_ENV: 'production', TELEMETRY_ENDPOINT: blank });
+      expect(cfg.enabled).toBe(false);
+      expect(cfg.endpoint).toBe('');
     }
   });
 

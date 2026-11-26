@@ -41,6 +41,7 @@ describe('SetupController', () => {
             getLocalLlmHost: mockGetLocalLlmHost,
             isEmailConfigured: mockIsEmailConfigured,
             isMcpEnabled: mockIsMcpEnabled,
+            isAutofixAvailable: () => false,
           },
         },
       ],
@@ -68,6 +69,7 @@ describe('SetupController', () => {
         localLlmHost: 'localhost',
         emailConfigured: true,
         mcpEnabled: true,
+        autofixAvailable: false,
       });
     });
 
@@ -82,6 +84,7 @@ describe('SetupController', () => {
         localLlmHost: 'localhost',
         emailConfigured: true,
         mcpEnabled: true,
+        autofixAvailable: false,
       });
     });
 
@@ -97,6 +100,7 @@ describe('SetupController', () => {
         localLlmHost: 'localhost',
         emailConfigured: true,
         mcpEnabled: true,
+        autofixAvailable: false,
       });
     });
 
@@ -113,6 +117,7 @@ describe('SetupController', () => {
         localLlmHost: 'localhost',
         emailConfigured: true,
         mcpEnabled: true,
+        autofixAvailable: false,
       });
     });
 
@@ -129,6 +134,7 @@ describe('SetupController', () => {
         localLlmHost: 'localhost',
         emailConfigured: true,
         mcpEnabled: true,
+        autofixAvailable: false,
       });
     });
 

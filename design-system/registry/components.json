@@ -615,8 +615,7 @@
         "auth-form__success"
       ],
       "files": [
-        "auth.css",
-        "discovery.css"
+        "auth.css"
       ]
     },
     "auth-header": {
@@ -1083,7 +1082,6 @@
       "files": [
         "connection-detail.css",
         "custom-select.css",
-        "discovery.css",
         "routing-providers.css"
       ]
     },
@@ -1136,43 +1134,6 @@
       ],
       "files": [
         "overview.css"
-      ]
-    },
-    "discovery-actions": {
-      "classes": [
-        "discovery-actions"
-      ],
-      "files": [
-        "discovery.css"
-      ]
-    },
-    "discovery-card": {
-      "classes": [
-        "discovery-card",
-        "discovery-card__desc",
-        "discovery-card__form",
-        "discovery-card__intro",
-        "discovery-card__logo",
-        "discovery-card__title"
-      ],
-      "files": [
-        "discovery.css"
-      ]
-    },
-    "discovery-form": {
-      "classes": [
-        "discovery-form"
-      ],
-      "files": [
-        "discovery.css"
-      ]
-    },
-    "discovery-select": {
-      "classes": [
-        "discovery-select--empty"
-      ],
-      "files": [
-        "discovery.css"
       ]
     },
     "drawer": {
@@ -3374,19 +3335,6 @@
         "theme.css"
       ]
     },
-    "services-modal": {
-      "classes": [
-        "services-modal",
-        "services-modal__contact",
-        "services-modal__list",
-        "services-modal__offer",
-        "services-modal__sent",
-        "services-modal__textarea"
-      ],
-      "files": [
-        "modals.css"
-      ]
-    },
     "settings-card": {
       "classes": [
         "settings-card",
@@ -3622,14 +3570,6 @@
       "files": [
         "controls.css",
         "theme.css"
-      ]
-    },
-    "sidebar-services": {
-      "classes": [
-        "sidebar-services"
-      ],
-      "files": [
-        "modals.css"
       ]
     },
     "sidebar-upgrade": {
@@ -5034,9 +4974,6 @@
     "connection-detail.css": [
       "pages/providers/ConnectionDetail.tsx"
     ],
-    "discovery.css": [
-      "pages/Discovery.tsx"
-    ],
     "filter-select.css": [
       "components/FilterSelect.tsx"
     ],
@@ -5099,8 +5036,8 @@
   "stats": {
     "tokens": 79,
     "darkOverrides": 38,
-    "blocks": 316,
-    "classes": 1699,
+    "blocks": 310,
+    "classes": 1683,
     "canonicalRules": 46,
     "ghostRules": 46
   }

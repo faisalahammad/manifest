@@ -186,7 +186,7 @@ jobs:
             exit 1
           fi
 
-      - name: Verify recording survives Manifest container recreation
+      - name: Verify recording survives TierGate container recreation
         working-directory: docker
         run: |
           base_url=http://127.0.0.1:2099

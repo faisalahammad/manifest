@@ -1,12 +1,12 @@
-# Run Manifest with Apple Containers
+# Run TierGate with Apple Containers
 
-This guide runs Manifest and PostgreSQL on Apple silicon using Apple's [`container`](https://github.com/apple/container) CLI. The deployment mirrors the bundled Docker Compose stack while accounting for differences in Apple Containers networking and storage.
+This guide runs TierGate and PostgreSQL on Apple silicon using Apple's [`container`](https://github.com/apple/container) CLI. The deployment mirrors the bundled Docker Compose stack while accounting for differences in Apple Containers networking and storage.
 
 ## Prerequisites
 
 - An Apple silicon Mac running a supported macOS version.
 - The Apple Containers `container` CLI installed from the [Apple Containers releases](https://github.com/apple/container/releases).
-- This Manifest repository checked out locally.
+- This TierGate repository checked out locally.
 - `curl` and OpenSSL, which are included with macOS.
 
 Confirm the CLI is available:
@@ -29,7 +29,7 @@ container system version
 
 The `container` and `container-apiserver` rows should report the same version. Startup also checks this and prints these recovery commands instead of continuing with mismatched components.
 
-## Configure Manifest
+## Configure TierGate
 
 The script reads `docker/.env`, the same configuration file used by Docker Compose.
 
@@ -83,7 +83,7 @@ The script replaces the Compose hostname `postgres` with the PostgreSQL containe
 
 `POSTGRES_PASSWORD` initializes a new database volume; changing it later does not rotate the password stored by PostgreSQL. If the persistent volume already exists, either keep its original password or rotate the `manifest` PostgreSQL role explicitly.
 
-## Start Manifest
+## Start TierGate
 
 From the repository root, run:
 
@@ -103,7 +103,7 @@ The script:
 2. Creates or reuses the `mnfst-postgres-data` database volume and `mnfst-request-recordings` recording volume.
 3. Starts PostgreSQL and verifies an authenticated connection.
 4. Discovers the PostgreSQL container address.
-5. Recreates the Manifest container so it always receives the current database address.
+5. Recreates the TierGate container so it always receives the current database address.
 6. Publishes the dashboard on host loopback and waits for `/api/v1/health`.
 
 When startup succeeds, open:
@@ -130,9 +130,9 @@ Stop and remove both containers:
 
 Both named volumes are retained, so a later `up` restores the same database and request recordings.
 
-Running `up` repeatedly is safe. A running PostgreSQL container is reused, while Manifest is recreated to pick up the current PostgreSQL IP and configuration.
+Running `up` repeatedly is safe. A running PostgreSQL container is reused, while TierGate is recreated to pick up the current PostgreSQL IP and configuration.
 
-## Upgrade Manifest
+## Upgrade TierGate
 
 First, back up the database:
 
@@ -147,7 +147,7 @@ container image pull ghcr.io/faisalahammad/tiergate:latest
 ./deploy/apple-containers/start.sh up
 ```
 
-`up` recreates the Manifest container, so it starts from the freshly pulled image. Database migrations run automatically on boot — no manual steps. The PostgreSQL container, database volume, and request-recording volume are not touched, so all data is preserved across upgrades.
+`up` recreates the TierGate container, so it starts from the freshly pulled image. Database migrations run automatically on boot — no manual steps. The PostgreSQL container, database volume, and request-recording volume are not touched, so all data is preserved across upgrades.
 
 ## Local LLM Servers
 
@@ -159,7 +159,7 @@ http://<gateway-ip>:11434
 
 A host LLM server must listen on an interface reachable through that gateway. A service bound only to `127.0.0.1` cannot be reached from the container.
 
-For Ollama, configure `OLLAMA_HOST` on the macOS host according to Ollama's documentation. Avoid exposing the service broadly unless your firewall and network are trusted. You can also point Manifest at another reachable endpoint through `docker/.env`:
+For Ollama, configure `OLLAMA_HOST` on the macOS host according to Ollama's documentation. Avoid exposing the service broadly unless your firewall and network are trusted. You can also point TierGate at another reachable endpoint through `docker/.env`:
 
 ```env
 OLLAMA_HOST=http://192.168.1.50:11434
@@ -169,7 +169,7 @@ OLLAMA_HOST=http://192.168.1.50:11434
 
 The dashboard is published to `127.0.0.1`, providing a stable URL that does not depend on Apple Containers' private subnet and is less likely to conflict with VPN routes.
 
-PostgreSQL-to-Manifest traffic still uses the private address assigned by Apple Containers. The script discovers that address on every `up` and recreates Manifest accordingly. If Apple Containers cannot create or inspect its network while a VPN is active:
+PostgreSQL-to-TierGate traffic still uses the private address assigned by Apple Containers. The script discovers that address on every `up` and recreates TierGate accordingly. If Apple Containers cannot create or inspect its network while a VPN is active:
 
 1. Run `./deploy/apple-containers/start.sh down`.
 2. Temporarily disconnect the VPN.
@@ -236,7 +236,7 @@ If logs mention `chmod` or `chown` being denied, do not replace the named volume
 
 The named volume was probably initialized with a different password. Restore the original `POSTGRES_PASSWORD`, or rotate the database role password inside PostgreSQL and update `DATABASE_URL` to match.
 
-### Manifest stops before becoming healthy
+### TierGate stops before becoming healthy
 
 The script prints the container logs automatically. You can inspect them again with:
 
@@ -272,4 +272,4 @@ container volume delete mnfst-postgres-data
 container volume delete mnfst-request-recordings
 ```
 
-Then run `up` again. This is destructive and returns Manifest to a fresh-install state.
+Then run `up` again. This is destructive and returns TierGate to a fresh-install state.

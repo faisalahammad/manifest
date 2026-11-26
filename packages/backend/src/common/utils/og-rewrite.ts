@@ -2,10 +2,10 @@ import { DEFAULT_DASHBOARD_URL } from './dashboard-url';
 
 /**
  * Rewrites Open Graph and Twitter card URL/image tags in the SPA's
- * index.html so self-hosted instances expose their own URL in shared
- * link previews instead of the Cloud Manifest defaults.
+ * index.html so instances expose their own URL in shared link previews
+ * instead of the local default.
  *
- * Only the leading `https://app.manifest.build` is replaced, preserving
+ * Only the leading `http://localhost:2099` is replaced, preserving
  * any path suffix on `og:image` (e.g. `/og-image.png`). When `baseUrl`
  * is empty or matches the default, the input is returned unchanged.
  */

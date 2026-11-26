@@ -1,6 +1,14 @@
-import { createResource, createSignal, createEffect, onCleanup, type Component } from 'solid-js';
+import {
+  createResource,
+  createSignal,
+  createEffect,
+  onCleanup,
+  Show,
+  type Component,
+} from 'solid-js';
 import { useSearchParams } from '@solidjs/router';
 import { getAutofix, updateAutofix } from '../services/api.js';
+import { checkAutofixAvailable } from '../services/setup-status.js';
 
 /**
  * Per-agent Autofix toggle on the Settings page. Fetches its own status and
@@ -13,6 +21,7 @@ import { getAutofix, updateAutofix } from '../services/api.js';
 const SettingsAutofixSection: Component<{ agentName: () => string }> = (props) => {
   const [config, { mutate }] = createResource(() => props.agentName(), getAutofix);
   const [saving, setSaving] = createSignal(false);
+  const [available] = createResource(checkAutofixAvailable);
 
   // Guard the errored read: accessing an errored SolidJS resource re-throws, so
   // short-circuit to off (the switch stays disabled via busy() below). Also gate
@@ -54,7 +63,7 @@ const SettingsAutofixSection: Component<{ agentName: () => string }> = (props) =
   });
 
   return (
-    <>
+    <Show when={available()}>
       <h2 class="settings-section__title">Autofix</h2>
       <div
         class="settings-card settings-card--flush"
@@ -87,17 +96,10 @@ const SettingsAutofixSection: Component<{ agentName: () => string }> = (props) =
         </div>
       </div>
       <p class="autofix-consent__legal settings-card__legal">
-        By enabling Autofix, you agree to Manifest&apos;s{' '}
-        <a href="https://manifest.build/terms" target="_blank" rel="noopener noreferrer">
-          Terms
-        </a>{' '}
-        and{' '}
-        <a href="https://manifest.build/privacy" target="_blank" rel="noopener noreferrer">
-          Privacy Policy
-        </a>
-        .
+        Autofix sends failing requests to Manifest's healing service (autofix.manifest.build).
+        Provider credentials are never sent.
       </p>
-    </>
+    </Show>
   );
 };
 

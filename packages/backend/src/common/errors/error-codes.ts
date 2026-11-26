@@ -11,12 +11,12 @@ export const MANIFEST_ERRORS = {
   },
   M002: {
     title: 'Empty Bearer token',
-    template: 'The Bearer token is empty. Paste your Manifest key into it.',
+    template: 'The Bearer token is empty. Paste your TierGate key into it.',
   },
   M003: {
     title: 'Invalid key format',
     template:
-      'That doesn\'t look right. Manifest keys start with "mnfst_". Grab yours from the dashboard.',
+      'That doesn\'t look right. TierGate keys start with "mnfst_". Grab yours from the dashboard.',
   },
   M004: {
     title: 'Key expired',
@@ -61,7 +61,7 @@ export const MANIFEST_ERRORS = {
   M204: {
     title: 'Subscription required',
     template:
-      'Manifest Cloud needs a Pro subscription to route requests. Subscribe here: {upgradeUrl}',
+      'TierGate Cloud needs a Pro subscription to route requests. Subscribe here: {upgradeUrl}',
   },
   M300: {
     title: 'Missing messages array',
@@ -73,9 +73,9 @@ export const MANIFEST_ERRORS = {
       'Model "{model}" is not available for this agent. Use GET /v1/models to list available model IDs, or make the provider available for this agent here: {dashboardUrl}',
   },
   M303: {
-    title: 'Local provider unavailable on Manifest Cloud',
+    title: 'Local provider unavailable on TierGate Cloud',
     template:
-      'Built-in local providers are only available in self-hosted Manifest. On Manifest Cloud, expose the runtime through a public URL or tunnel and connect it as a custom provider.',
+      'Built-in local providers are only available in self-hosted TierGate. On TierGate Cloud, expose the runtime through a public URL or tunnel and connect it as a custom provider.',
   },
   M500: {
     title: 'Internal server error',
@@ -85,11 +85,12 @@ export const MANIFEST_ERRORS = {
 
 export type ManifestErrorCode = keyof typeof MANIFEST_ERRORS;
 
-// Matches the peacock prefix written by formatManifestError, e.g. `[🦚 Manifest M102]`.
+// Matches the peacock prefix written by formatManifestError, e.g. `[🦚 TierGate M102]`.
+// Rows stored before the rename carry `Manifest`, so both names match.
 // The 🦚 is REQUIRED: only Manifest emits it, so a provider error body that merely
 // echoes the text "Manifest M100" can never be mis-extracted into a Manifest code
 // (which would then misclassify a provider round-trip as a Manifest config error).
-const MANIFEST_ERROR_CODE_RE = /\[\s*🦚\s*Manifest\s+(M\d{3})\s*\]/;
+const MANIFEST_ERROR_CODE_RE = /\[\s*🦚\s*(?:TierGate|Manifest)\s+(M\d{3})\s*\]/;
 
 export function formatManifestError(
   code: ManifestErrorCode,
@@ -100,7 +101,7 @@ export function formatManifestError(
     const value = vars[key];
     return value === undefined ? match : String(value);
   });
-  return `[${PEACOCK} Manifest ${code}] ${interpolated} See ${manifestErrorDocsUrl(code)}`;
+  return `[${PEACOCK} TierGate ${code}] ${interpolated} See ${manifestErrorDocsUrl(code)}`;
 }
 
 /**

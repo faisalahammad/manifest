@@ -187,8 +187,8 @@ describe('ProviderClient — strict header contract on auth-critical paths', () 
     expect(sentHeaders).toEqual({
       Authorization: 'Bearer sk-or-key',
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://manifest.build',
-      'X-Title': 'Manifest',
+      'HTTP-Referer': 'https://github.com/faisalahammad/tiergate',
+      'X-Title': 'TierGate',
     });
     expect(sentHeaders).not.toHaveProperty('x-api-key');
   });

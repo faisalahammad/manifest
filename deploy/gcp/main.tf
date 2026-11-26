@@ -50,7 +50,7 @@ resource "random_password" "database" {
 
 resource "google_service_account" "manifest" {
   account_id   = local.service_account
-  display_name = "Manifest Cloud Run"
+  display_name = "TierGate Cloud Run"
 
   depends_on = [google_project_service.required]
 }

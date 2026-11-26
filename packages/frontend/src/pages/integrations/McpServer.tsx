@@ -5,7 +5,8 @@ import CodeBlock from '../../components/CodeBlock.jsx';
 import { mcpEndpoint } from '../../services/install-endpoints.js';
 import { checkMcpEnabled } from '../../services/setup-status.js';
 
-const DOCS_URL = 'https://manifest.build/llm-gateway/docs/integrations/mcp/';
+const DOCS_URL =
+  'https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md#mcp-server';
 
 interface ClientSetup {
   id: string;

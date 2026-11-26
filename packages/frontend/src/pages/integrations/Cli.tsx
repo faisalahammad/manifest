@@ -1,25 +1,18 @@
-import { createMemo, createResource, type Component } from 'solid-js';
+import type { Component } from 'solid-js';
 import { Title, Meta } from '@solidjs/meta';
 import CodeBlock from '../../components/CodeBlock.jsx';
 import { installOrigin } from '../../services/install-endpoints.js';
-import { checkIsSelfHosted } from '../../services/setup-status.js';
 
-const DOCS_URL = 'https://manifest.build/llm-gateway/docs/cli/';
+const DOCS_URL = 'https://github.com/faisalahammad/tiergate/blob/main/packages/cli/README.md';
 const PACKAGE = 'mnfst-gateway-cli';
 
 /**
- * On a self-hosted install the CLI has to be told which host to talk to, and
- * this dashboard is the only place that knows it. On Cloud the CLI already
- * defaults there, so the flag would be noise.
- *
- * `pinHost` is deliberately "not known to be Cloud" rather than "known to be
- * self-hosted". While the deployment check is in flight, or if it fails, the
- * honest fallback is the explicit form: `--url` is merely redundant on Cloud,
- * whereas a bare `mnfst login` is plain wrong on a self-hosted install and the
- * user would copy it before the check resolved.
+ * The CLI has to be told which host to talk to, and this dashboard is the only
+ * place that knows it. The published CLI defaults to `app.manifest.build`, so
+ * only that host may omit the flag.
  */
-export function loginCommand(pinHost: boolean, origin: string): string {
-  return pinHost ? `mnfst login --url ${origin}` : 'mnfst login';
+export function loginCommand(origin: string): string {
+  return origin === 'https://app.manifest.build' ? 'mnfst login' : `mnfst login --url ${origin}`;
 }
 
 const EXAMPLE = `mnfst agent create --name coding-assistant --platform openclaw
@@ -28,14 +21,7 @@ mnfst agent configure coding-assistant --models grok-4.5,grok-4 --provider xai
 mnfst routing test coding-assistant`;
 
 const Cli: Component = () => {
-  // A failed deployment check must not throw into the render tree: this page
-  // has a correct answer for "unknown" and nothing to escalate. Swallowing it
-  // here keeps the failure indistinguishable from still-loading, which is what
-  // the memo below already handles.
-  const [selfHosted] = createResource(() => checkIsSelfHosted().catch(() => undefined));
-  // Only a confirmed Cloud install drops the flag; unresolved and errored both
-  // keep it, so a self-hosted user never sees a command that targets Cloud.
-  const login = createMemo(() => loginCommand(selfHosted() !== false, installOrigin()));
+  const login = () => loginCommand(installOrigin());
 
   return (
     <div class="container--lg">

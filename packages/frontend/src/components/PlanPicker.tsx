@@ -1,6 +1,7 @@
 import { For, Show, createSignal, type Component } from 'solid-js';
 
-export const SELF_HOSTING_GUIDE_URL = 'https://manifest.build/llm-gateway/docs/self-hosted';
+export const SELF_HOSTING_GUIDE_URL =
+  'https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md';
 
 /* ── Plan data ───────────────────────────────────────── */
 
@@ -12,11 +13,11 @@ const freeFeatures = [
   'All providers, including local models',
   'Autofix, routing rules and fallbacks',
   'Your data stays on your machine',
-  'Community support via Discord',
+  'Community support on GitHub',
 ];
 
 const proFeatures = [
-  'Hosted at app.manifest.build, ready in a minute',
+  'Hosted for you, ready in a minute',
   'Updates land the same day we ship them',
   'Servers, database and uptime handled by us',
   'Unlimited routed requests',
@@ -78,7 +79,7 @@ const PlanPicker: Component<PlanPickerProps> = (props) => {
     },
     {
       id: 'pro',
-      name: 'Manifest Cloud',
+      name: 'TierGate Cloud',
       price: props.proPrice ?? FALLBACK_PRO_PRICE,
       period: '/month',
       desc: 'The gateway hosted and run by us. No server to install, update or watch.',
@@ -167,7 +168,7 @@ const PlanPicker: Component<PlanPickerProps> = (props) => {
           fallback={
             <a
               class="auth-form__submit plan-picker__cta"
-              href="https://manifest.build/pricing"
+              href="https://github.com/faisalahammad/tiergate/issues"
               target="_blank"
               rel="noopener noreferrer"
             >

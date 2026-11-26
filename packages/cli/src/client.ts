@@ -52,7 +52,7 @@ export class ApiClient {
         throw new CliError(
           'redirect_not_allowed',
           `The server redirected ${method} ${url.pathname} (HTTP ${response.status})`,
-          'Manifest does not follow API redirects; point --url at the final origin',
+          'TierGate does not follow API redirects; point --url at the final origin',
           response.status,
         );
       }
@@ -77,7 +77,7 @@ export class ApiClient {
       throw new CliError(
         'network_error',
         `Could not reach ${this.opts.origin}: ${error instanceof Error ? error.message : String(error)}`,
-        'Check the URL and that the Manifest server is running',
+        'Check the URL and that the TierGate server is running',
       );
     } finally {
       clearTimeout(timeout);

@@ -1,6 +1,6 @@
-# Deploy Manifest on AWS
+# Deploy TierGate on AWS
 
-This walkthrough deploys Manifest on AWS with ECS Fargate, RDS PostgreSQL, a private S3 bucket for request recordings, Secrets Manager, and an Application Load Balancer. The stack uses public ECS tasks behind the load balancer and private RDS subnets, so it does not create a NAT gateway.
+This walkthrough deploys TierGate on AWS with ECS Fargate, RDS PostgreSQL, a private S3 bucket for request recordings, Secrets Manager, and an Application Load Balancer. The stack uses public ECS tasks behind the load balancer and private RDS subnets, so it does not create a NAT gateway.
 
 ## Prerequisites
 
@@ -10,15 +10,15 @@ This walkthrough deploys Manifest on AWS with ECS Fargate, RDS PostgreSQL, a pri
 
 This stack creates paid resources, including an Application Load Balancer, ECS Fargate tasks, and RDS PostgreSQL.
 
-The default template exposes Manifest over HTTP on the generated load balancer DNS name. Configure TLS with your own domain and ACM certificate before using the deployment for production authentication traffic.
+The default template exposes TierGate over HTTP on the generated load balancer DNS name. Configure TLS with your own domain and ACM certificate before using the deployment for production authentication traffic.
 
 ## Open AWS CloudShell
 
 Open [AWS CloudShell](https://console.aws.amazon.com/cloudshell/home), choose the region you want to deploy into, then run:
 
 ```bash
-git clone https://github.com/mnfst/llm-gateway.git
-cd llm-gateway
+git clone https://github.com/faisalahammad/tiergate.git
+cd tiergate
 AWS_REGION=us-east-1 ./deploy/aws/deploy.sh
 ```
 
@@ -46,7 +46,7 @@ The CloudFormation template generates these runtime values in Secrets Manager:
 - `BETTER_AUTH_SECRET`
 - `MANIFEST_ENCRYPTION_KEY`
 
-Manifest runs with:
+TierGate runs with:
 
 - `PORT=2099`
 - `BIND_ADDRESS=0.0.0.0`
@@ -58,7 +58,7 @@ Manifest runs with:
 
 The ECS task uses its IAM task role to access only the request-recording object prefix, so no static S3 access keys are stored in the container. The recording bucket is retained when the CloudFormation stack is deleted to avoid accidental recording loss; remove it manually after exporting or deleting its contents.
 
-## Open Manifest
+## Open TierGate
 
 After deployment, the script prints `ServiceUrl` and `HealthCheckUrl`.
 

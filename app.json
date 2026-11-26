@@ -1,9 +1,9 @@
 {
-  "name": "Manifest",
+  "name": "TierGate",
   "description": "Open-source AI model router for agents and apps. Connect your providers to one OpenAI-compatible endpoint.",
-  "repository": "https://github.com/mnfst/llm-gateway",
-  "website": "https://manifest.build",
-  "logo": "https://raw.githubusercontent.com/mnfst/llm-gateway/HEAD/.github/assets/logo-dark.svg",
+  "repository": "https://github.com/faisalahammad/tiergate",
+  "website": "https://github.com/faisalahammad/tiergate",
+  "logo": "https://raw.githubusercontent.com/faisalahammad/tiergate/main/site/logo.svg",
   "success_url": "/setup",
   "stack": "container",
   "keywords": ["ai", "llm", "model-router", "agents", "postgres"],
@@ -65,7 +65,7 @@
       "value": "0.0.0.0"
     },
     "MANIFEST_MODE": {
-      "description": "Run Manifest in self-hosted mode.",
+      "description": "Run TierGate in self-hosted mode.",
       "value": "selfhosted"
     },
     "NODE_ENV": {

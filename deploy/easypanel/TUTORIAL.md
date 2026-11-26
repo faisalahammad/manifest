@@ -1,8 +1,8 @@
-# Deploy Manifest on Easypanel
+# Deploy TierGate on Easypanel
 
-This guide deploys Manifest on Easypanel with the public Manifest Docker image and an Easypanel PostgreSQL service.
+This guide deploys TierGate on Easypanel with the public TierGate Docker image and an Easypanel PostgreSQL service.
 
-Easypanel is a good fit for Manifest because it can run Docker image services, proxy web apps with HTTPS, and provision PostgreSQL in the same project. The template files in [`template/`](template/) are ready to submit to the upstream Easypanel template catalog.
+Easypanel is a good fit for TierGate because it can run Docker image services, proxy web apps with HTTPS, and provision PostgreSQL in the same project. The template files in [`template/`](template/) are ready to submit to the upstream Easypanel template catalog.
 
 ## Prerequisites
 
@@ -14,15 +14,15 @@ This stack runs on infrastructure you control through Easypanel. Your server, st
 
 ## Template Deploy
 
-If Manifest is available in your Easypanel template catalog:
+If TierGate is available in your Easypanel template catalog:
 
 1. Open your Easypanel project.
 2. Choose **Templates**.
-3. Search for **Manifest**.
+3. Search for **TierGate**.
 4. Keep the default image `ghcr.io/faisalahammad/tiergate:6` unless you need to pin another version.
 5. Deploy the template.
 
-The template provisions Manifest, PostgreSQL, a persistent request-recording volume, generated secrets, and a domain proxy on port `2099`.
+The template provisions TierGate, PostgreSQL, a persistent request-recording volume, generated secrets, and a domain proxy on port `2099`.
 
 ## Manual Deploy
 
@@ -36,7 +36,7 @@ Create a PostgreSQL service:
 4. Name it `manifest-db`.
 5. Generate and save a strong password.
 
-Create the Manifest app service:
+Create the TierGate app service:
 
 1. Click **Create Service**.
 2. Choose **App**.
@@ -45,7 +45,7 @@ Create the Manifest app service:
 5. Set the proxy port to `2099`.
 6. Add your domain and mark it as the primary domain.
 
-Set the Manifest environment:
+Set the TierGate environment:
 
 ```env
 PORT=2099
@@ -61,7 +61,7 @@ DB_POOL_MAX=10
 AUTH_DB_POOL_MAX=5
 REQUEST_RECORDING_STORAGE=filesystem
 REQUEST_RECORDING_FILESYSTEM_PATH=/data/request-recordings
-MANIFEST_TELEMETRY_DISABLED=0
+MANIFEST_TELEMETRY_DISABLED=1
 ```
 
 Generate secrets locally:
@@ -75,7 +75,7 @@ Use an alphanumeric or hex PostgreSQL password in `DATABASE_URL`. If your passwo
 
 Add an app volume named `recordings`, mount it at `/data/request-recordings`, then deploy the app.
 
-## Open Manifest
+## Open TierGate
 
 Open the Easypanel domain and create the first admin account. Fresh installs redirect to `/setup`; the first account you create becomes the admin.
 
@@ -97,18 +97,18 @@ Before publishing a template, smoke test the full first-run flow:
 
 ## What Gets Provisioned
 
-- Manifest Docker image `ghcr.io/faisalahammad/tiergate:6`.
+- TierGate Docker image `ghcr.io/faisalahammad/tiergate:6`.
 - PostgreSQL service.
 - Generated or manually configured session and encryption secrets.
-- HTTPS domain proxy to Manifest port `2099`.
+- HTTPS domain proxy to TierGate port `2099`.
 
 ## Production notes
 
 - Back up the PostgreSQL service through Easypanel or your server provider.
 - Use a real HTTPS domain before enabling OAuth providers.
 - Keep `BETTER_AUTH_SECRET` and `MANIFEST_ENCRYPTION_KEY` as separate values.
-- Set `MANIFEST_TELEMETRY_DISABLED=1` to disable anonymous self-hosted telemetry.
-- If you deploy more than one Manifest replica, lower database pool sizes or upgrade PostgreSQL connection capacity.
+- Anonymous telemetry is off. It sends only when you set `TELEMETRY_ENDPOINT` to your own collector.
+- If you deploy more than one TierGate replica, lower database pool sizes or upgrade PostgreSQL connection capacity.
 
 Relevant Easypanel docs:
 

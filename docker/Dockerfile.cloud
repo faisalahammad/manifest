@@ -68,11 +68,11 @@ RUN \
 FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:78f07ef1b5ea71ad7c055df15d0dd8997f2d288f9158623c4d4ae3d765b7d50d AS runtime
 WORKDIR /app
 
-LABEL org.opencontainers.image.title="Manifest" \
+LABEL org.opencontainers.image.title="TierGate" \
       org.opencontainers.image.description="Open-source AI model router. Plug your agents into any provider and send each query to the right model." \
-      org.opencontainers.image.url="https://manifest.build" \
-      org.opencontainers.image.documentation="https://manifest.build/llm-gateway/docs/introduction/" \
-      org.opencontainers.image.source="https://github.com/mnfst/llm-gateway" \
+      org.opencontainers.image.url="https://github.com/faisalahammad/tiergate" \
+      org.opencontainers.image.documentation="https://github.com/faisalahammad/tiergate#readme" \
+      org.opencontainers.image.source="https://github.com/faisalahammad/tiergate" \
       org.opencontainers.image.vendor="MNFST Inc." \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.base.name="gcr.io/distroless/nodejs24-debian13:nonroot" \
@@ -93,7 +93,7 @@ COPY --from=build --chown=nonroot:nonroot /app/packages/backend/dist packages/ba
 COPY --from=build --chown=nonroot:nonroot /app/packages/frontend/dist packages/frontend/dist
 COPY --chown=nonroot:nonroot packages/shared/package.json packages/shared/
 COPY --chown=nonroot:nonroot packages/backend/package.json packages/backend/
-# The telemetry sender reads the canonical Manifest version from this
+# The telemetry sender reads the canonical TierGate version from this
 # file at boot. Without it, readManifestVersion() falls back to "unknown"
 # and the sender ends up posting invalid semver to the ingest endpoint.
 COPY --chown=nonroot:nonroot packages/manifest/package.json packages/manifest/

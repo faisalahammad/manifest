@@ -11,6 +11,7 @@ import {
 import '../styles/notifications-bell.css';
 import { A } from '@solidjs/router';
 import { getWorkspaceAutofixStatus } from '../services/api/analytics.js';
+import { checkAutofixAvailable } from '../services/setup-status.js';
 import { getAgents } from '../services/api.js';
 import { agentPing, routingPing } from '../services/sse.js';
 
@@ -87,7 +88,10 @@ const NotificationBell: Component = () => {
     },
   );
 
+  const [autofixAvailable] = createResource(checkAutofixAvailable);
+
   const disabledAgents = createMemo(() => {
+    if (!autofixAvailable()) return [];
     const s = status();
     const list = agentList() ?? [];
     if (!s) return [];

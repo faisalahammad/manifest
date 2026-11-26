@@ -10,7 +10,7 @@ function makeConfig(overrides: Record<string, string | undefined> = {}): ConfigS
 }
 
 function makeProbe(overrides: Record<string, string | undefined> = {}): AutofixHealthProbe {
-  return new AutofixHealthProbe(makeConfig(overrides));
+  return new AutofixHealthProbe(makeConfig({ AUTOFIX_GLOBAL_ENABLED: 'true', ...overrides }));
 }
 
 function fakeResponse(ok: boolean, status: number): Response {
@@ -52,6 +52,11 @@ describe('AutofixHealthProbe', () => {
 
     await makeProbe({ NODE_ENV: 'production', AUTOFIX_GLOBAL_ENABLED: 'false' }).probe();
 
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('makes no contact when AUTOFIX_GLOBAL_ENABLED is unset', async () => {
+    await makeProbe({ NODE_ENV: 'production', AUTOFIX_GLOBAL_ENABLED: undefined }).probe();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

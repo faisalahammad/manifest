@@ -57,7 +57,7 @@ describe('RequestRecordingRetentionService', () => {
     expect(createQueryRunner).not.toHaveBeenCalled();
     expect(storage.delete).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith(
-      'REQUEST_RECORDING_RETENTION_DAYS is ignored on Manifest Cloud: request recordings are never deleted',
+      'REQUEST_RECORDING_RETENTION_DAYS is ignored on TierGate Cloud: request recordings are never deleted',
     );
   });
 

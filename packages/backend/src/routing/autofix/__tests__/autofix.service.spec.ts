@@ -38,8 +38,12 @@ function makeHealingClient(): HealingClientMock {
 
 /** ConfigService stub whose `get` reads from a plain map (undefined by default). */
 function makeConfig(overrides: Record<string, string | undefined> = {}): ConfigService {
+  const values: Record<string, string | undefined> = {
+    AUTOFIX_GLOBAL_ENABLED: 'true',
+    ...overrides,
+  };
   return {
-    get: jest.fn((key: string) => overrides[key]),
+    get: jest.fn((key: string) => values[key]),
   } as unknown as ConfigService;
 }
 
@@ -125,12 +129,13 @@ describe('AutofixService', () => {
   // Constructor config parsing
   // -------------------------------------------------------------------------
   describe('constructor config parsing', () => {
-    it('defaults globalEnabled to true when AUTOFIX_GLOBAL_ENABLED is unset', () => {
-      const { findOne } = makeAgentRepo();
-      const service = makeService({ config: makeConfig() });
-      // Directly assert the parsed default (only `'false'` disables), and that
-      // construction never touches the DB.
-      expect((service as unknown as { globalEnabled: boolean }).globalEnabled).toBe(true);
+    it('stays off, even for an enabled agent, unless AUTOFIX_GLOBAL_ENABLED is "true"', async () => {
+      const { repo, findOne } = makeAgentRepo(() => ({ id: 'agent-1', autofix_enabled: true }));
+      const service = makeService({
+        repo,
+        config: makeConfig({ AUTOFIX_GLOBAL_ENABLED: undefined }),
+      });
+      await expect(service.isActiveFor('tenant-1', 'agent-1')).resolves.toBe(false);
       expect(findOne).not.toHaveBeenCalled();
     });
   });

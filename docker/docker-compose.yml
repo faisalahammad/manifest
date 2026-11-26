@@ -1,4 +1,4 @@
-# Managed by Manifest's installer. Keep local settings in `.env` or
+# Managed by TierGate's installer. Keep local settings in `.env` or
 # `docker-compose.override.yml` so upgrades can replace this file safely.
 # manifest-compose-version: 1
 #
@@ -11,8 +11,8 @@
 # booting. The install script does this automatically.
 #
 # Connecting local LLM servers (Ollama, LM Studio, or any OpenAI-compatible server):
-# Install your server on the host, bind it to 0.0.0.0, and point Manifest
-# at `http://host.docker.internal:<port>/v1`. Manifest auto-allows private
+# Install your server on the host, bind it to 0.0.0.0, and point TierGate
+# at `http://host.docker.internal:<port>/v1`. TierGate auto-allows private
 # and http URLs in the self-hosted version. See DOCKER_README.md for the
 # full flow — no `--profile` flag is needed. Requires Docker Engine 20.10+.
 #
@@ -40,7 +40,7 @@
 # basename. Without this, the project name would be inherited from the
 # directory (commonly `manifest`) and would silently collide with any
 # other Docker project the user happens to have called `manifest` —
-# including older Manifest installs moved to a different path.
+# including older TierGate installs moved to a different path.
 name: mnfst
 
 services:
@@ -123,7 +123,7 @@ services:
       - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET:-}
       # Provider OAuth client overrides (optional). Only needed if you have
       # registered your own OAuth app with these providers instead of using
-      # the defaults shipped with Manifest.
+      # the defaults shipped with TierGate.
       - OPENAI_OAUTH_CLIENT_ID=${OPENAI_OAUTH_CLIENT_ID:-}
       - MINIMAX_OAUTH_CLIENT_ID=${MINIMAX_OAUTH_CLIENT_ID:-}
       # Programmatic API access via the X-API-Key header. Optional — the
@@ -155,11 +155,13 @@ services:
       - SENTRY_DSN=${SENTRY_DSN:-}
       - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-}
       - SENTRY_RELEASE=${SENTRY_RELEASE:-}
-      # Anonymous usage telemetry. Off by default in TierGate. Set
-      # MANIFEST_TELEMETRY_DISABLED=0 to send it, or point TELEMETRY_ENDPOINT at your own collector. See
-      # https://manifest.build/llm-gateway/docs/self-hosted/#telemetry for the payload shape.
+      # Anonymous usage telemetry. Off: nothing is sent unless TELEMETRY_ENDPOINT
+      # points at your own collector and MANIFEST_TELEMETRY_DISABLED=0.
       - MANIFEST_TELEMETRY_DISABLED=${MANIFEST_TELEMETRY_DISABLED:-1}
       - TELEMETRY_ENDPOINT=${TELEMETRY_ENDPOINT:-}
+      # Autofix is off. Set true to send failing requests to Manifest's healing
+      # service (autofix.manifest.build) for repair.
+      - AUTOFIX_GLOBAL_ENABLED=${AUTOFIX_GLOBAL_ENABLED:-}
       # Daily Harness usage rollup. Reads stay off until backfill parity passes.
       - AGENT_USAGE_DAILY_WORKER=${AGENT_USAGE_DAILY_WORKER:-}
       - AGENT_USAGE_DAILY_READS=${AGENT_USAGE_DAILY_READS:-}
@@ -167,7 +169,7 @@ services:
       - AGENT_USAGE_DAILY_BATCH_SIZE=${AGENT_USAGE_DAILY_BATCH_SIZE:-}
       - AGENT_USAGE_DAILY_RUN_BUDGET_MS=${AGENT_USAGE_DAILY_RUN_BUDGET_MS:-}
       # Update check (opt-out). Once a day the dashboard asks GitHub for the
-      # latest Manifest release so it can show a "new version available"
+      # latest TierGate release so it can show a "new version available"
       # badge. Set MANIFEST_UPDATE_CHECK_DISABLED=1 on air-gapped installs.
       - MANIFEST_UPDATE_CHECK_DISABLED=${MANIFEST_UPDATE_CHECK_DISABLED:-0}
     depends_on:

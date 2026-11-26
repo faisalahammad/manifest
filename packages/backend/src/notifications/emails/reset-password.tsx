@@ -26,12 +26,12 @@ export function ResetPasswordEmail(props: ResetPasswordEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Reset your Manifest password</Preview>
+      <Preview>Reset your TierGate password</Preview>
       <Body style={body}>
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Img src={logoUrl} alt="Manifest LLM Gateway" width="174" height="32" style={logoImg} />
+            <Img src={logoUrl} alt="TierGate LLM Gateway" width="174" height="32" style={logoImg} />
           </Section>
 
           {/* Main content */}
@@ -66,9 +66,9 @@ export function ResetPasswordEmail(props: ResetPasswordEmailProps) {
           <Hr style={divider} />
           <Section style={footer}>
             <Text style={footerMuted}>
-              © 2026 MNFST Inc. All rights reserved.{' '}
-              <Link href="https://manifest.build" style={footerLink}>
-                manifest.build
+              TierGate ·{' '}
+              <Link href="https://github.com/faisalahammad/tiergate" style={footerLink}>
+                github.com/faisalahammad/tiergate
               </Link>
             </Text>
           </Section>

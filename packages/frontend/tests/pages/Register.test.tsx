@@ -104,10 +104,10 @@ describe('Register', () => {
     expect(container.querySelector('a[href="/login?plan=pro"]')).not.toBeNull();
   });
 
-  it('shows terms and privacy links', () => {
+  it('links to no terms or privacy pages', () => {
     render(() => <Register />);
-    expect(screen.getByText('Terms')).toBeDefined();
-    expect(screen.getByText('Privacy Policy')).toBeDefined();
+    expect(screen.queryByText('Terms')).toBeNull();
+    expect(screen.queryByText('Privacy Policy')).toBeNull();
   });
 
   it('submits registration form', async () => {
@@ -229,7 +229,7 @@ describe('Register', () => {
     locationSpy.mockRestore();
   });
 
-  it('routes self-hosted email signups through the discovery step', async () => {
+  it('sends self-hosted email signups to the welcome flow', async () => {
     mockCheckIsSelfHosted.mockResolvedValue(true);
     mockSignUpEmail.mockResolvedValue({ error: null });
     const { container } = render(() => <Register />);
@@ -248,26 +248,12 @@ describe('Register', () => {
         name: 'Test',
         email: 'test@test.com',
         password: 'pass123',
-        callbackURL: '/discovery?next=%2Fwelcome',
+        callbackURL: '/welcome',
       });
     });
   });
 
-  it('routes self-hosted social signups through the discovery step', async () => {
-    mockCheckIsSelfHosted.mockResolvedValue(true);
-    mockCheckSocialProviders.mockResolvedValue(['github']);
-    render(() => <Register />);
-
-    await fireEvent.click(await screen.findByText('Continue with GitHub'));
-
-    expect(mockSignInSocial).toHaveBeenCalledWith({
-      provider: 'github',
-      callbackURL: '/discovery?next=%2Fwelcome&signup=1',
-      errorCallbackURL: '/login?oauth=failed',
-    });
-  });
-
-  it('redirects self-hosted token signups to the discovery step', async () => {
+  it('redirects self-hosted token signups to the welcome flow', async () => {
     const locationSpy = vi.spyOn(window, 'location', 'get').mockReturnValue({
       ...window.location,
       href: '',
@@ -291,10 +277,9 @@ describe('Register', () => {
     });
     fireEvent.submit(container.querySelector('form')!);
     await vi.waitFor(() => {
-      expect(hrefSetter).toHaveBeenCalledWith('/discovery?next=%2Fwelcome');
+      expect(hrefSetter).toHaveBeenCalledWith('/welcome');
     });
-    // The pending marker lets the guards route Back presses to the form.
-    expect(localStorage.getItem('manifest_discovery_pending_u1')).toBe('/welcome');
+    expect(localStorage.getItem('manifest_discovery_pending_u1')).toBeNull();
 
     locationSpy.mockRestore();
   });
@@ -542,7 +527,7 @@ describe('Register', () => {
     await vi.waitFor(() => {
       expect(screen.getByText('Choose your plan')).toBeDefined();
     });
-    expect(screen.getByText(/Manifest Cloud is \$19\/month/)).toBeDefined();
+    expect(screen.getByText(/TierGate Cloud is \$19\/month/)).toBeDefined();
   });
 
   it('shows "Create an account" title without context=login (email signup)', async () => {

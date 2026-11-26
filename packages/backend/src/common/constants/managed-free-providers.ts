@@ -38,11 +38,11 @@ export function getManagedFreeProviderConfig(
   return MANAGED_FREE_PROVIDER_BY_ID.get(providerId.toLowerCase());
 }
 
-const DEFAULT_CREDITS_BASE_URL = 'https://credits.manifest.build';
 const DEFAULT_MAX_BUDGET_USD = 10;
 
 export function getManagedFreeLiteLlmBaseUrl(): string {
-  const raw = process.env['CREDITS_BASE_URL']?.trim() || DEFAULT_CREDITS_BASE_URL;
+  // No default: managed free providers stay off until a gateway is configured.
+  const raw = process.env['CREDITS_BASE_URL']?.trim() ?? '';
   return raw.replace(/\/+$/, '');
 }
 
@@ -69,7 +69,7 @@ export function getManagedFreeLiteLlmAutoAllowlist(): string[] {
 }
 
 export function isManagedFreeLiteLlmAutoEligible(email: string | null | undefined): boolean {
-  if (!getManagedFreeLiteLlmMasterKey()) return false;
+  if (!getManagedFreeLiteLlmBaseUrl() || !getManagedFreeLiteLlmMasterKey()) return false;
   const allowlist = getManagedFreeLiteLlmAutoAllowlist();
   if (allowlist.length === 0) return true;
   if (!email) return false;

@@ -77,7 +77,7 @@ function renderSetup(platform: string | undefined, origin: string, keyRef: strin
     return template.replaceAll('{{ORIGIN}}', origin).replaceAll('{{API_KEY}}', keyRef);
   }
   return [
-    `Point your tool's OpenAI-compatible client at Manifest:`,
+    `Point your tool's OpenAI-compatible client at TierGate:`,
     `  base URL: ${origin}/v1`,
     `  API key:  ${keyRef}`,
     `Or wire it via env: mnfst agent env <name> --url ${origin} >> .env`,

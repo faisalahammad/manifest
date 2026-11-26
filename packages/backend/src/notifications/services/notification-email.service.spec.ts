@@ -112,7 +112,7 @@ describe('NotificationEmailService', () => {
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'user@test.com',
-        from: 'Manifest <noreply@mg.example.com>',
+        from: 'TierGate <noreply@mg.example.com>',
       }),
     );
     expect(sendEmail).not.toHaveBeenCalled();
@@ -142,7 +142,7 @@ describe('NotificationEmailService', () => {
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: expect.stringContaining('Manifest <'),
+        from: expect.stringContaining('TierGate <'),
       }),
     );
   });

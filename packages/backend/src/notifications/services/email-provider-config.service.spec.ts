@@ -577,7 +577,7 @@ describe('EmailProviderConfigService', () => {
       );
       expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
-          from: 'Manifest <noreply@mg.example.com>',
+          from: 'TierGate <noreply@mg.example.com>',
         }),
       );
     });

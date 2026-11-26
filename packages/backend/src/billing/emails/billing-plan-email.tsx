@@ -79,9 +79,9 @@ function subscriptionCopy(props: SubscriptionPlanEmailProps): {
 } {
   if (props.kind === 'plan_changed') {
     return {
-      preview: `Your Manifest plan changed to ${props.planName}`,
+      preview: `Your TierGate plan changed to ${props.planName}`,
       badge: '',
-      heading: `Your plan is now Manifest ${props.planName}`,
+      heading: `Your plan is now TierGate ${props.planName}`,
       body: (
         <>
           {greeting(props.userName)} your plan has been updated
@@ -99,7 +99,7 @@ function subscriptionCopy(props: SubscriptionPlanEmailProps): {
         '365 days dashboard retention',
         'Basic support (platform issues, billing, licence activation)',
       ],
-      cta: 'Open Manifest',
+      cta: 'Open TierGate',
     };
   }
 
@@ -107,8 +107,8 @@ function subscriptionCopy(props: SubscriptionPlanEmailProps): {
     const end = formatDate(props.periodEnd);
     return {
       preview: end
-        ? `Your Manifest ${props.planName} plan is scheduled to end on ${end}`
-        : `Your Manifest ${props.planName} plan is scheduled to end`,
+        ? `Your TierGate ${props.planName} plan is scheduled to end on ${end}`
+        : `Your TierGate ${props.planName} plan is scheduled to end`,
       badge: '',
       heading: `${props.planName} cancellation confirmed`,
       body: 'multi',
@@ -132,9 +132,9 @@ function subscriptionCopy(props: SubscriptionPlanEmailProps): {
   }
 
   return {
-    preview: `Your Manifest ${props.planName} plan is active`,
+    preview: `Your TierGate ${props.planName} plan is active`,
     badge: '',
-    heading: `Welcome to Manifest ${props.planName}`,
+    heading: `Welcome to TierGate ${props.planName}`,
     body: (
       <>
         {greeting(props.userName)} your <strong>{props.planName}</strong> plan is active. The whole
@@ -146,7 +146,7 @@ function subscriptionCopy(props: SubscriptionPlanEmailProps): {
       '365 days dashboard retention',
       'Basic support (platform issues, billing, licence activation)',
     ],
-    cta: 'Open Manifest',
+    cta: 'Open TierGate',
   };
 }
 
@@ -163,7 +163,7 @@ export function SubscriptionPlanEmail(props: SubscriptionPlanEmailProps) {
       <Body style={body}>
         <Container style={container}>
           <Section style={logoSection}>
-            <Img src={logoUrl} alt="Manifest LLM Gateway" width="174" height="32" style={logoImg} />
+            <Img src={logoUrl} alt="TierGate LLM Gateway" width="174" height="32" style={logoImg} />
           </Section>
 
           <Section style={card}>
@@ -198,14 +198,17 @@ export function SubscriptionPlanEmail(props: SubscriptionPlanEmailProps) {
                 {copy.cta}
               </Button>
               {copy.ctaSecondary && (
-                <Button style={buttonSecondary} href="https://manifest.build/pricing">
+                <Button
+                  style={buttonSecondary}
+                  href="https://github.com/faisalahammad/tiergate/issues"
+                >
                   {copy.ctaSecondary}
                 </Button>
               )}
             </Section>
 
             <Text style={hint}>
-              This email confirms a Manifest plan change only. Stripe may send payment receipts
+              This email confirms a TierGate plan change only. Stripe may send payment receipts
               separately.
             </Text>
           </Section>
@@ -231,13 +234,13 @@ export function PlanUsageEmail(props: PlanUsageEmailProps) {
       <Head />
       <Preview>
         {isLimit
-          ? `Your Manifest workspace reached ${formatCount(props.limit)} monthly requests`
-          : `Your Manifest workspace used ${percentage}% of monthly requests`}
+          ? `Your TierGate workspace reached ${formatCount(props.limit)} monthly requests`
+          : `Your TierGate workspace used ${percentage}% of monthly requests`}
       </Preview>
       <Body style={body}>
         <Container style={container}>
           <Section style={logoSection}>
-            <Img src={logoUrl} alt="Manifest LLM Gateway" width="174" height="32" style={logoImg} />
+            <Img src={logoUrl} alt="TierGate LLM Gateway" width="174" height="32" style={logoImg} />
           </Section>
 
           <Section style={card}>
@@ -284,9 +287,9 @@ function Footer(props: { preferencesUrl: string }) {
             Manage email preferences
           </Link>
           {' · '}
-          (c) 2026 MNFST Inc.{' '}
-          <Link href="https://manifest.build" style={footerLink}>
-            manifest.build
+          TierGate ·{' '}
+          <Link href="https://github.com/faisalahammad/tiergate" style={footerLink}>
+            github.com/faisalahammad/tiergate
           </Link>
         </Text>
       </Section>

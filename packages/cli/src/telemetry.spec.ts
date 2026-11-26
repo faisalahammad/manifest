@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {
-  DEFAULT_TELEMETRY_ENDPOINT,
   FLUSH_AT_EVENTS,
   FLUSH_INTERVAL_MS,
   LOCK_STALE_MS,
@@ -15,6 +14,8 @@ import {
 } from './telemetry';
 import { makeIo, type TestIo } from '../test/helpers';
 
+const TEST_ENDPOINT = 'http://telemetry.test/v1/cli-report';
+
 type Call = { url: string; body: Record<string, unknown> };
 
 function capturing(calls: Call[], status = 202): typeof fetch {
@@ -25,7 +26,14 @@ function capturing(calls: Call[], status = 202): typeof fetch {
 }
 
 function on(env: Record<string, string> = {}, fetchImpl?: typeof fetch): TestIo {
-  return makeIo({ env: { MANIFEST_TELEMETRY_DISABLED: '0', ...env }, fetchImpl });
+  return makeIo({
+    env: {
+      MANIFEST_TELEMETRY_DISABLED: '0',
+      MANIFEST_CLI_TELEMETRY_ENDPOINT: TEST_ENDPOINT,
+      ...env,
+    },
+    fetchImpl,
+  });
 }
 
 function spoolLines(io: TestIo): string[] {
@@ -49,9 +57,19 @@ function readState(io: TestIo): Record<string, string> {
 }
 
 describe('telemetry', () => {
+  it('records and sends nothing when no endpoint is configured', async () => {
+    const calls: Call[] = [];
+    for (const blank of ['', '   ']) {
+      const io = on({ MANIFEST_CLI_TELEMETRY_ENDPOINT: blank }, capturing(calls));
+      await reportUsage(io, 'agent list', true, 5);
+      expect(spoolLines(io)).toEqual([]);
+    }
+    expect(calls).toEqual([]);
+  });
+
   it('classifies the target as cloud or self-hosted, never as a URL', () => {
-    // Fresh install, nothing configured: the CLI defaults to Cloud.
-    expect(telemetryTarget(makeIo())).toBe('cloud');
+    // Fresh install, nothing configured: the CLI defaults to a local server.
+    expect(telemetryTarget(makeIo())).toBe('self-hosted');
     expect(telemetryTarget(makeIo({ env: { MANIFEST_URL: 'https://APP.manifest.build/' } }))).toBe(
       'cloud',
     );
@@ -70,7 +88,7 @@ describe('telemetry', () => {
     const corrupt = makeIo();
     fs.mkdirSync(path.join(corrupt.configDir, 'manifest'), { recursive: true });
     fs.writeFileSync(path.join(corrupt.configDir, 'manifest', 'config.json'), '{not json');
-    expect(telemetryTarget(corrupt)).toBe('cloud');
+    expect(telemetryTarget(corrupt)).toBe('self-hosted');
     expect(telemetryTarget(makeIo({ env: { MANIFEST_URL: 'not a url' } }))).toBe('self-hosted');
     // A per-command --url outranks everything, as it does for the command itself.
     expect(
@@ -112,7 +130,7 @@ describe('telemetry', () => {
 
   it('tags a mixed spool (legacy + new events) by its latest event', async () => {
     const calls: Call[] = [];
-    const io = on({}, capturing(calls));
+    const io = on({ MANIFEST_URL: 'https://app.manifest.build' }, capturing(calls));
     writeState(io, { last_flush_at: '2020-01-01T00:00:00.000Z' });
     fs.mkdirSync(path.dirname(spoolPath(io)), { recursive: true });
     fs.writeFileSync(
@@ -141,11 +159,11 @@ describe('telemetry', () => {
 
   it('first run ever: spools the event and flushes it at once (new install shows up today)', async () => {
     const calls: Call[] = [];
-    const io = on({}, capturing(calls));
+    const io = on({ MANIFEST_URL: 'https://app.manifest.build' }, capturing(calls));
     await reportUsage(io, 'agent create', true, 123);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].url).toBe(DEFAULT_TELEMETRY_ENDPOINT);
+    expect(calls[0].url).toBe(TEST_ENDPOINT);
     expect(calls[0].body).toEqual({
       schema_version: 1,
       anon_id: expect.stringMatching(/^[0-9a-f-]{36}$/),

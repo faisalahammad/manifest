@@ -1,6 +1,6 @@
-# Manifest CLI
+# TierGate CLI
 
-`mnfst` manages a Manifest gateway from your terminal. Use it to create agents, connect AI providers, configure model routing, and inspect requests. The dashboard calls agents **Harnesses**; CLI commands use `agent`.
+`mnfst` manages a TierGate gateway from your terminal. Use it to create agents, connect AI providers, configure model routing, and inspect requests. The dashboard calls agents **Harnesses**; CLI commands use `agent`.
 
 The npm package is `mnfst-gateway-cli`. The command it installs is `mnfst`. Node.js 20 or later is required.
 
@@ -19,7 +19,7 @@ npx mnfst-gateway-cli --help
 
 ## Quick start
 
-Sign in to the hosted Manifest gateway, then create an agent and connect a provider:
+Sign in to your TierGate server with `mnfst login --url https://your-host`, then create an agent and connect a provider:
 
 ```bash
 mnfst login
@@ -71,10 +71,12 @@ Agent keys are separate from management credentials. The CLI stores a newly crea
 
 ## Usage telemetry
 
-The CLI records usage telemetry by default. It batches events locally and normally sends one request per install per day. The payload contains a random, persistent install ID; CLI version; operating system; Cloud or self-hosted target; and each command's name, result, duration, and minute-level time. It may include the detected coding-agent runtime. It does not include command arguments, agent or provider names, gateway URLs, prompts, or credentials.
+This section describes the CLI built from this repository. The `mnfst-gateway-cli` package on npm is published by Manifest, the upstream project, and keeps its defaults: it signs in to Manifest Cloud unless you pass `--url` or set `MANIFEST_URL`, and it sends usage telemetry to Manifest unless you set `MANIFEST_TELEMETRY_DISABLED=1`.
 
-Set `MANIFEST_TELEMETRY_DISABLED=1` to opt out. Telemetry files are stored beside the CLI config. You can set `MANIFEST_CLI_TELEMETRY_ENDPOINT` to send usage data to your own endpoint.
+The CLI records and sends nothing unless you set `MANIFEST_CLI_TELEMETRY_ENDPOINT` to your own collector. With it set, events are batched locally and normally sent once per install per day. The payload contains a random, persistent install ID; CLI version; operating system; Cloud or self-hosted target; and each command's name, result, duration, and minute-level time. It may include the detected coding-agent runtime. It does not include command arguments, agent or provider names, gateway URLs, prompts, or credentials.
+
+`MANIFEST_TELEMETRY_DISABLED=1` turns it off again. Telemetry files are stored beside the CLI config.
 
 ## Documentation
 
-See the [CLI documentation](https://manifest.build/llm-gateway/docs/cli/) for more examples and the [GitHub repository](https://github.com/mnfst/llm-gateway) for source and issues.
+See the [CLI documentation](https://github.com/faisalahammad/tiergate/blob/main/packages/cli/README.md) for more examples and the [GitHub repository](https://github.com/faisalahammad/tiergate) for source and issues.

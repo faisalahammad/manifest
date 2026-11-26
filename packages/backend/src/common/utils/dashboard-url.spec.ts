@@ -10,10 +10,8 @@ describe('dashboard URLs', () => {
   });
 
   it('uses the app dashboard when no deployment URL is configured', () => {
-    expect(getDashboardBaseUrl()).toBe('https://app.manifest.build');
-    expect(getEmailAssetUrl('manifest-logo.png')).toBe(
-      'https://app.manifest.build/manifest-logo.png',
-    );
+    expect(getDashboardBaseUrl()).toBe('http://localhost:2099');
+    expect(getEmailAssetUrl('manifest-logo.png')).toBe('http://localhost:2099/manifest-logo.png');
   });
 
   it('uses the configured deployment for absolute email images', () => {
