@@ -2,7 +2,7 @@
 /**
  * Stamps one version onto every file in packages/cli that carries it.
  *
- * The CLI's version tracks the Manifest release it ships with, so there is no
+ * The CLI's version tracks the TierGate release it ships with, so there is no
  * separate changeset target for it (`mnfst-gateway-cli` stays in the
  * `.changeset/config.json` ignore list). The publish-npm job in release.yml
  * calls this with the version from packages/manifest/package.json before
@@ -13,7 +13,7 @@
  * released, so it tries to read packages/cli/CHANGELOG.md to build the version
  * PR body. That file does not exist, because the CLI is in the ignore list, and
  * the action dies with ENOENT, taking the whole Release workflow down with it.
- * The committed CLI version therefore drifts from the Manifest version between
+ * The committed CLI version therefore drifts from the TierGate version between
  * releases. That is cosmetic: the published version is stamped here, at publish
  * time, from packages/manifest/package.json.
  *

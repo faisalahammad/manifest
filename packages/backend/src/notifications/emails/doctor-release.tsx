@@ -46,7 +46,7 @@ export function DoctorReleaseEmail(props: DoctorReleaseProps) {
       <Body style={body}>
         <Container style={container}>
           <Section style={logoSection}>
-            <Img src={logoUrl} alt="Manifest LLM Gateway" width="174" height="32" style={logoImg} />
+            <Img src={logoUrl} alt="TierGate LLM Gateway" width="174" height="32" style={logoImg} />
           </Section>
 
           <Section style={card}>
@@ -67,7 +67,7 @@ export function DoctorReleaseEmail(props: DoctorReleaseProps) {
 
             <Text style={paragraph}>
               From now on, when a provider rejects one of your requests with a fixable error, a
-              renamed parameter, an unsupported field, a deprecated model, Manifest repairs the
+              renamed parameter, an unsupported field, a deprecated model, TierGate repairs the
               request and sends it again. Your agent gets its answer. You see the whole story in
               your dashboard: the failure, the fix, the retry.
             </Text>
@@ -91,7 +91,7 @@ export function DoctorReleaseEmail(props: DoctorReleaseProps) {
             <Hr style={hr} />
 
             <Text style={footer}>
-              You are receiving this email because you joined the Autofix waitlist on Manifest.
+              You are receiving this email because you joined the Autofix waitlist on TierGate.
             </Text>
           </Section>
         </Container>

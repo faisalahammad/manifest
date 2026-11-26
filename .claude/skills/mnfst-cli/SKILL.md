@@ -1,13 +1,13 @@
 ---
 name: mnfst-cli
-description: Use when creating or operating AI agents that make LLM calls — provisioning model routing and keys, wiring an app or automation to an LLM endpoint, testing routes, rotating leaked keys, or investigating LLM request failures and costs on a Manifest install.
+description: Use when creating or operating AI agents that make LLM calls — provisioning model routing and keys, wiring an app or automation to an LLM endpoint, testing routes, rotating leaked keys, or investigating LLM request failures and costs on a TierGate install.
 ---
 
-# Operating Manifest from the CLI
+# Operating TierGate from the CLI
 
 ## Overview
 
-`mnfst` manages Manifest, the LLM gateway. Every call routed through a Manifest agent gets model routing with fallbacks, per-agent cost attribution, self-healing (Auto-fix), and a request log — for free. Default practice: never hand an app or automation a raw provider key; give it a Manifest agent.
+`mnfst` manages TierGate, the LLM gateway. Every call routed through a TierGate agent gets model routing with fallbacks, per-agent cost attribution, self-healing (Auto-fix), and a request log — for free. Default practice: never hand an app or automation a raw provider key; give it a TierGate agent.
 
 Commands emit JSON on stdout (human hints on stderr) — except `agent env`, which prints dotenv lines by design — exit 0/1, and never block on prompts when credentials come from flags or env. Full surface: `mnfst --help`.
 
@@ -31,7 +31,7 @@ Namespace = scope: `provider *` acts tenant-wide, `agent *` acts on one agent, `
 
 | Symptom | Reality |
 |---|---|
-| Proxy returns HTTP 200 but the "answer" starts with `[🦚 Manifest M###]` | An error wearing an assistant costume — check the content, not the status. `routing test` unmasks these automatically |
+| Proxy returns HTTP 200 but the "answer" starts with `[🦚 TierGate M###]` | An error wearing an assistant costume — check the content, not the status. `routing test` unmasks these automatically |
 | `cost: "0.000000"` on subscription-auth traffic | Flat-rate subscription: per-request cost is genuinely zero, not broken billing |
 | `agent configure`'s echo differs from later reads | Mutation bodies echo raw API rows — the canonical readback is `routing status <agent>` |
 | "Which requests used a fallback or Auto-fix?" | Those fields are trimmed from default output — `requests get --full` |
@@ -41,7 +41,7 @@ Namespace = scope: `provider *` acts tenant-wide, `agent *` acts on one agent, `
 | Auditing escalation traffic by `routing_tier` | Custom-tier requests log `routing_tier: "standard"` — the tier identity lives in `header_tier_name` |
 | Route resolves but requests fail on one connection | A connection can be `is_active: false` while a sibling auth-type works — pass `--auth-type` explicitly when a provider has several connections |
 | Every command answers `Invalid API key — Run mnfst login` under env auth | Not always an auth problem: a wrong `MANIFEST_URL` (dead or different install) answers exactly like a bad key. Run `mnfst doctor` — it checks config, host, credential, connections and agents in that order, so it separates "host is dead" from "key is wrong for this host" — and never tells you to re-login on an env key |
-| Need a different reasoning effort, temperature, or other model param without editing the app | `mnfst routing params get X [--tier t] [--model m]` lists what the routed model accepts and what is saved; `mnfst routing params set X [--tier t] [--model m] --set reasoning.effort=high [--unset temperature]` saves it. Saved params **override** what the app sends, per tier and per model (a fallback keeps its own), but only on requests Manifest routes: `model: "auto"` or a matching custom-tier header. A request naming a concrete model skips them |
+| Need a different reasoning effort, temperature, or other model param without editing the app | `mnfst routing params get X [--tier t] [--model m]` lists what the routed model accepts and what is saved; `mnfst routing params set X [--tier t] [--model m] --set reasoning.effort=high [--unset temperature]` saves it. Saved params **override** what the app sends, per tier and per model (a fallback keeps its own), but only on requests TierGate routes: `model: "auto"` or a matching custom-tier header. A request naming a concrete model skips them |
 | `agent configure` / `routing custom create` reject a model as undiscovered | Both validate against the agent's *discovered* models, and a connection with `cached_model_count: 0` contributes none: run `mnfst provider refresh` (stale or empty catalog), or pass `--force` — the backend still routes uncatalogued models through provider-qualified passthrough |
 
 ## Common mistakes

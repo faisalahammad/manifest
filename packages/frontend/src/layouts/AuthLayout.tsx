@@ -5,7 +5,7 @@ const AuthLayout: ParentComponent = (props) => {
     <div class="auth-layout">
       <div class="auth-card">
         <div class="auth-logo">
-          <a href="https://manifest.build" class="auth-logo__link">
+          <a href="https://github.com/faisalahammad/tiergate" class="auth-logo__link">
             <img
               src="/logotype-white.svg"
               alt="TierGate"

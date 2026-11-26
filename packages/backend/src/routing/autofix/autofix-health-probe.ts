@@ -1,6 +1,6 @@
 import { Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { resolveHealingUrl } from './autofix-healing-config';
+import { isAutofixGloballyEnabled, resolveHealingUrl } from './autofix-healing-config';
 
 const PROBE_TIMEOUT_MS = 5_000;
 
@@ -22,11 +22,8 @@ export class AutofixHealthProbe implements OnApplicationBootstrap {
   }
 
   async probe(): Promise<void> {
-    // With no healer URL to blank out, `AUTOFIX_GLOBAL_ENABLED=false` is the
-    // only opt-out an operator has left — so it has to mean *no contact at
-    // all*, boot probe included. Previously `AUTOFIX_HEALING_URL=off` carried
-    // that guarantee and the probe was allowed to run regardless.
-    if (this.config.get<string>('AUTOFIX_GLOBAL_ENABLED') === 'false') return;
+    // Off means no contact at all, boot probe included.
+    if (!isAutofixGloballyEnabled(this.config.get<string>('AUTOFIX_GLOBAL_ENABLED'))) return;
 
     const url = resolveHealingUrl(this.config.get<string>('NODE_ENV'));
     if (!url) return; // Dev/test runs the in-process mock — nothing to probe.

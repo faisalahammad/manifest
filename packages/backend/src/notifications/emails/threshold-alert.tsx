@@ -78,7 +78,7 @@ export function ThresholdAlertEmail(props: ThresholdAlertProps) {
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Img src={logoUrl} alt="Manifest LLM Gateway" width="174" height="32" style={logoImg} />
+            <Img src={logoUrl} alt="TierGate LLM Gateway" width="174" height="32" style={logoImg} />
           </Section>
 
           {/* Main content */}
@@ -160,12 +160,12 @@ export function ThresholdAlertEmail(props: ThresholdAlertProps) {
           <Hr style={divider} />
           <Section style={footer}>
             <Text style={footerNote}>
-              You are receiving this because you set up a notification rule in Manifest.
+              You are receiving this because you set up a notification rule in TierGate.
             </Text>
             <Text style={footerMuted}>
-              © 2026 MNFST Inc. All rights reserved.{' '}
-              <Link href="https://manifest.build" style={footerLink}>
-                manifest.build
+              TierGate ·{' '}
+              <Link href="https://github.com/faisalahammad/tiergate" style={footerLink}>
+                github.com/faisalahammad/tiergate
               </Link>
             </Text>
           </Section>

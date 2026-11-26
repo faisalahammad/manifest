@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manifest — self-host install and upgrade helper
+# TierGate — self-host install and upgrade helper
 #
 # Downloads the Docker Compose file and the `.env.example` template,
 # generates a BETTER_AUTH_SECRET and a MANIFEST_ENCRYPTION_KEY, writes them
@@ -122,7 +122,7 @@ elif [[ -e "$INSTALL_DIR" && -n "$(ls -A "$INSTALL_DIR" 2>/dev/null || true)" ]]
   if [[ -f "$INSTALL_DIR/docker-compose.yml" && -f "$INSTALL_DIR/.env" ]]; then
     RESUME=1
   else
-    die "$INSTALL_DIR already exists, is not empty, and does not look like a Manifest install (no docker-compose.yml + .env). Pass --dir to choose another location, or remove it first."
+    die "$INSTALL_DIR already exists, is not empty, and does not look like a TierGate install (no docker-compose.yml + .env). Pass --dir to choose another location, or remove it first."
   fi
 fi
 
@@ -179,7 +179,7 @@ else
   operation="install"
 fi
 
-log "Manifest self-host ${operation}"
+log "TierGate self-host ${operation}"
 printf '    Install directory: %s\n' "$INSTALL_DIR"
 printf '    Dashboard port:    %s\n' "$HOST_PORT"
 printf '    Source:            %s\n' "$REPO_RAW"
@@ -241,7 +241,7 @@ if [[ "$UPGRADE" -eq 1 ]]; then
     curl -sSLf "$REPO_RAW/docker-compose.yml" -o "$NEW_COMPOSE_PATH" \
       || die "Failed to download docker-compose.yml"
     grep -qE '^# manifest-compose-version: [0-9]+$' "$NEW_COMPOSE_PATH" \
-      || die "Downloaded docker-compose.yml is not a managed Manifest Compose file."
+      || die "Downloaded docker-compose.yml is not a managed TierGate Compose file."
     docker compose --env-file "$ENV_PATH" -f "$NEW_COMPOSE_PATH" config --quiet \
       || die "Downloaded docker-compose.yml is invalid for the existing .env."
 
@@ -364,11 +364,11 @@ if ! (cd "$INSTALL_DIR" && docker compose up -d); then
   die "docker compose up failed"
 fi
 
-log "Waiting for Manifest to become healthy (up to 120s)"
+log "Waiting for TierGate to become healthy (up to 120s)"
 HEALTH_URL="http://127.0.0.1:${HOST_PORT}/api/v1/health"
 for _ in $(seq 1 24); do
   if curl -sSf "$HEALTH_URL" >/dev/null 2>&1; then
-    log "Manifest is up."
+    log "TierGate is up."
     if [[ "$UPGRADE" -eq 1 ]]; then
       cat <<EOF
 
@@ -408,9 +408,9 @@ done
 
 if [[ "$UPGRADE" -eq 1 ]]; then
   restore_previous_compose 1
-  die "Manifest did not become healthy after the upgrade. The previous Compose configuration was restored."
+  die "TierGate did not become healthy after the upgrade. The previous Compose configuration was restored."
 fi
 
-warn "Manifest did not become healthy within 120s. Check logs with:"
+warn "TierGate did not become healthy within 120s. Check logs with:"
 warn "  (cd $INSTALL_DIR && docker compose logs -f manifest)"
 exit 1

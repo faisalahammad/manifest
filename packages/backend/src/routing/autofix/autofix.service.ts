@@ -23,6 +23,7 @@ import { normalizeProviderError } from './provider-error-normalizer';
 import { scrubSecrets } from '../../common/utils/secret-scrub';
 import { scrubProviderUrl } from './observation-payload';
 import type { AutofixChainEntry, AutofixRecord } from './autofix.types';
+import { isAutofixGloballyEnabled } from './autofix-healing-config';
 import type { HealOutcome, HealResponse } from './phoenix.types';
 import { recordingResponseFromText } from '../proxy/attempt-recording-capture';
 
@@ -140,7 +141,7 @@ export class AutofixService {
     @InjectRepository(Agent) private readonly agentRepo: Repository<Agent>,
     config: ConfigService,
   ) {
-    this.globalEnabled = config.get<string>('AUTOFIX_GLOBAL_ENABLED') !== 'false';
+    this.globalEnabled = isAutofixGloballyEnabled(config.get<string>('AUTOFIX_GLOBAL_ENABLED'));
     this.defaultAgentEnabled = !isSelfHosted();
     this.repairableStatuses = parseStatuses(config.get<string>('AUTOFIX_REPAIRABLE_STATUSES'));
     // Boot-time snapshot of the resolved configuration. Logged once so an operator can
@@ -234,7 +235,9 @@ export class AutofixService {
         `tenant=${params.tenantId} globalEnabled=${this.globalEnabled}`,
     );
     if (!this.globalEnabled) {
-      this.logger.warn(`skip status=${status}: globally disabled (AUTOFIX_GLOBAL_ENABLED=false)`);
+      this.logger.warn(
+        `skip status=${status}: globally disabled (set AUTOFIX_GLOBAL_ENABLED=true)`,
+      );
       return null;
     }
     if (!this.isRepairable(status)) {

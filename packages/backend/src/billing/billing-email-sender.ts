@@ -12,7 +12,7 @@ export function formatPlanName(plan: string | null | undefined): string {
   const normalized = (plan ?? '').trim().toLowerCase();
   if (normalized === 'pro') return 'Pro';
   if (normalized === 'free') return 'Free';
-  if (!normalized) return 'Manifest';
+  if (!normalized) return 'TierGate';
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
@@ -21,7 +21,7 @@ export function getBillingEmailFrom(explicit?: string | null): string {
     explicit ||
     process.env['EMAIL_FROM'] ||
     process.env['NOTIFICATION_FROM_EMAIL'] ||
-    'noreply@manifest.build'
+    'noreply@tiergate.local'
   );
 }
 
@@ -30,15 +30,15 @@ export function getBillingAppUrl(explicit?: string | null): string {
 }
 
 export function subscriptionEmailSubject(kind: SubscriptionPlanEmailProps['kind'], plan: string) {
-  if (kind === 'plan_changed') return `Your Manifest plan changed to ${plan}`;
-  if (kind === 'cancellation_confirmed') return `Your Manifest ${plan} cancellation is scheduled`;
-  return `Your Manifest ${plan} plan is active`;
+  if (kind === 'plan_changed') return `Your TierGate plan changed to ${plan}`;
+  if (kind === 'cancellation_confirmed') return `Your TierGate ${plan} cancellation is scheduled`;
+  return `Your TierGate ${plan} plan is active`;
 }
 
 export function usageEmailSubject(kind: PlanUsageEmailProps['kind']) {
   return kind === 'requests_limit_reached'
-    ? 'Your Manifest monthly request limit has been reached'
-    : 'Your Manifest workspace has used 80% of monthly requests';
+    ? 'Your TierGate monthly request limit has been reached'
+    : 'Your TierGate workspace has used 80% of monthly requests';
 }
 
 export async function sendSubscriptionPlanEmail(
@@ -54,7 +54,7 @@ export async function sendSubscriptionPlanEmail(
     subject: subscriptionEmailSubject(props.kind, props.planName),
     html,
     text,
-    from: `Manifest <${getBillingEmailFrom(fromEmail)}>`,
+    from: `TierGate <${getBillingEmailFrom(fromEmail)}>`,
   });
 }
 
@@ -71,6 +71,6 @@ export async function sendPlanUsageEmail(
     subject: usageEmailSubject(props.kind),
     html,
     text,
-    from: `Manifest <${getBillingEmailFrom(fromEmail)}>`,
+    from: `TierGate <${getBillingEmailFrom(fromEmail)}>`,
   });
 }

@@ -11,6 +11,7 @@ interface SetupStatusResponse {
   localLlmHost?: string;
   emailConfigured?: boolean;
   mcpEnabled?: boolean;
+  autofixAvailable?: boolean;
 }
 
 interface SetupStatusResult {
@@ -21,6 +22,7 @@ interface SetupStatusResult {
   localLlmHost: string;
   emailConfigured: boolean;
   mcpEnabled: boolean;
+  autofixAvailable: boolean;
 }
 
 let cachedPromise: Promise<SetupStatusResult> | null = null;
@@ -40,6 +42,7 @@ async function fetchSetupStatus(): Promise<SetupStatusResult> {
         localLlmHost: 'localhost',
         emailConfigured: true,
         mcpEnabled: true,
+        autofixAvailable: false,
       };
     const data = (await res.json()) as SetupStatusResponse;
     return {
@@ -53,6 +56,7 @@ async function fetchSetupStatus(): Promise<SetupStatusResult> {
       emailConfigured: data.emailConfigured !== false,
       // Same reasoning, plus a backend older than this field always serves MCP.
       mcpEnabled: data.mcpEnabled !== false,
+      autofixAvailable: data.autofixAvailable === true,
     };
   } catch {
     return {
@@ -63,6 +67,7 @@ async function fetchSetupStatus(): Promise<SetupStatusResult> {
       localLlmHost: 'localhost',
       emailConfigured: true,
       mcpEnabled: true,
+      autofixAvailable: false,
     };
   }
 }
@@ -106,6 +111,11 @@ export async function checkEmailConfigured(): Promise<boolean> {
  */
 export async function checkMcpEnabled(): Promise<boolean> {
   return (await getSetupStatus()).mcpEnabled;
+}
+
+/** False unless the operator opted in to Autofix (`AUTOFIX_GLOBAL_ENABLED=true`). */
+export async function checkAutofixAvailable(): Promise<boolean> {
+  return (await getSetupStatus()).autofixAvailable;
 }
 
 /** Invalidate the cached status. Call this after a successful setup. */

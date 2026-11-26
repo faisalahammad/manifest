@@ -1,6 +1,6 @@
 import { SHARED_PROVIDER_BY_ID } from 'manifest-shared';
 
-const MANAGED_FREE_PROVIDER_API_KEY_URL = 'https://calendly.com/sebastien-manifest/30min';
+const MANAGED_FREE_PROVIDER_API_KEY_URL = 'https://github.com/faisalahammad/tiergate/issues';
 
 export const ROUTING_PROVIDER_API_KEY_URLS: Record<string, string> = {
   anthropic: 'https://console.anthropic.com/settings/keys',

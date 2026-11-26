@@ -407,7 +407,7 @@ export async function routingTest(io: CliIo, argv: string[]): Promise<number | v
     throw new CliError(
       'network_error',
       `Could not reach ${resolved.origin}: ${error instanceof Error ? error.message : String(error)}`,
-      'Check the URL and that the Manifest server is running',
+      'Check the URL and that the TierGate server is running',
     );
   } finally {
     clearTimeout(timer);
@@ -451,7 +451,7 @@ export async function routingTest(io: CliIo, argv: string[]): Promise<number | v
       : surface === 'responses'
         ? parseResponsesSurface(parsed)
         : parseCompletionSurface(parsed);
-  if (/^\[🦚 Manifest M\d+\]/.test(result.reply)) {
+  if (/^\[🦚 (?:TierGate|Manifest) M\d+\]/.test(result.reply)) {
     throw new CliError('route_test_failed', result.reply, 'See mnfst routing status ' + agent);
   }
 

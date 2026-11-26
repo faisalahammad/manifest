@@ -27,7 +27,7 @@ export function TestEmail(props: TestEmailProps = {}) {
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Img src={logoUrl} alt="Manifest LLM Gateway" width="174" height="32" style={logoImg} />
+            <Img src={logoUrl} alt="TierGate LLM Gateway" width="174" height="32" style={logoImg} />
           </Section>
 
           {/* Main content */}
@@ -38,7 +38,7 @@ export function TestEmail(props: TestEmailProps = {}) {
 
             <Text style={heading}>Email is working</Text>
             <Text style={paragraph}>
-              This is a test email from Manifest. If you're reading this, your email provider
+              This is a test email from TierGate. If you're reading this, your email provider
               configuration is working correctly.
             </Text>
             <Text style={paragraph}>
@@ -49,11 +49,11 @@ export function TestEmail(props: TestEmailProps = {}) {
           {/* Footer */}
           <Hr style={divider} />
           <Section style={footer}>
-            <Text style={footerNote}>This is a one-time test email sent from Manifest.</Text>
+            <Text style={footerNote}>This is a one-time test email sent from TierGate.</Text>
             <Text style={footerMuted}>
-              © 2026 MNFST Inc. All rights reserved.{' '}
-              <Link href="https://manifest.build" style={footerLink}>
-                manifest.build
+              TierGate ·{' '}
+              <Link href="https://github.com/faisalahammad/tiergate" style={footerLink}>
+                github.com/faisalahammad/tiergate
               </Link>
             </Text>
           </Section>

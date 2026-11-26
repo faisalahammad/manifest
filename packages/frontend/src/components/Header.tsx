@@ -25,12 +25,12 @@ import {
 import { providerIcon } from './ProviderIcon.jsx';
 import DuplicateAgentModal from './DuplicateAgentModal.jsx';
 
-const GITHUB_REPO = 'mnfst/llm-gateway';
+const GITHUB_REPO = 'faisalahammad/tiergate';
 const STAR_DISMISSED_KEY = 'github-star-dismissed';
 const STAR_CACHE_KEY = 'github-star-count';
 const STAR_CACHE_TS_KEY = 'github-star-ts';
 const STAR_CACHE_TTL = 3600000; // 1 hour
-const DOCS_BASE_URL = 'https://manifest.build/llm-gateway/docs';
+const REPO_URL = `https://github.com/${GITHUB_REPO}`;
 
 interface HeaderProps {
   showMobileNavToggle?: boolean;
@@ -97,19 +97,12 @@ const Header: Component<HeaderProps> = (props) => {
   const effectiveName = () => user()?.name ?? 'User';
   const docsUrl = () => {
     const p = location.pathname.replace(/\/$/, '');
-    if (p === '/integrations/mcp') return `${DOCS_BASE_URL}/integrations/mcp/`;
-    if (p === '/integrations/cli') return `${DOCS_BASE_URL}/cli/`;
-    if (p.includes('/guardrails') || p.includes('/limits'))
-      return `${DOCS_BASE_URL}/observability/`;
-    if (p.includes('/routing')) return `${DOCS_BASE_URL}/llm-gateway/`;
+    if (p === '/integrations/mcp') return `${REPO_URL}/blob/main/docs/self-hosting.md#mcp-server`;
+    if (p === '/integrations/cli') return `${REPO_URL}/blob/main/packages/cli/README.md`;
     if (p.startsWith('/providers/subscriptions')) {
-      return `${DOCS_BASE_URL}/providers/subscription-based-providers/`;
+      return `${REPO_URL}/blob/main/docs/providers/subscription-based-providers.md`;
     }
-    if (p.startsWith('/providers/usage-based'))
-      return `${DOCS_BASE_URL}/providers/api-key-providers/`;
-    if (p.startsWith('/providers/local')) return `${DOCS_BASE_URL}/providers/local-models/`;
-    if (p.includes('/providers')) return `${DOCS_BASE_URL}/providers/api-key-providers/`;
-    return `${DOCS_BASE_URL}/introduction/`;
+    return `${REPO_URL}#readme`;
   };
 
   const initials = () => {

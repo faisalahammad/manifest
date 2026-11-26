@@ -40,7 +40,7 @@ export function generate(input: Input): Output {
         "AUTH_DB_POOL_MAX=5",
         "REQUEST_RECORDING_STORAGE=filesystem",
         "REQUEST_RECORDING_FILESYSTEM_PATH=/data/request-recordings",
-        `MANIFEST_TELEMETRY_DISABLED=${input.telemetryDisabled || "0"}`,
+        `MANIFEST_TELEMETRY_DISABLED=${input.telemetryDisabled || "1"}`,
       ].join("\n"),
       mounts: [
         {

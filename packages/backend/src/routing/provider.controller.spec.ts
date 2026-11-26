@@ -536,7 +536,7 @@ describe('ProviderController', () => {
           provider: 'ollama',
           authType: 'local',
         }),
-      ).rejects.toThrow('Built-in local providers are only available in self-hosted Manifest');
+      ).rejects.toThrow('Built-in local providers are only available in self-hosted TierGate');
 
       expect(mockOllamaSync.sync).not.toHaveBeenCalled();
       expect(mockProviderService.upsertProvider).not.toHaveBeenCalled();

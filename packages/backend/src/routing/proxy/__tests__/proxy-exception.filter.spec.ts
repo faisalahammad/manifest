@@ -276,9 +276,11 @@ describe('ProxyExceptionFilter', () => {
 
       expect(res.status).toHaveBeenCalledWith(200);
       const content = res.json.mock.calls[0][0].choices[0].message.content;
-      expect(content).toContain('[🦚 Manifest M500]');
+      expect(content).toContain('[🦚 TierGate M500]');
       expect(content).toContain('Something broke on our end');
-      expect(content).toContain('https://manifest.build/llm-gateway/docs/errors/M500/');
+      expect(content).toContain(
+        'https://github.com/faisalahammad/tiergate/blob/main/docs/errors.md#m500',
+      );
     });
 
     it('converts unknown auth message to friendly message', () => {

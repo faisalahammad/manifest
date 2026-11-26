@@ -24,7 +24,7 @@ export const KIRO_OIDC_DEFAULT_REGION = 'us-east-1';
 // AWS Builder ID. Google / GitHub social logins are surfaced on this same
 // hosted page, so a single start URL covers every Kiro sign-in method.
 export const KIRO_DEFAULT_START_URL = 'https://view.awsapps.com/start';
-export const KIRO_CLIENT_NAME = 'Manifest';
+export const KIRO_CLIENT_NAME = 'TierGate';
 export const KIRO_CLIENT_TYPE = 'public';
 export const KIRO_DEVICE_CODE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
 export const KIRO_REFRESH_GRANT = 'refresh_token';

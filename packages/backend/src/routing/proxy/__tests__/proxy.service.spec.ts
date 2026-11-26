@@ -994,7 +994,9 @@ describe('ProxyService — orchestration', () => {
       const realAutofix = new AutofixService(
         healingClient as unknown as HealingClient,
         { findOne: jest.fn().mockResolvedValue({ id: 'agent-1', autofix_enabled: true }) } as never,
-        { get: jest.fn().mockReturnValue(undefined) } as unknown as ConfigService,
+        {
+          get: jest.fn((key: string) => (key === 'AUTOFIX_GLOBAL_ENABLED' ? 'true' : undefined)),
+        } as unknown as ConfigService,
       );
       (svc as unknown as { autofixService: AutofixService }).autofixService = realAutofix;
       resolveService.resolve.mockResolvedValue({

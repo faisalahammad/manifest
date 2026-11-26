@@ -80,7 +80,7 @@ export function buildRegistry(input) {
 
 export function buildLlmsTxt(registry) {
   const lines = [
-    '# Manifest platform design-system registry (GENERATED — do not edit)',
+    '# TierGate platform design-system registry (GENERATED — do not edit)',
     '# Regenerate: npm run design:registry — source: packages/frontend/src/styles, entry theme.css',
     '#',
     '# Rules for any UI change: use these tokens (never raw hex/hsl/px sizes),',

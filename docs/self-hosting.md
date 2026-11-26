@@ -79,7 +79,7 @@ Useful flags:
 | `--yes` | Skip the confirmation prompt |
 | `--upgrade` | Replace only the compose file on an existing install, keep `.env` |
 
-The default folder is `~/manifest`, so the installer can find and upgrade older Manifest installs. The name of the folder does not matter.
+The default folder is `~/manifest`, so the installer can find and upgrade older TierGate installs. The name of the folder does not matter.
 
 ### Option B: by hand with Docker Compose
 
@@ -365,4 +365,31 @@ Compose uses the local image because the tag matches.
 | `denied` when pulling the image | The image is not public yet, or no release exists. Build it yourself (step 10). |
 | Provider keys stopped working after a reinstall | `.env` changed. Restore the old `.env` and restart. |
 
-Anonymous usage telemetry is off by default in the TierGate compose file (`MANIFEST_TELEMETRY_DISABLED=1`). Set it to `0` in `.env` only if you want to send daily usage counts to the upstream Manifest telemetry server.
+<a id="telemetry"></a>
+
+## 12. Telemetry and Autofix
+
+Both are off. TierGate sends nothing to anyone unless you turn it on.
+
+**Telemetry** sends daily usage counts (no prompts, keys or emails) to a collector you run. Set both lines in `.env`:
+
+```env
+MANIFEST_TELEMETRY_DISABLED=0
+TELEMETRY_ENDPOINT=https://collector.example.com/v1/report
+```
+
+A CLI built from this repository works the same way with `MANIFEST_CLI_TELEMETRY_ENDPOINT`. The `mnfst-gateway-cli` package on npm is published by Manifest, the upstream project, and sends usage telemetry to Manifest unless you set `MANIFEST_TELEMETRY_DISABLED=1`. Pass `--url` to point it at your server.
+
+**Autofix** repairs a failing request and retries it once. The repair runs on Manifest's healing service (`autofix.manifest.build`), so failing request bodies leave your server. Provider credentials are never sent. To turn it on:
+
+```env
+AUTOFIX_GLOBAL_ENABLED=true
+```
+
+Then enable it per harness under **Settings**.
+
+<a id="mcp-server"></a>
+
+## 13. MCP server
+
+TierGate serves a remote MCP server at `/api/v1/mcp`, for example `https://ai.example.com/api/v1/mcp`. Add that URL to your MCP client and sign in when it asks. It needs an HTTPS `BETTER_AUTH_URL` (plain HTTP works only on `localhost`). Set `MCP_ENABLED=false` to turn it off.

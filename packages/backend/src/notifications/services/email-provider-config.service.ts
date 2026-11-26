@@ -43,7 +43,7 @@ export class EmailProviderConfigService {
   ) {
     this.fromEmail = this.configService.get<string>(
       'app.notificationFromEmail',
-      'noreply@manifest.build',
+      'noreply@tiergate.local',
     );
   }
 
@@ -251,10 +251,10 @@ export class EmailProviderConfigService {
       const emailProvider = createProvider(config);
       const html = await render(TestEmail());
       const text = await render(TestEmail(), { plainText: true });
-      const from = domain ? `Manifest <noreply@${domain}>` : `Manifest <${this.fromEmail}>`;
+      const from = domain ? `TierGate <noreply@${domain}>` : `TierGate <${this.fromEmail}>`;
       const sent = await emailProvider.send({
         to: toEmail,
-        subject: 'Manifest — Test Email',
+        subject: 'TierGate — Test Email',
         html,
         text,
         from,

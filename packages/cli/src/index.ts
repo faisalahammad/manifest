@@ -84,7 +84,7 @@ export const COMMANDS: Record<string, Handler> = {
   skill: skill.skillShow,
 };
 
-export const USAGE = `mnfst ${VERSION} — Manifest management CLI (JSON output, agent-first)
+export const USAGE = `mnfst ${VERSION} — TierGate management CLI (JSON output, agent-first)
 ${skill.SKILL_NUDGE}
 
 Auth

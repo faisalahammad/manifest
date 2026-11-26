@@ -457,6 +457,21 @@ describe('ProviderService — route-only cleanup paths', () => {
     });
   });
 
+  describe('upsertProvider — managed free provider without a gateway', () => {
+    const previous = process.env['CREDITS_BASE_URL'];
+    afterEach(() => {
+      if (previous === undefined) delete process.env['CREDITS_BASE_URL'];
+      else process.env['CREDITS_BASE_URL'] = previous;
+    });
+
+    it('refuses the connection and says which variable to set', async () => {
+      delete process.env['CREDITS_BASE_URL'];
+      await expect(svc.upsertProvider('a1', 't1', 'gemini-free', 'sk-key')).rejects.toThrow(
+        'Gemini Free needs CREDITS_BASE_URL on this server',
+      );
+    });
+  });
+
   describe('upsertProvider — Bedrock region', () => {
     let originalSecret: string | undefined;
 

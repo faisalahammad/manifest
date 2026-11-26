@@ -23,8 +23,11 @@ describe('managed free provider config', () => {
     process.env = env;
   });
 
-  it('defaults to the managed gateway', () => {
-    expect(getManagedFreeLiteLlmBaseUrl()).toBe('https://credits.manifest.build');
+  it('has no gateway unless CREDITS_BASE_URL is set', () => {
+    delete process.env['CREDITS_BASE_URL'];
+    expect(getManagedFreeLiteLlmBaseUrl()).toBe('');
+    process.env['CREDITS_MASTER_KEY'] = 'sk-test';
+    expect(isManagedFreeLiteLlmAutoEligible('a@x.com')).toBe(false);
   });
 
   it('strips trailing slashes from the base URL', () => {
@@ -58,6 +61,7 @@ describe('managed free provider config', () => {
   });
 
   it('requires the master key for automatic provisioning', () => {
+    process.env['CREDITS_BASE_URL'] = 'https://credits.test';
     expect(isManagedFreeLiteLlmAutoEligible('a@x.com')).toBe(false);
     process.env['CREDITS_MASTER_KEY'] = 'sk-test';
     expect(isManagedFreeLiteLlmAutoEligible('a@x.com')).toBe(true);
@@ -65,6 +69,7 @@ describe('managed free provider config', () => {
   });
 
   it('honors the allowlist when configured', () => {
+    process.env['CREDITS_BASE_URL'] = 'https://credits.test';
     process.env['CREDITS_MASTER_KEY'] = 'sk-test';
     process.env['CREDITS_AUTO_PROVISION_ALLOWLIST'] = 'allowed@example.com';
     expect(isManagedFreeLiteLlmAutoEligible('allowed@example.com')).toBe(true);

@@ -5,7 +5,7 @@ describe('oauthDoneHtml', () => {
     const html = oauthDoneHtml(true);
     expect(html).toContain('Login successful');
     expect(html).toContain('manifest-oauth-success');
-    expect(html).toContain('Manifest — Login');
+    expect(html).toContain('TierGate — Login');
   });
 
   it('emits a failure message with retry guidance', () => {
@@ -15,7 +15,7 @@ describe('oauthDoneHtml', () => {
   });
 
   it('respects a custom provider label in the page title', () => {
-    expect(oauthDoneHtml(true, undefined, 'OpenAI Login')).toContain('Manifest — OpenAI Login');
+    expect(oauthDoneHtml(true, undefined, 'OpenAI Login')).toContain('TierGate — OpenAI Login');
   });
 
   it('threads a CSP nonce into the inline script tag', () => {

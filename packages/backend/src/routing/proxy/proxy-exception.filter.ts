@@ -157,7 +157,7 @@ export class ProxyExceptionFilter implements ExceptionFilter {
 
     // Tools and monitors: pass the real HTTP status with a structured envelope.
     const errorMessage =
-      status >= 500 ? 'Manifest encountered an internal error. Try again shortly.' : message;
+      status >= 500 ? 'TierGate encountered an internal error. Try again shortly.' : message;
     res.status(status).json({
       error: {
         message: errorMessage,

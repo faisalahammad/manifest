@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the Manifest docker-compose stack with Apple Containers (`container` CLI).
+# Run the TierGate docker-compose stack with Apple Containers (`container` CLI).
 #
 # Mirrors docker/docker-compose.yml as closely as Apple Containers allows:
 #   - postgres:16-alpine with a persistent data directory
@@ -202,7 +202,7 @@ cmd_up() {
   if ! container volume inspect "$RECORDINGS_VOLUME" >/dev/null 2>&1; then
     container volume create "$RECORDINGS_VOLUME" >/dev/null
   fi
-  # The Manifest image runs as distroless nonroot (uid/gid 65532), while a new
+  # The TierGate image runs as distroless nonroot (uid/gid 65532), while a new
   # Apple Containers volume is root-owned. Initialize ownership before mounting
   # it over the writable recording directory.
   container run --rm \
@@ -316,7 +316,7 @@ cmd_up() {
     --env REQUEST_RECORDING_S3_ACCESS_KEY_ID="${REQUEST_RECORDING_S3_ACCESS_KEY_ID:-}" \
     --env REQUEST_RECORDING_S3_SECRET_ACCESS_KEY="${REQUEST_RECORDING_S3_SECRET_ACCESS_KEY:-}" \
     --env REQUEST_RECORDING_S3_FORCE_PATH_STYLE="${REQUEST_RECORDING_S3_FORCE_PATH_STYLE:-false}" \
-    --env MANIFEST_TELEMETRY_DISABLED="${MANIFEST_TELEMETRY_DISABLED:-0}" \
+    --env MANIFEST_TELEMETRY_DISABLED="${MANIFEST_TELEMETRY_DISABLED:-1}" \
     ghcr.io/faisalahammad/tiergate:latest
 
   echo "waiting for manifest to become healthy..."
@@ -340,7 +340,7 @@ cmd_up() {
   done
 
   echo ""
-  echo "Manifest is up: http://localhost:${PORT}"
+  echo "TierGate is up: http://localhost:${PORT}"
   echo "First boot: visit the URL above and complete the setup wizard at /setup."
 }
 

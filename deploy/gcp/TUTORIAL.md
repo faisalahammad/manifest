@@ -1,8 +1,8 @@
-# Deploy Manifest on GCP
+# Deploy TierGate on GCP
 
 <walkthrough-tutorial-duration duration="15"></walkthrough-tutorial-duration>
 
-This walkthrough deploys Manifest on Google Cloud with Cloud Run, Cloud SQL for PostgreSQL, a private Cloud Storage bucket mounted for request recordings, and Secret Manager. DeployStack asks for a few settings, writes `terraform.tfvars`, and runs Terraform in the selected project.
+This walkthrough deploys TierGate on Google Cloud with Cloud Run, Cloud SQL for PostgreSQL, a private Cloud Storage bucket mounted for request recordings, and Secret Manager. DeployStack asks for a few settings, writes `terraform.tfvars`, and runs Terraform in the selected project.
 
 ## Prerequisites
 
@@ -33,7 +33,7 @@ deploystack install
 
 The first deploy usually takes 10-15 minutes because Cloud SQL needs time to provision. The Terraform config also patches `BETTER_AUTH_URL` to the final Cloud Run URL after the service is created. Request recordings are written through a Cloud Storage volume mount at `/data/request-recordings`; the Cloud Run service account receives object read/write/delete access only for that bucket.
 
-## Open Manifest
+## Open TierGate
 
 ```bash
 terraform output service_url

@@ -1,8 +1,8 @@
-# Deploy Manifest on Fly.io
+# Deploy TierGate on Fly.io
 
-This guide deploys Manifest on Fly.io with the public Manifest Docker image, a Fly Postgres database, and a private Tigris S3-compatible bucket for request recordings.
+This guide deploys TierGate on Fly.io with the public TierGate Docker image, a Fly Postgres database, and a private Tigris S3-compatible bucket for request recordings.
 
-Fly is a CLI-first deployment target, not a browser one-click button. The script in this directory creates the app, creates Postgres, attaches `DATABASE_URL`, generates Manifest secrets, and deploys the Docker image.
+Fly is a CLI-first deployment target, not a browser one-click button. The script in this directory creates the app, creates Postgres, attaches `DATABASE_URL`, generates TierGate secrets, and deploys the Docker image.
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ This stack creates paid resources. Review Fly pricing before leaving test apps r
 
 ## Fast Deploy
 
-From the Manifest repository root:
+From the TierGate repository root:
 
 ```bash
 FLY_APP_NAME=manifest-demo \
@@ -32,7 +32,7 @@ Environment variables:
 - `FLY_ORG`: Fly organization. Defaults to `personal`.
 - `FLY_RECORDING_BUCKET_NAME`: private Tigris bucket name. Defaults to `<app-name>-recordings`. Keep the same value on reruns; changing an attached bucket requires a manual recording migration.
 
-The script uses [`fly.toml`](fly.toml) as a template and deploys `ghcr.io/faisalahammad/tiergate:6`. It creates a private Tigris bucket and lets Fly stage the bucket's `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` secrets on the app; Manifest uses those credentials with the bucket name, Tigris endpoint, and `auto` region from `fly.toml`. Re-running the script keeps that bucket and the existing `BETTER_AUTH_SECRET` and `MANIFEST_ENCRYPTION_KEY` values; rotate those secrets manually only if you intend to invalidate sessions and encrypted provider credentials.
+The script uses [`fly.toml`](fly.toml) as a template and deploys `ghcr.io/faisalahammad/tiergate:6`. It creates a private Tigris bucket and lets Fly stage the bucket's `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` secrets on the app; TierGate uses those credentials with the bucket name, Tigris endpoint, and `auto` region from `fly.toml`. Re-running the script keeps that bucket and the existing `BETTER_AUTH_SECRET` and `MANIFEST_ENCRYPTION_KEY` values; rotate those secrets manually only if you intend to invalidate sessions and encrypted provider credentials.
 
 ## Manual Deploy
 
@@ -88,7 +88,7 @@ perl -pi -e "s/manifest-recordings-bucket/$RECORDING_BUCKET_NAME/g; s/manifest-e
 fly deploy --app "$APP_NAME" --config fly.toml
 ```
 
-## Open Manifest
+## Open TierGate
 
 Open the deployed app and create the first admin account:
 
@@ -119,11 +119,11 @@ fly logs --app <your-fly-app>
 
 ## Production notes
 
-- The template keeps one Machine running with `min_machines_running = 1` so Manifest is always available for agents.
-- Tigris is shared across Machines, so recording storage remains consistent if you scale the Manifest app horizontally.
+- The template keeps one Machine running with `min_machines_running = 1` so TierGate is always available for agents.
+- Tigris is shared across Machines, so recording storage remains consistent if you scale the TierGate app horizontally.
 - For production, choose a larger Postgres configuration or Fly Managed Postgres instead of the small script default.
 - Add a custom domain before configuring OAuth callback URLs.
-- Set `MANIFEST_TELEMETRY_DISABLED=1` as a Fly secret if you want to disable anonymous self-hosted telemetry.
+- Anonymous telemetry is off. It sends only when you set `TELEMETRY_ENDPOINT` to your own collector.
 - Destroy the app, database, and recording bucket when testing is done. Export any recordings you need before destroying the bucket:
 
 ```bash

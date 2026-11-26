@@ -15,7 +15,7 @@ describe('ManifestError', () => {
 
     expect(err.code).toBe('M300');
     expect(err.getStatus()).toBe(400);
-    expect(err.message).toContain('[🦚 Manifest M300]');
+    expect(err.message).toContain('[🦚 TierGate M300]');
     expect(err.message).toContain('`messages` array is required.');
     expect(err.title).toBe('Missing messages array');
   });

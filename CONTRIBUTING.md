@@ -1,8 +1,6 @@
-# Contributing to Manifest
+# Contributing to TierGate
 
-Thanks for your interest in contributing to Manifest! This guide will help you get up and running.
-
-[![codecov](https://img.shields.io/codecov/c/github/mnfst/llm-gateway?color=brightgreen)](https://codecov.io/gh/mnfst/llm-gateway)
+Thanks for your interest in contributing to TierGate! This guide will help you get up and running.
 
 ## Tech Stack
 
@@ -14,7 +12,7 @@ Thanks for your interest in contributing to Manifest! This guide will help you g
 | Routing  | OpenAI-compatible proxy (`/v1/chat/completions`) |
 | Build    | Turborepo + npm workspaces                       |
 
-The full NestJS + SolidJS stack runs locally against PostgreSQL, and the same database backend is used in the [cloud version](https://app.manifest.build). For local development, the simplest option is to run PostgreSQL in Docker and point `DATABASE_URL` at it.
+The full NestJS + SolidJS stack runs locally against PostgreSQL, and the same database backend is used in a hosted deployment. For local development, the simplest option is to run PostgreSQL in Docker and point `DATABASE_URL` at it.
 
 ## Prerequisites
 
@@ -23,7 +21,7 @@ The full NestJS + SolidJS stack runs locally against PostgreSQL, and the same da
 
 ## Repository Structure
 
-Manifest is a monorepo managed with [Turborepo](https://turbo.build/) and npm workspaces.
+TierGate is a monorepo managed with [Turborepo](https://turbo.build/) and npm workspaces.
 
 ```
 packages/
@@ -116,11 +114,11 @@ The frontend runs on `http://localhost:3000` and proxies API requests to the bac
 
 ## Testing Routing with AI agents
 
-Manifest is a smart router for any AI agent that speaks OpenAI-compatible HTTP. The list of supported agents lives in `packages/shared/src/agent-type.ts` — OpenClaw, Hermes, OpenAI SDK, Vercel AI SDK, LangChain, and cURL are all first-class. The dashboard's "Connect Agent" flow generates the right setup snippet for whichever platform you pick.
+TierGate is a smart router for any AI agent that speaks OpenAI-compatible HTTP. The list of supported agents lives in `packages/shared/src/agent-type.ts` — OpenClaw, Hermes, OpenAI SDK, Vercel AI SDK, LangChain, and cURL are all first-class. The dashboard's "Connect Agent" flow generates the right setup snippet for whichever platform you pick.
 
 This section walks through **OpenClaw** because it's the deepest integration and the easiest to wire up end-to-end. The same backend also handles all other agents — just follow the dashboard instructions after creating the agent, or grab the snippet shown by the setup modal.
 
-To test routing against your local backend, add Manifest as a model provider in your OpenClaw config:
+To test routing against your local backend, add TierGate as a model provider in your OpenClaw config:
 
 1. Build and start the backend in self-hosted mode:
 
@@ -132,10 +130,10 @@ MANIFEST_MODE=selfhosted PORT=38238 BIND_ADDRESS=127.0.0.1 \
 
 2. Create an agent in the dashboard at `http://localhost:38238` and get the API key.
 
-3. Add Manifest as a provider in OpenClaw:
+3. Add TierGate as a provider in OpenClaw:
 
 ```bash
-openclaw config set models.providers.manifest '{"baseUrl":"http://localhost:38238/v1","api":"openai-completions","apiKey":"mnfst_YOUR_KEY","models":[{"id":"auto","name":"Manifest Auto"}]}'
+openclaw config set models.providers.manifest '{"baseUrl":"http://localhost:38238/v1","api":"openai-completions","apiKey":"mnfst_YOUR_KEY","models":[{"id":"auto","name":"TierGate Auto"}]}'
 openclaw config set agents.defaults.model.primary manifest/auto
 openclaw gateway restart
 ```
@@ -150,11 +148,11 @@ The backend runs standalone and OpenClaw talks to it as a regular OpenAI-compati
 
 ## Wingman — gateway tester (dev only)
 
-**Wingman** is an in-browser playground for sending one-shot requests at the gateway while impersonating any of the agents/SDKs Manifest tracks (OpenClaw, Hermes, OpenAI SDK, Vercel AI SDK, LangChain, cURL, Raw). It lives in its own repo at [`mnfst/wingman`](https://github.com/mnfst/wingman) and is hosted at [`wingman.manifest.build`](https://wingman.manifest.build). The dashboard embeds it as an iframe drawer (FAB at bottom-right, or `⌘/Ctrl + Shift + W`) **only in dev mode** — it is dead-code-eliminated from production / self-hosted bundles via the `__DEV_MODE__` build constant in `packages/frontend/vite.config.ts`.
+**Wingman** is an in-browser playground for sending one-shot requests at the gateway while impersonating any of the agents/SDKs TierGate tracks (OpenClaw, Hermes, OpenAI SDK, Vercel AI SDK, LangChain, cURL, Raw). It lives in its own repo at [`mnfst/wingman`](https://github.com/mnfst/wingman) and is hosted at [`wingman.manifest.build`](https://wingman.manifest.build). The dashboard embeds it as an iframe drawer (FAB at bottom-right, or `⌘/Ctrl + Shift + W`) **only in dev mode** — it is dead-code-eliminated from production / self-hosted bundles via the `__DEV_MODE__` build constant in `packages/frontend/vite.config.ts`.
 
 Pick a profile, type a message, see the request and response side by side with the assistant's text, status pill, latency, tokens, and full headers/body dumps. Each send is saved to a localStorage history sidebar so you can compare runs and replay any of them.
 
-The hosted SPA is a static bundle with no first-party backend. Your API key is sent directly from the browser to whatever Manifest backend you configure as the base URL (the same endpoint the key is already used against); nothing is proxied through wingman.manifest.build. To point the drawer at a locally-running Wingman build instead, set `VITE_WINGMAN_URL=http://localhost:3002` when building the frontend, and run Wingman from the `mnfst/wingman` repo.
+The hosted SPA is a static bundle with no first-party backend. Your API key is sent directly from the browser to whatever TierGate backend you configure as the base URL (the same endpoint the key is already used against); nothing is proxied through wingman.manifest.build. To point the drawer at a locally-running Wingman build instead, set `VITE_WINGMAN_URL=http://localhost:3002` when building the frontend, and run Wingman from the `mnfst/wingman` repo.
 
 ## Available Scripts
 
@@ -228,7 +226,7 @@ npm run build
 
 ### Cutting a Docker release
 
-Manifest ships as the Docker image at [`ghcr.io/faisalahammad/tiergate`](https://github.com/faisalahammad/tiergate/pkgs/container/tiergate). Releases are manual:
+TierGate ships as the Docker image at [`ghcr.io/faisalahammad/tiergate`](https://github.com/faisalahammad/tiergate/pkgs/container/tiergate). Releases are manual:
 
 1. After merging PRs with changesets, a `chore: version packages` PR will be open on `main` — merge it to land the version bump in `packages/manifest/package.json` and update `packages/manifest/CHANGELOG.md`.
 2. Go to **GitHub Actions → Docker → Run workflow**, leave the `version` input blank, click Run.
@@ -256,7 +254,7 @@ Write clear, concise commit messages that explain **why** the change was made. U
 
 ## Reporting Issues
 
-Found a bug or have a feature request? [Open an issue](https://github.com/mnfst/llm-gateway/issues) with as much detail as possible.
+Found a bug or have a feature request? [Open an issue](https://github.com/faisalahammad/tiergate/issues) with as much detail as possible.
 
 ## Code of Conduct
 

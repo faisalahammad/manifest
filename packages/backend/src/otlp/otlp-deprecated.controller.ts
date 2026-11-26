@@ -1,5 +1,6 @@
 import { Controller, All, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { Public } from '../common/decorators/public.decorator';
+import { getDashboardBaseUrl } from '../common/utils/dashboard-url';
 
 /**
  * Structured 410 Gone response returned by all deprecated OTLP endpoints.
@@ -29,7 +30,7 @@ const WRONG_PATH_RESPONSE = {
   error: {
     message:
       'Use /v1/chat/completions (not /chat/completions). ' +
-      'Set your baseURL to https://app.manifest.build/v1',
+      `Set your baseURL to ${getDashboardBaseUrl()}/v1`,
     type: 'invalid_request_error',
     status: 404,
   },

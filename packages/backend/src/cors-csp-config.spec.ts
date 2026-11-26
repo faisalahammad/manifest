@@ -44,27 +44,26 @@ describe('buildDevAllowedOrigins', () => {
 });
 
 describe('buildProdAllowedOrigins', () => {
-  it('allows the hosted Wingman origin by default', () => {
-    expect(buildProdAllowedOrigins()).toEqual([HOSTED_WINGMAN_ORIGIN]);
+  it('allows no cross-origin caller by default', () => {
+    expect(buildProdAllowedOrigins()).toEqual([]);
   });
 
-  it('appends operator-configured extra origins, trimmed and deduped', () => {
+  it('keeps operator-configured origins, trimmed and deduped', () => {
     expect(
       buildProdAllowedOrigins({
         extraOrigins:
-          ' https://wingman.acme.dev , https://wingman.manifest.build ,https://tools.acme.dev',
+          ' https://wingman.acme.dev , https://wingman.acme.dev ,https://tools.acme.dev',
       }),
-    ).toEqual([HOSTED_WINGMAN_ORIGIN, 'https://wingman.acme.dev', 'https://tools.acme.dev']);
+    ).toEqual(['https://wingman.acme.dev', 'https://tools.acme.dev']);
   });
 
-  it('ignores empty / whitespace-only extra origins', () => {
-    expect(buildProdAllowedOrigins({ extraOrigins: '  , ,' })).toEqual([HOSTED_WINGMAN_ORIGIN]);
-    expect(buildProdAllowedOrigins({ extraOrigins: '' })).toEqual([HOSTED_WINGMAN_ORIGIN]);
+  it('ignores blank entries', () => {
+    expect(buildProdAllowedOrigins({ extraOrigins: '  , ,' })).toEqual([]);
+    expect(buildProdAllowedOrigins({ extraOrigins: '' })).toEqual([]);
   });
 
   it('strips a trailing slash so it matches the browser Origin header', () => {
     expect(buildProdAllowedOrigins({ extraOrigins: 'https://wingman.acme.dev/' })).toEqual([
-      HOSTED_WINGMAN_ORIGIN,
       'https://wingman.acme.dev',
     ]);
   });

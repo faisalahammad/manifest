@@ -50,7 +50,10 @@ import {
   isMinimaxRegion,
 } from '../oauth/minimax/minimax-oauth-helpers';
 import { filterProvidersForDeployment } from '../../common/utils/provider-availability';
-import { getManagedFreeProviderConfig } from '../../common/constants/managed-free-providers';
+import {
+  getManagedFreeLiteLlmBaseUrl,
+  getManagedFreeProviderConfig,
+} from '../../common/constants/managed-free-providers';
 
 const MAX_KEYS_MANAGED_FREE_PROVIDER = 1;
 const MAX_LABEL_LENGTH = 50;
@@ -373,6 +376,12 @@ export class ProviderService {
     createdByUserId?: string | null,
     manager?: EntityManager,
   ): Promise<{ provider: TenantProvider; isNew: boolean }> {
+    const managedFree = getManagedFreeProviderConfig(provider);
+    if (managedFree && !getManagedFreeLiteLlmBaseUrl()) {
+      throw new BadRequestException(
+        `${managedFree.displayName} needs CREDITS_BASE_URL on this server`,
+      );
+    }
     const effectiveAuthType = authType ?? 'api_key';
     const trimmedLabel = this.normalizeLabel(label, effectiveAuthType);
     const repo = this.tenantProviderRepo(manager);

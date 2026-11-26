@@ -56,7 +56,7 @@ export class RequestRecordingRetentionService {
     this.retentionDays = isSelfHosted() ? configured : null;
     if (configured !== null && this.retentionDays === null) {
       this.logger.warn(
-        'REQUEST_RECORDING_RETENTION_DAYS is ignored on Manifest Cloud: request recordings are never deleted',
+        'REQUEST_RECORDING_RETENTION_DAYS is ignored on TierGate Cloud: request recordings are never deleted',
       );
     }
   }

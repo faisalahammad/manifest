@@ -45,7 +45,7 @@ describe('ProxyRateLimiter', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(HttpException);
         expect((err as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
-        expect((err as HttpException).message).toContain('[🦚 Manifest M201]');
+        expect((err as HttpException).message).toContain('[🦚 TierGate M201]');
         expect((err as HttpException).message).toContain(
           'Too many requests — wait a few seconds and retry.',
         );
@@ -234,7 +234,7 @@ describe('ProxyRateLimiter', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(HttpException);
         expect((err as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
-        expect((err as HttpException).message).toContain('[🦚 Manifest M202]');
+        expect((err as HttpException).message).toContain('[🦚 TierGate M202]');
         expect((err as HttpException).message).toContain(
           'Too many requests from this IP — wait a few seconds and retry.',
         );
@@ -346,7 +346,7 @@ describe('ProxyRateLimiter', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(HttpException);
         expect((err as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
-        expect((err as HttpException).message).toContain('[🦚 Manifest M203]');
+        expect((err as HttpException).message).toContain('[🦚 TierGate M203]');
         expect((err as HttpException).message).toContain(
           'Too many concurrent requests. Give it a moment.',
         );

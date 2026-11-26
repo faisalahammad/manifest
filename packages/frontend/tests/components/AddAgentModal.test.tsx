@@ -32,8 +32,10 @@ vi.mock('../../src/services/sse.js', () => ({
 
 // Deployment mode drives the logs storage note in the toggle description.
 let mockIsSelfHosted = false;
+let mockAutofixAvailable = true;
 vi.mock('../../src/services/setup-status.js', () => ({
   checkIsSelfHosted: () => Promise.resolve(mockIsSelfHosted),
+  checkAutofixAvailable: () => Promise.resolve(mockAutofixAvailable),
 }));
 
 vi.mock('../../src/components/AgentTypeSelect.jsx', () => ({
@@ -76,6 +78,7 @@ describe('AddAgentModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsSelfHosted = false;
+    mockAutofixAvailable = true;
     mockCreateAgent.mockResolvedValue({ agent: { name: 'new-agent' }, apiKey: 'key-1' });
     mockGetGlobalProviders.mockResolvedValue({ providers: [{ provider: 'openai' }] });
   });
@@ -91,12 +94,25 @@ describe('AddAgentModal', () => {
     expect(container.textContent).toContain('Name your harness to start tracking');
   });
 
-  it('creates directly with the legal line as the consent act (no dialog)', async () => {
+  it('hides Autofix and sends no choice when the install has it switched off', async () => {
+    mockAutofixAvailable = false;
     const { input, createBtn } = renderOpen();
-    // Autofix defaults on, so the Terms/Privacy legal line is visible.
-    expect(document.body.textContent).toContain('you agree to Manifest');
-    expect(document.querySelector('a[href="https://manifest.build/terms"]')).not.toBeNull();
-    expect(document.querySelector('a[href="https://manifest.build/privacy"]')).not.toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.queryByRole('switch', { name: 'Autofix' })).toBeNull();
+    expect(document.body.textContent).not.toContain('healing service');
+
+    fireEvent.input(input, { target: { value: 'quiet-agent' } });
+    fireEvent.click(createBtn);
+    await vi.waitFor(() => expect(mockCreateAgent).toHaveBeenCalled());
+    expect(mockCreateAgent.mock.calls[0]![0]).not.toHaveProperty('autofix_enabled');
+  });
+
+  it('creates directly with the data notice as the consent act (no dialog)', async () => {
+    const { input, createBtn } = renderOpen();
+    await screen.findByRole('switch', { name: 'Autofix' });
+    // Autofix defaults on, so the data notice is visible.
+    expect(document.body.textContent).toContain("Manifest's healing service");
+    expect(document.querySelector('a[href*="manifest.build"]')).toBeNull();
 
     fireEvent.input(input, { target: { value: 'first-agent' } });
     fireEvent.click(createBtn);
@@ -105,9 +121,9 @@ describe('AddAgentModal', () => {
   });
 
   it('hides the legal line when Autofix is toggled off and still creates', async () => {
-    const { container, input, createBtn } = renderOpen();
-    fireEvent.click(container.querySelector('.settings-switch')!);
-    expect(document.body.textContent).not.toContain('you agree to Manifest');
+    const { input, createBtn } = renderOpen();
+    fireEvent.click(await screen.findByRole('switch', { name: 'Autofix' }));
+    expect(document.body.textContent).not.toContain('healing service');
 
     fireEvent.input(input, { target: { value: 'disabled-agent' } });
     fireEvent.click(createBtn);
@@ -260,6 +276,7 @@ describe('AddAgentModal', () => {
     fireEvent.click(container.querySelector('[data-testid="pick-app"]')!);
     fireEvent.click(container.querySelector('[data-testid="pick-platform"]')!);
     fireEvent.input(input, { target: { value: 'typed' } });
+    await screen.findByRole('switch', { name: 'Autofix' });
     fireEvent.click(createBtn);
     await vi.waitFor(() => {
       expect(mockCreateAgent).toHaveBeenCalledWith({
@@ -275,6 +292,7 @@ describe('AddAgentModal', () => {
   it('sends toggled-off Autofix and recording when the user flips them', async () => {
     const { input, createBtn } = renderOpen();
     // Both switches default on; flip each off before creating.
+    await screen.findByRole('switch', { name: 'Autofix' });
     const switches = Array.from(
       document.querySelectorAll('.settings-switch'),
     ) as HTMLButtonElement[];
@@ -299,7 +317,7 @@ describe('AddAgentModal', () => {
     renderOpen();
     expect(screen.getByText('Enable logs')).toBeTruthy();
     await vi.waitFor(() =>
-      expect(document.body.textContent).toContain('Logs are stored in your Manifest workspace.'),
+      expect(document.body.textContent).toContain('Logs are stored in your TierGate workspace.'),
     );
   });
 

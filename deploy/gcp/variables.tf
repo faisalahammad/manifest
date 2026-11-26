@@ -1,5 +1,5 @@
 variable "project_id" {
-  description = "Google Cloud project ID to deploy Manifest into."
+  description = "Google Cloud project ID to deploy TierGate into."
   type        = string
 }
 
@@ -21,7 +21,7 @@ variable "service_name" {
 }
 
 variable "image_url" {
-  description = "Manifest container image to deploy."
+  description = "TierGate container image to deploy."
   type        = string
   default     = "ghcr.io/faisalahammad/tiergate:6"
 }

@@ -110,7 +110,7 @@ const Upgrade: Component = () => {
           <p class="upgrade-limit-notice">
             {(status()?.requests.limit ?? 0) > 0
               ? `You've used all ${status()!.requests.limit!.toLocaleString('en-US')} requests this month. Upgrade for unlimited routed requests.`
-              : 'Manifest Cloud needs a Pro subscription to route requests.'}
+              : 'TierGate Cloud needs a Pro subscription to route requests.'}
           </p>
         </Show>
 
@@ -189,7 +189,7 @@ const Upgrade: Component = () => {
 
                   <section class="settings-card upgrade-plan-card upgrade-plan-card--pro">
                     <div class="upgrade-plan-card__header">
-                      <h2>Manifest Cloud</h2>
+                      <h2>TierGate Cloud</h2>
                       <span class="upgrade-plan-card__badge">Popular</span>
                     </div>
                     <div class="upgrade-plan-card__price">
@@ -251,7 +251,7 @@ const Upgrade: Component = () => {
                     <div class="upgrade-plan-card__cta">
                       <a
                         class="btn btn--primary"
-                        href="https://manifest.build/pricing"
+                        href="https://github.com/faisalahammad/tiergate/issues"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -282,12 +282,6 @@ const Upgrade: Component = () => {
                     </div>
                   </section>
                 </div>
-                <p class="upgrade-terms">
-                  Subject to our{' '}
-                  <a href="https://manifest.build/terms" target="_blank" rel="noopener noreferrer">
-                    terms and conditions
-                  </a>
-                </p>
               </>
             }
           >
@@ -320,7 +314,7 @@ const Upgrade: Component = () => {
                   <div class="upgrade-plan-card__cta">
                     <a
                       class="btn btn--primary"
-                      href="https://manifest.build/pricing"
+                      href="https://github.com/faisalahammad/tiergate/issues"
                       target="_blank"
                       rel="noopener noreferrer"
                     >

@@ -47,7 +47,7 @@ describe('ResendProvider', () => {
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body.to).toEqual(['user@test.com']);
-    expect(body.from).toBe('Manifest <noreply@test.com>');
+    expect(body.from).toBe('TierGate <noreply@test.com>');
     expect(body.subject).toBe('Test');
     expect(body.html).toBe('<p>Hi</p>');
   });
@@ -60,7 +60,11 @@ describe('ResendProvider', () => {
   });
 
   it('returns false on non-ok response', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 422, text: async () => 'Invalid' });
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => 'Invalid',
+    });
     const provider = new ResendProvider(config);
 
     const result = await provider.send({ to: 'user@test.com', subject: 'Test', html: '<p>Hi</p>' });
@@ -79,7 +83,12 @@ describe('ResendProvider', () => {
     (global.fetch as jest.Mock).mockResolvedValue({ ok: true });
     const provider = new ResendProvider(config);
 
-    await provider.send({ to: 'user@test.com', subject: 'Test', html: '<p>Hi</p>', from: 'Custom <custom@test.com>' });
+    await provider.send({
+      to: 'user@test.com',
+      subject: 'Test',
+      html: '<p>Hi</p>',
+      from: 'Custom <custom@test.com>',
+    });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body.from).toBe('Custom <custom@test.com>');
@@ -89,7 +98,12 @@ describe('ResendProvider', () => {
     (global.fetch as jest.Mock).mockResolvedValue({ ok: true });
     const provider = new ResendProvider(config);
 
-    await provider.send({ to: 'user@test.com', subject: 'Test', html: '<p>Hi</p>', text: 'Hi plain' });
+    await provider.send({
+      to: 'user@test.com',
+      subject: 'Test',
+      html: '<p>Hi</p>',
+      text: 'Hi plain',
+    });
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body.text).toBe('Hi plain');

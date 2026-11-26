@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * DB footprint benchmark: run against a COPY of the Manifest database,
+ * DB footprint benchmark: run against a COPY of the TierGate database,
  * never against production.
  *
  * Runs the main HOT (proxy path) and DASH (dashboard) queries for three tenant

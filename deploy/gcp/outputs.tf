@@ -1,10 +1,10 @@
 output "service_url" {
-  description = "Manifest Cloud Run URL."
+  description = "TierGate Cloud Run URL."
   value       = google_cloud_run_v2_service.manifest.uri
 }
 
 output "health_check_url" {
-  description = "Manifest health check URL."
+  description = "TierGate health check URL."
   value       = "${google_cloud_run_v2_service.manifest.uri}/api/v1/health"
 }
 

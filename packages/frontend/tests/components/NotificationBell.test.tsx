@@ -51,6 +51,11 @@ vi.mock('../../src/services/sse.js', async () => {
   };
 });
 
+let mockAutofixAvailable = true;
+vi.mock('../../src/services/setup-status.js', () => ({
+  checkAutofixAvailable: () => Promise.resolve(mockAutofixAvailable),
+}));
+
 import NotificationBell from '../../src/components/NotificationBell';
 import * as sse from '../../src/services/sse.js';
 
@@ -61,6 +66,7 @@ describe('NotificationBell', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     localStorage.clear();
+    mockAutofixAvailable = true;
     mockGetStatus.mockResolvedValue({
       any_enabled: false,
       enabled_agents: [],
@@ -72,6 +78,13 @@ describe('NotificationBell', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('shows nothing when the install has Autofix switched off', async () => {
+    mockAutofixAvailable = false;
+    render(() => <NotificationBell />);
+    await vi.advanceTimersByTimeAsync(10);
+    expect(screen.queryByLabelText('Notifications')).toBeNull();
   });
 
   it('shows disabled agents, marks them read, and closes outside', async () => {

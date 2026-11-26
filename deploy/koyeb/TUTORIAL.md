@@ -1,21 +1,21 @@
-# Deploy Manifest on Koyeb
+# Deploy TierGate on Koyeb
 
-This guide deploys the public Manifest Docker image to a Koyeb Web Service. The deploy button pre-fills the image, HTTP port, and runtime settings, but you must create PostgreSQL and a private S3-compatible recording bucket separately and replace the placeholder secrets before deploying.
+This guide deploys the public TierGate Docker image to a Koyeb Web Service. The deploy button pre-fills the image, HTTP port, and runtime settings, but you must create PostgreSQL and a private S3-compatible recording bucket separately and replace the placeholder secrets before deploying.
 
 ## Prerequisites
 
 - A Koyeb account.
 - A Koyeb PostgreSQL Database Service.
-- Two random 32+ character secrets for Manifest.
+- Two random 32+ character secrets for TierGate.
 - A private S3-compatible bucket and credentials limited to reading, writing, and deleting its objects.
 
 This deployment creates paid resources if your selected Koyeb service or database plan is not free.
 
 ## Create PostgreSQL
 
-In Koyeb, create a PostgreSQL Database Service in the same region you plan to use for Manifest. After it is ready, open the database connection details and copy the connection string.
+In Koyeb, create a PostgreSQL Database Service in the same region you plan to use for TierGate. After it is ready, open the database connection details and copy the connection string.
 
-Manifest uses TLS to connect to Koyeb Postgres, so include `sslmode=require` in the connection string. If the copied URL has no query string, append `?sslmode=require`. If it already has query parameters, append `&sslmode=require`.
+TierGate uses TLS to connect to Koyeb Postgres, so include `sslmode=require` in the connection string. If the copied URL has no query string, append `?sslmode=require`. If it already has query parameters, append `&sslmode=require`.
 
 ## Generate secrets
 
@@ -26,7 +26,7 @@ openssl rand -hex 32
 openssl rand -hex 32
 ```
 
-## Deploy Manifest
+## Deploy TierGate
 
 Open the Koyeb deploy link:
 
@@ -45,7 +45,7 @@ In the deploy form:
 
 The button deploys `ghcr.io/faisalahammad/tiergate:6` and exposes port `2099` over HTTP.
 
-## Open Manifest
+## Open TierGate
 
 After the deployment is live, open the public Koyeb domain and create the first account. The first account becomes the admin.
 
@@ -59,7 +59,7 @@ curl -sSf https://<your-koyeb-domain>/api/v1/health
 
 Delete the Koyeb resources when you are done:
 
-- The Manifest Koyeb Web Service.
+- The TierGate Koyeb Web Service.
 - The Koyeb PostgreSQL Database Service.
 
 Deleting only the web service leaves the database running. The external recording bucket is managed separately; export and delete it through its provider if it is no longer needed.

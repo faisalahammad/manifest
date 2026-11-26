@@ -109,7 +109,7 @@ export class VersionCheckService {
     }
     const summary = summarizeReleases(await res.json(), this.config.currentVersion);
     if (!summary) {
-      throw new Error('no Manifest release in the GitHub response');
+      throw new Error('no TierGate release in the GitHub response');
     }
     return summary;
   }

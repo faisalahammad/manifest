@@ -1,6 +1,6 @@
-# Deploy Manifest on DigitalOcean
+# Deploy TierGate on DigitalOcean
 
-This deploys Manifest on DigitalOcean App Platform with a web service, Dev PostgreSQL database, and a user-provided DigitalOcean Space for durable request recordings. The deploy link uses DigitalOcean's Deploy to DigitalOcean flow, which reads `.do/deploy.template.yaml` from the public repository.
+This deploys TierGate on DigitalOcean App Platform with a web service, Dev PostgreSQL database, and a user-provided DigitalOcean Space for durable request recordings. The deploy link uses DigitalOcean's Deploy to DigitalOcean flow, which reads `.do/deploy.template.yaml` from the public repository.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ App Platform has no persistent volumes and its deploy template cannot create sco
 Open the DigitalOcean deploy link:
 
 ```text
-https://cloud.digitalocean.com/apps/new?repo=https://github.com/mnfst/llm-gateway/tree/main
+https://cloud.digitalocean.com/apps/new?repo=https://github.com/faisalahammad/tiergate/tree/main
 ```
 
 DigitalOcean prompts for the missing secret values before deployment. Generate and paste separate values for:
@@ -35,7 +35,7 @@ Use one generated value for `BETTER_AUTH_SECRET` and another for `MANIFEST_ENCRY
 
 Keep `REQUEST_RECORDING_S3_REGION=us-east-1` and `REQUEST_RECORDING_S3_FORCE_PATH_STYLE=false`; DigitalOcean's AWS SDK guidance uses the endpoint to select the actual Space region.
 
-## Open Manifest
+## Open TierGate
 
 After App Platform finishes deploying, open the app URL and create the first account. The first account becomes the admin.
 

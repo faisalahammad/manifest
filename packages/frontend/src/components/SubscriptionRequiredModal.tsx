@@ -93,7 +93,7 @@ const SubscriptionRequiredModal: Component = () => {
                 Your requests are paused
               </h2>
               <p class="subscription-required-modal__text">
-                Manifest Cloud is {price()}/month since November 2, 2026. Your agents' requests are
+                TierGate Cloud is {price()}/month since November 2, 2026. Your agents' requests are
                 not routed until you subscribe.
               </p>
               <p class="subscription-required-modal__text">

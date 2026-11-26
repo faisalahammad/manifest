@@ -5,6 +5,7 @@ import { OLLAMA_HOST } from '../common/constants/ollama';
 import { getContainerHostAlias, isSelfHosted } from '../common/utils/detect-self-hosted';
 import { isEmailConfigured } from '../notifications/services/email-providers/send-email';
 import { mcpAvailability } from '../auth/mcp-availability';
+import { isAutofixGloballyEnabled } from '../routing/autofix/autofix-healing-config';
 
 /**
  * Postgres advisory lock key reserved for the first-run setup wizard.
@@ -71,6 +72,11 @@ export class SetupService {
    */
   isMcpEnabled(): boolean {
     return mcpAvailability().enabled;
+  }
+
+  /** Autofix is opt-in; the dashboard hides its toggles while it is off. */
+  isAutofixAvailable(): boolean {
+    return isAutofixGloballyEnabled(process.env['AUTOFIX_GLOBAL_ENABLED']);
   }
 
   /**

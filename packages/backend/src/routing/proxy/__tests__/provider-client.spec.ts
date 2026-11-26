@@ -74,7 +74,7 @@ describe('ProviderClient', () => {
       await expect(request).rejects.toMatchObject({ code: 'M303' });
       await expect(request).rejects.toBeInstanceOf(ManifestError);
       await expect(request).rejects.toThrow(
-        'Built-in local providers are only available in self-hosted Manifest',
+        'Built-in local providers are only available in self-hosted TierGate',
       );
       expect(mockFetch).not.toHaveBeenCalled();
     });
@@ -1321,8 +1321,8 @@ describe('ProviderClient', () => {
           headers: {
             Authorization: 'Bearer sk-or-test',
             'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://manifest.build',
-            'X-Title': 'Manifest',
+            'HTTP-Referer': 'https://github.com/faisalahammad/tiergate',
+            'X-Title': 'TierGate',
           },
         }),
       );

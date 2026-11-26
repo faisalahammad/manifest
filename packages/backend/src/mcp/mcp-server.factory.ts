@@ -29,7 +29,7 @@ export function buildMcpServer(deps: McpToolDeps, operator: McpOperator): McpSer
       // bit on by default as soon as a tool is registered, so say no here.
       capabilities: { tools: { listChanged: false } },
       instructions:
-        'Manifest is an LLM gateway control plane. Use these tools to manage harnesses ' +
+        'TierGate is an LLM gateway control plane. Use these tools to manage harnesses ' +
         '(agents), provider connections, routing, model catalogs, and to read the request ' +
         'ledger. ' +
         (canWrite

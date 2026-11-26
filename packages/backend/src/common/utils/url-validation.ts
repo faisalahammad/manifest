@@ -158,7 +158,7 @@ export async function validatePublicUrl(
     throw new Error(
       'Only https URLs are allowed in cloud mode. ' +
         'Self-hosted installs allow http:// for private destinations — ' +
-        'set MANIFEST_MODE=selfhosted if you are running Manifest yourself ' +
+        'set MANIFEST_MODE=selfhosted if you are running TierGate yourself ' +
         '(e.g. inside Docker, Podman, or Kubernetes).',
     );
   }

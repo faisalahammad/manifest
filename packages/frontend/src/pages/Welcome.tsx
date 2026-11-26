@@ -57,7 +57,7 @@ import { customProviderColor } from '../services/formatters.js';
 import { markAgentCreated } from '../services/recent-agents.js';
 import { useRightSidebar } from '../services/right-sidebar.jsx';
 import { hasOnboardingBeenDone, markOnboardingDone } from '../services/onboarding.js';
-import { checkIsSelfHosted } from '../services/setup-status.js';
+import { checkAutofixAvailable, checkIsSelfHosted } from '../services/setup-status.js';
 import {
   type AgentCategory,
   type AgentPlatform,
@@ -166,6 +166,7 @@ const Welcome: Component = () => {
   };
   // ── Shared resources ─────────────────────────────────────────────────
   const [selfHosted] = createResource(checkIsSelfHosted);
+  const [autofixAvailable] = createResource(checkAutofixAvailable);
 
   // The Playground agent gives provider connections an agent context before
   // the user's own harness exists (providers are tenant-global anyway).
@@ -307,7 +308,7 @@ const Welcome: Component = () => {
         name,
         ...(category() ? { agent_category: category()! } : {}),
         ...(platform() ? { agent_platform: platform()! } : {}),
-        autofix_enabled: autofixEnabled(),
+        ...(autofixAvailable() ? { autofix_enabled: autofixEnabled() } : {}),
         record_messages: logsEnabled(),
       });
       const slug = result?.agent?.name ?? name;
@@ -923,35 +924,35 @@ const Welcome: Component = () => {
                           labels, not the larger Model-params group header. */}
                       <div class="modal-card__field-label add-agent-toggles__header">Settings</div>
                       <div class="model-params__group-card">
-                        <div class="model-params__row">
-                          <div class="model-params__row-text">
-                            <div class="model-params__label-title">
-                              <span>Autofix</span>
+                        <Show when={autofixAvailable()}>
+                          <div class="model-params__row">
+                            <div class="model-params__row-text">
+                              <div class="model-params__label-title">
+                                <span>Autofix</span>
+                              </div>
+                              <div class="model-params__label-hint">
+                                Repair eligible failing requests before falling back.
+                              </div>
                             </div>
-                            <div class="model-params__label-hint">
-                              Repair eligible failing requests before falling back. Failed requests
-                              are sent to TierGate Autofix for diagnosis; provider authorization
-                              credentials are never sent.
+                            <div class="model-params__row-control">
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={autofixEnabled()}
+                                aria-label="Autofix"
+                                class="settings-switch"
+                                classList={{ 'settings-switch--on': autofixEnabled() }}
+                                disabled={creating()}
+                                onClick={() => setAutofixEnabled(!autofixEnabled())}
+                              >
+                                <span class="settings-switch__track">
+                                  <span class="settings-switch__thumb" />
+                                </span>
+                              </button>
                             </div>
                           </div>
-                          <div class="model-params__row-control">
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={autofixEnabled()}
-                              aria-label="Autofix"
-                              class="settings-switch"
-                              classList={{ 'settings-switch--on': autofixEnabled() }}
-                              disabled={creating()}
-                              onClick={() => setAutofixEnabled(!autofixEnabled())}
-                            >
-                              <span class="settings-switch__track">
-                                <span class="settings-switch__thumb" />
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-                        <div class="model-params__separator" />
+                          <div class="model-params__separator" />
+                        </Show>
                         <div class="model-params__row">
                           <div class="model-params__row-text">
                             <div class="model-params__label-title">
@@ -963,7 +964,7 @@ const Welcome: Component = () => {
                               {selfHosted.state === 'ready' &&
                                 (selfHosted()
                                   ? 'Logs stay in your own database.'
-                                  : 'Logs are stored in your Manifest workspace.')}
+                                  : 'Logs are stored in your TierGate workspace.')}
                             </div>
                           </div>
                           <div class="model-params__row-control">
@@ -986,25 +987,10 @@ const Welcome: Component = () => {
                       </div>
                     </div>
                   </div>
-                  <Show when={autofixEnabled()}>
+                  <Show when={autofixAvailable() && autofixEnabled()}>
                     <p class="autofix-consent__legal welcome__legal">
-                      By enabling Autofix, you agree to Manifest&apos;s{' '}
-                      <a
-                        href="https://manifest.build/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Terms
-                      </a>{' '}
-                      and{' '}
-                      <a
-                        href="https://manifest.build/privacy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Privacy Policy
-                      </a>
-                      .
+                      Autofix sends failing requests to Manifest's healing service
+                      (autofix.manifest.build). Provider credentials are never sent.
                     </p>
                   </Show>
                   <Show when={harnessError()}>

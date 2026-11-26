@@ -181,7 +181,7 @@ describe('Header - GitHub star button', () => {
     });
     const link = container.querySelector('.header__github-star-btn') as HTMLAnchorElement;
     expect(link).toBeDefined();
-    expect(link.href).toContain('github.com/mnfst/llm-gateway');
+    expect(link.href).toContain('github.com/faisalahammad/tiergate');
     expect(link.target).toBe('_blank');
     expect(link.rel).toBe('noopener noreferrer');
   });
@@ -341,56 +341,54 @@ describe('Header - docs link', () => {
   it('links agent routing pages to routing docs', () => {
     mockPathname = '/harnesses/my-agent/routing';
     const { container } = render(() => <Header />);
-    expect(docsHref(container)).toBe('https://manifest.build/llm-gateway/docs/llm-gateway/');
+    expect(docsHref(container)).toBe('https://github.com/faisalahammad/tiergate#readme');
   });
 
   it('links the current Limits route to limits docs', () => {
     mockPathname = '/harnesses/my-agent/guardrails';
     const { container } = render(() => <Header />);
-    expect(docsHref(container)).toBe('https://manifest.build/llm-gateway/docs/observability/');
+    expect(docsHref(container)).toBe('https://github.com/faisalahammad/tiergate#readme');
   });
 
   it('keeps the legacy Limits route mapped to limits docs', () => {
     mockPathname = '/harnesses/my-agent/limits';
     const { container } = render(() => <Header />);
-    expect(docsHref(container)).toBe('https://manifest.build/llm-gateway/docs/observability/');
+    expect(docsHref(container)).toBe('https://github.com/faisalahammad/tiergate#readme');
   });
 
   it('links provider pages to matching provider docs', () => {
     mockPathname = '/providers/subscriptions';
     const subscriptions = render(() => <Header />);
     expect(docsHref(subscriptions.container)).toBe(
-      'https://manifest.build/llm-gateway/docs/providers/subscription-based-providers/',
+      'https://github.com/faisalahammad/tiergate/blob/main/docs/providers/subscription-based-providers.md',
     );
 
     mockPathname = '/providers/byok';
     const byok = render(() => <Header />);
-    expect(docsHref(byok.container)).toBe(
-      'https://manifest.build/llm-gateway/docs/providers/api-key-providers/',
-    );
+    expect(docsHref(byok.container)).toBe('https://github.com/faisalahammad/tiergate#readme');
 
     mockPathname = '/providers/local';
     const local = render(() => <Header />);
-    expect(docsHref(local.container)).toBe(
-      'https://manifest.build/llm-gateway/docs/providers/local-models/',
-    );
+    expect(docsHref(local.container)).toBe('https://github.com/faisalahammad/tiergate#readme');
   });
 
   it.each([
-    ['/integrations/mcp', 'integrations/mcp'],
-    ['/integrations/mcp/', 'integrations/mcp'],
-    ['/integrations/cli', 'cli'],
-    ['/integrations/cli/', 'cli'],
+    ['/integrations/mcp', 'docs/self-hosting.md#mcp-server'],
+    ['/integrations/mcp/', 'docs/self-hosting.md#mcp-server'],
+    ['/integrations/cli', 'packages/cli/README.md'],
+    ['/integrations/cli/', 'packages/cli/README.md'],
   ])('links %s to its documentation', (pathname, docsPath) => {
     mockPathname = pathname;
     const { container } = render(() => <Header />);
-    expect(docsHref(container)).toBe(`https://manifest.build/llm-gateway/docs/${docsPath}/`);
+    expect(docsHref(container)).toBe(
+      `https://github.com/faisalahammad/tiergate/blob/main/${docsPath}`,
+    );
   });
 
   it('falls back to introduction docs for unmapped pages', () => {
     mockPathname = '/messages';
     const { container } = render(() => <Header />);
-    expect(docsHref(container)).toBe('https://manifest.build/llm-gateway/docs/introduction/');
+    expect(docsHref(container)).toBe('https://github.com/faisalahammad/tiergate#readme');
   });
 });
 

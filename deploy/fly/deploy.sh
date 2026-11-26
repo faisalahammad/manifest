@@ -7,7 +7,7 @@ if ! command -v fly >/dev/null 2>&1; then
 fi
 
 if ! command -v openssl >/dev/null 2>&1; then
-  echo "openssl is required to generate Manifest secrets." >&2
+  echo "openssl is required to generate TierGate secrets." >&2
   exit 1
 fi
 
@@ -139,7 +139,7 @@ fly postgres attach "$POSTGRES_APP_NAME" \
   --database-user manifest \
   --yes
 
-echo "Setting Manifest secrets..."
+echo "Setting TierGate secrets..."
 manifest_secret_args=(--app "$APP_NAME" --stage)
 
 if secret_exists "BETTER_AUTH_SECRET"; then
@@ -157,12 +157,12 @@ fi
 if [ "${#manifest_secret_args[@]}" -gt 3 ]; then
   fly secrets set "${manifest_secret_args[@]}"
 else
-  echo "Manifest secrets already exist."
+  echo "TierGate secrets already exist."
 fi
 
-echo "Deploying Manifest..."
+echo "Deploying TierGate..."
 fly deploy --app "$APP_NAME" --config "$CONFIG_FILE"
 
 echo
-echo "Manifest URL: https://${APP_NAME}.fly.dev"
+echo "TierGate URL: https://${APP_NAME}.fly.dev"
 echo "Health check: https://${APP_NAME}.fly.dev/api/v1/health"

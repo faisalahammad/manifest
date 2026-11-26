@@ -151,7 +151,7 @@ jobs:
 
   # Publishes the management CLI to npm as mnfst-gateway-cli. Gated on the same
   # `should_publish` output as the Docker image, so the CLI version always
-  # matches the Manifest release it shipped with — that is why the package stays
+  # matches the TierGate release it shipped with — that is why the package stays
   # in the `.changeset/config.json` ignore list and has no changeset target of
   # its own.
   publish-npm:

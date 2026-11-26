@@ -31,7 +31,7 @@ describe('billing plan emails', () => {
       }),
     );
 
-    expect(html).toContain('Your plan is now Manifest Pro');
+    expect(html).toContain('Your plan is now TierGate Pro');
     expect(html).toContain('from <strong>Free</strong>');
   });
 

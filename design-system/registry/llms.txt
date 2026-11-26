@@ -1,4 +1,4 @@
-# Manifest platform design-system registry (GENERATED — do not edit)
+# TierGate platform design-system registry (GENERATED — do not edit)
 # Regenerate: npm run design:registry — source: packages/frontend/src/styles, entry theme.css
 #
 # Rules for any UI change: use these tokens (never raw hex/hsl/px sizes),
@@ -96,7 +96,7 @@
 --z-toast: 8000
 --z-tooltip: 9999
 
-## Blocks (316 BEM blocks, 1699 classes)
+## Blocks (310 BEM blocks, 1683 classes)
 account-back-btn (agents.css): account-back-btn
 account-email-footer (agents.css): account-email-footer
 account-email-toggle (agents.css): account-email-toggle--disabled
@@ -125,7 +125,7 @@ attempt-item (request-drawer.css): attempt-item attempt-item--active attempt-ite
 auth-card (auth.css): auth-card
 auth-divider (auth.css): auth-divider auth-divider__text
 auth-footer (auth.css): auth-footer auth-footer__link
-auth-form (auth.css, discovery.css): auth-form auth-form__actions auth-form__error auth-form__error-link auth-form__forgot auth-form__input auth-form__label auth-form__link-btn auth-form__notice auth-form__notice-link auth-form__submit auth-form__submit--secondary auth-form__success
+auth-form (auth.css): auth-form auth-form__actions auth-form__error auth-form__error-link auth-form__forgot auth-form__input auth-form__label auth-form__link-btn auth-form__notice auth-form__notice-link auth-form__submit auth-form__submit--secondary auth-form__success
 auth-header (auth.css): auth-header auth-header__subtitle auth-header__title
 auth-last-used (auth.css): auth-last-used
 auth-layout (auth.css): auth-layout
@@ -164,15 +164,11 @@ count-link (theme.css): count-link
 custom-provider-item (routing-providers.css): custom-provider-item custom-provider-item__delete custom-provider-item__icon custom-provider-item__info custom-provider-item__meta custom-provider-item__name
 custom-provider-model-row (routing-providers.css): custom-provider-model-row custom-provider-model-row__name custom-provider-model-row__price custom-provider-model-row__remove
 custom-provider-models (routing-providers.css): custom-provider-models custom-provider-models__column custom-provider-models__column--name custom-provider-models__column--price custom-provider-models__column-spacer custom-provider-models__columns custom-provider-models__label
-custom-select (connection-detail.css, custom-select.css, discovery.css, routing-providers.css): custom-select custom-select__chevron custom-select__dropdown custom-select__dropdown--portal custom-select__dropdown--wide custom-select__option custom-select__option--disabled custom-select__option--selected custom-select__option--top custom-select__option-desc custom-select__option-text custom-select__option-text--inline custom-select__trigger custom-select__trigger--open custom-select__value
+custom-select (connection-detail.css, custom-select.css, routing-providers.css): custom-select custom-select__chevron custom-select__dropdown custom-select__dropdown--portal custom-select__dropdown--wide custom-select__option custom-select__option--disabled custom-select__option--selected custom-select__option--top custom-select__option-desc custom-select__option-text custom-select__option-text--inline custom-select__trigger custom-select__trigger--open custom-select__value
 dark (agent-type-select.css, agents.css, analytics-overview.css, auth.css, controls.css, data.css, modals.css, model-filter.css, overview.css, platform-icons.css, request-drawer.css, routing-providers.css, routing.css, syntax-highlight.css, tokens.css, welcome.css, wizard.css): dark
 data-table (data.css, feedback.css, theme.css): data-table data-table__sortable
 data-table-scroll (data.css): data-table-scroll
 demo-dashboard (overview.css): demo-dashboard
-discovery-actions (discovery.css): discovery-actions
-discovery-card (discovery.css): discovery-card discovery-card__desc discovery-card__form discovery-card__intro discovery-card__logo discovery-card__title
-discovery-form (discovery.css): discovery-form
-discovery-select (discovery.css): discovery-select--empty
 drawer (request-drawer.css): drawer drawer--open drawer__badge drawer__badge--autofix drawer__badge--fallback drawer__body drawer__close drawer__content drawer__content-empty drawer__header drawer__messages-pane drawer__meta-row drawer__meta-sep drawer__meta-text drawer__sidebar drawer__sidebar-title drawer__split drawer__tabs-full drawer__title drawer__title-row
 drawer-context-card (request-drawer.css): drawer-context-card drawer-context-card--autofix drawer-context-card--error drawer-context-card--fallback
 drawer-kv (request-drawer.css): drawer-kv drawer-kv__key
@@ -339,7 +335,6 @@ rule-menu (limits.css): rule-menu__btn rule-menu__dropdown rule-menu__item rule-
 scroll-panel (analytics-overview.css, routing-providers.css): scroll-panel scroll-panel--at-bottom scroll-panel__body
 security-event (data.css, theme.css): security-event security-event__badge security-event__desc security-event__dot security-event__dot--critical security-event__dot--info security-event__dot--warning security-event__time
 select (controls.css, theme.css): select
-services-modal (modals.css): services-modal services-modal__contact services-modal__list services-modal__offer services-modal__sent services-modal__textarea
 settings-card (agents.css, cards.css, controls.css, modals.css, notifications.css): settings-card settings-card--danger settings-card--disabled settings-card--flush settings-card--highlight settings-card--info settings-card__body settings-card__control settings-card__control--end settings-card__copy-btn settings-card__desc settings-card__footer settings-card__id-row settings-card__id-value settings-card__input settings-card__key-actions settings-card__key-row settings-card__key-value settings-card__label settings-card__label-desc settings-card__label-desc--meta settings-card__label-title settings-card__legal settings-card__row
 settings-section (agents.css, controls.css): settings-section__title settings-section__title--danger
 settings-switch (agents.css, modals.css, welcome.css): settings-switch settings-switch--on settings-switch__thumb settings-switch__track
@@ -359,7 +354,6 @@ setup-step (wizard.css): setup-step__desc setup-step__heading
 setup-step-providers (overview.css): setup-step-providers
 setup-steps (controls.css): setup-steps setup-steps__content setup-steps__divider setup-steps__number setup-steps__step
 sidebar (controls.css, theme.css): sidebar sidebar--mobile-open sidebar__badge sidebar__feedback sidebar__feedback-hint sidebar__feedback-title sidebar__footer sidebar__link sidebar__link--disabled sidebar__link-row sidebar__logo sidebar__logo-dot sidebar__section-add sidebar__section-label sidebar__spacer
-sidebar-services (modals.css): sidebar-services
 sidebar-upgrade (modals.css): sidebar-upgrade
 sidebar-usage (modals.css): sidebar-usage sidebar-usage__alert sidebar-usage__bar sidebar-usage__count sidebar-usage__count--danger sidebar-usage__fill sidebar-usage__fill--danger sidebar-usage__fill--warning sidebar-usage__header sidebar-usage__month sidebar-usage__title
 skeleton (skeleton.css): skeleton skeleton--rect skeleton--text
@@ -519,11 +513,10 @@ workspace-table (agents.css): workspace-table__actions workspace-table__icon wor
 .welcome__route-test-heading { align-items: flex-start }  at welcome.css:873 loses to welcome.css:903
 .welcome__route-test-heading { gap: 14px }  at welcome.css:875 loses to welcome.css:904
 
-## Component-loaded sheets — imported by components, not theme.css; they load after the global styles (19)
+## Component-loaded sheets — imported by components, not theme.css; they load after the global styles (18)
 agent-chart-tooltip.css ← components/ChartHoverTooltip.tsx
 analytics-overview.css ← components/AutofixKpiCards.tsx, pages/GlobalOverview.tsx, pages/providers/ConnectionDetail.tsx, pages/providers/ProviderConnectionsPage.tsx
 connection-detail.css ← pages/providers/ConnectionDetail.tsx
-discovery.css ← pages/Discovery.tsx
 filter-select.css ← components/FilterSelect.tsx
 model-filter.css ← components/ModelPricesFilterBar.tsx, pages/MessageLog.tsx
 notifications-bell.css ← components/NotificationBell.tsx

@@ -267,6 +267,23 @@ describe('SetupService', () => {
     });
   });
 
+  describe('isAutofixAvailable', () => {
+    const previous = process.env['AUTOFIX_GLOBAL_ENABLED'];
+    afterEach(() => {
+      if (previous === undefined) delete process.env['AUTOFIX_GLOBAL_ENABLED'];
+      else process.env['AUTOFIX_GLOBAL_ENABLED'] = previous;
+    });
+
+    it('is true only when AUTOFIX_GLOBAL_ENABLED is "true"', () => {
+      delete process.env['AUTOFIX_GLOBAL_ENABLED'];
+      expect(service.isAutofixAvailable()).toBe(false);
+      process.env['AUTOFIX_GLOBAL_ENABLED'] = 'false';
+      expect(service.isAutofixAvailable()).toBe(false);
+      process.env['AUTOFIX_GLOBAL_ENABLED'] = 'true';
+      expect(service.isAutofixAvailable()).toBe(true);
+    });
+  });
+
   describe('isMcpEnabled', () => {
     const envKeys = ['BETTER_AUTH_URL', 'MCP_ENABLED'];
     let savedEnv: Record<string, string | undefined>;

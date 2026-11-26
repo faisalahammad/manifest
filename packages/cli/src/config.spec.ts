@@ -20,6 +20,18 @@ function tmpFile(): string {
 }
 
 describe('configFilePath', () => {
+  it('defaults to a local server but keeps a saved Cloud host', () => {
+    expect(DEFAULT_URL).toBe('http://localhost:2099');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mnfst-config-'));
+    const file = path.join(dir, 'config.json');
+    const saved = {
+      activeHost: 'https://app.manifest.build',
+      hosts: { 'https://app.manifest.build': { apiKey: 'k' } },
+    };
+    saveConfig(file, saved);
+    expect(loadConfig(file)).toEqual(saved);
+  });
+
   it('prefers XDG_CONFIG_HOME and falls back to ~/.config', () => {
     expect(configFilePath({ XDG_CONFIG_HOME: '/xdg' })).toBe(
       path.join('/xdg', 'manifest', 'config.json'),

@@ -66,7 +66,7 @@ describe('UsageLimitBanner', () => {
     const { container } = render(() => <UsageLimitBanner />);
 
     await screen.findByText(
-      'Manifest Cloud needs a Pro subscription to route requests. Your dashboard and settings are kept.',
+      'TierGate Cloud needs a Pro subscription to route requests. Your dashboard and settings are kept.',
     );
     expect(container.querySelector('.usage-limit-banner--danger')).not.toBeNull();
     expect(screen.getByText('Subscribe')).toBeDefined();

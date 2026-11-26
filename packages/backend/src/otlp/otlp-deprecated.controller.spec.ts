@@ -31,7 +31,6 @@ describe('OtlpDeprecatedController', () => {
       const result = controller.traces();
       expect(result.error.message).toContain('/v1/chat/completions');
     });
-
   });
 
   describe('metrics', () => {
@@ -114,7 +113,7 @@ describe('OtlpDeprecatedController', () => {
 
     it('includes the correct baseURL hint', () => {
       const result = controller.wrongChatPath();
-      expect(result.error.message).toContain('https://app.manifest.build/v1');
+      expect(result.error.message).toContain('http://localhost:2099/v1');
     });
   });
 });

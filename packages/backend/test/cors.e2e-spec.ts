@@ -49,9 +49,9 @@ async function buildDevApp(): Promise<INestApplication> {
 }
 
 // Boots a minimal NestJS app with the exact CORS config main.ts uses in
-// production: the hosted Wingman origin (plus WINGMAN_CORS_ORIGINS opt-ins), the
-// PNA middleware (so a browser-hosted Wingman can reach a self-hosted gateway on
-// a LAN address), and the shared CORS options.
+// production: only the WINGMAN_CORS_ORIGINS opt-ins, the PNA middleware (so an
+// opted-in browser tool can reach a self-hosted gateway on a LAN address), and
+// the shared CORS options.
 async function buildProdApp(extraOrigins?: string): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({
     imports: [CorsTestModule],
@@ -152,14 +152,24 @@ describe('CORS — production', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    app = await buildProdApp();
+    app = await buildProdApp(HOSTED_WINGMAN_ORIGIN);
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('allows preflight from the hosted Wingman origin', async () => {
+  it('allows no cross-origin caller until one is listed', async () => {
+    const closed = await buildProdApp();
+    const res = await request(closed.getHttpServer())
+      .options('/v1/chat/completions')
+      .set('Origin', HOSTED_WINGMAN_ORIGIN)
+      .set('Access-Control-Request-Method', 'POST');
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    await closed.close();
+  });
+
+  it('allows preflight from a listed origin', async () => {
     const res = await request(app.getHttpServer())
       .options('/v1/chat/completions')
       .set('Origin', HOSTED_WINGMAN_ORIGIN)

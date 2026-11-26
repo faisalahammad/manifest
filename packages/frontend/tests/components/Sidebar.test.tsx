@@ -439,17 +439,9 @@ describe('Sidebar — usage card', () => {
   });
 });
 
-describe('Sidebar — custom development button', () => {
-  it("opens the services contact modal with the session's name and email", async () => {
-    const { container, getByText } = render(() => <Sidebar />);
-    expect(container.querySelector('.services-modal')).toBeNull();
-    const btn = getByText('Custom development').closest('button') as HTMLButtonElement;
-    expect(btn.classList.contains('sidebar-services')).toBe(true);
-    await fireEvent.click(btn);
-    await waitFor(() => expect(container.querySelector('.services-modal')).not.toBeNull());
-    expect((container.querySelector('#services-name') as HTMLInputElement).value).toBe('Alice');
-    expect((container.querySelector('#services-email') as HTMLInputElement).value).toBe(
-      'alice@test.com',
-    );
+describe('Sidebar — upstream services', () => {
+  it('has no custom development button', () => {
+    const { queryByText } = render(() => <Sidebar />);
+    expect(queryByText('Custom development')).toBeNull();
   });
 });

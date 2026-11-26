@@ -3,6 +3,7 @@ import {
   checkNeedsSetup,
   checkSocialProviders,
   checkIsSelfHosted,
+  checkAutofixAvailable,
   checkIsOllamaAvailable,
   checkLocalLlmHost,
   checkEmailConfigured,
@@ -180,6 +181,29 @@ describe('setup-status service', () => {
       expect(social).toEqual(['google']);
       expect(ollama).toBe(true);
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('checkAutofixAvailable', () => {
+    const status = (body: object) =>
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => body }));
+
+    it('is true only when the backend says so', async () => {
+      status({ needsSetup: false, autofixAvailable: true });
+      expect(await checkAutofixAvailable()).toBe(true);
+    });
+
+    it('is false when the field is absent', async () => {
+      status({ needsSetup: false });
+      expect(await checkAutofixAvailable()).toBe(false);
+    });
+
+    it('is false on a failed response or request', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+      expect(await checkAutofixAvailable()).toBe(false);
+      resetSetupStatus();
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+      expect(await checkAutofixAvailable()).toBe(false);
     });
   });
 
