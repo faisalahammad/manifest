@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="packages/frontend/public/logotype-white.svg" alt="TierGate" height="53" title="TierGate"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="packages/frontend/public/logotype-dark.svg">
+    <img src="packages/frontend/public/logotype-white.svg" alt="TierGate" height="53" title="TierGate"/>
+  </picture>
 </p>
 <p align="center">
 One OpenAI-compatible endpoint. Every request goes to the cheapest model that can handle it.
