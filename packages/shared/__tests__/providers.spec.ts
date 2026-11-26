@@ -265,10 +265,16 @@ describe('SHARED_PROVIDER_BY_ID', () => {
     expect(meta!.keyPlaceholder).toBe('LLM_...');
     expect(META_MODEL_API_CONTEXT_WINDOW).toBe(1_048_576);
     expect(META_MODEL_API_MODELS.map((model) => model.id)).toEqual([
+      'muse-spark-1.3',
+      'muse-spark-1.3-contributor',
       'muse-spark-1.2',
       'muse-spark-1.2-contributor',
       'muse-spark-1.1',
     ]);
+    expect(META_MODEL_API_MODEL_BY_ID.get('muse-spark-1.3')?.displayName).toBe('Muse Spark 1.3');
+    expect(META_MODEL_API_MODEL_BY_ID.get('muse-spark-1.3-contributor')?.displayName).toMatch(
+      /may train Meta/,
+    );
     expect(META_MODEL_API_MODEL_BY_ID.get('muse-spark-1.2-contributor')?.displayName).toMatch(
       /may train Meta/,
     );

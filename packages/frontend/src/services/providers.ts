@@ -361,7 +361,7 @@ const PROVIDER_UI: Record<string, ProviderUIOverlay> = {
   },
   meta: {
     initial: 'Me',
-    subtitle: 'Muse Spark 1.2, Contributor, and 1.1',
+    subtitle: 'Muse Spark 1.3, 1.2, 1.1, and Contributor',
     models: META_MODEL_API_MODELS.map((model) => ({
       label: model.displayName,
       value: model.id,
