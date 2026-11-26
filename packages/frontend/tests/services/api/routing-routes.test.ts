@@ -267,4 +267,27 @@ describe('routing-routes dual-write API client', () => {
       expect(body).not.toHaveProperty('routes');
     });
   });
+
+  describe('provider key rotation', () => {
+    it('reads the key status live, with the auth type as a query param', async () => {
+      const fetchMock = setupFetch({ provider: 'openai', auth_type: 'subscription', keys: [] });
+      await routing.getProviderKeyStatus('my agent', 'custom:x', 'subscription');
+      const [url] = fetchMock.mock.calls[0];
+      expect(String(url)).toBe(
+        'http://localhost/api/v1/routing/my%20agent/providers/custom%3Ax/keys/status?authType=subscription',
+      );
+    });
+
+    it('posts a reset with or without an auth type', async () => {
+      const fetchMock = setupFetch({ provider: 'openai', auth_type: 'api_key', keys: [] });
+      await routing.resetProviderKeyRotation('my-agent', 'openai');
+      await routing.resetProviderKeyRotation('my-agent', 'openai', 'subscription');
+      expect(String(fetchMock.mock.calls[0][0])).toContain(
+        '/routing/my-agent/providers/openai/keys/reset-rotation',
+      );
+      expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe('POST');
+      expect(lastBody(fetchMock, 0)).toEqual({});
+      expect(lastBody(fetchMock, 1)).toEqual({ authType: 'subscription' });
+    });
+  });
 });

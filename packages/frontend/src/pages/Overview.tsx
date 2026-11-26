@@ -32,6 +32,7 @@ import {
   getPerProviderMessageTimeseries,
   getPerProviderCostTimeseries,
 } from '../services/api/analytics.js';
+import { recoveredSaves } from '../services/recovered-saves.js';
 import { preloadModelDisplayNames } from '../services/model-display.js';
 import { isRecentlyCreated, isSetupPending, clearSetupPending } from '../services/recent-agents.js';
 import { analyticsPing } from '../services/sse.js';
@@ -336,7 +337,7 @@ const Overview: Component = () => {
     if (!ts) return undefined;
     const picked = ts.keys
       .map((k, i) => ({ k, i }))
-      .filter(({ k }) => k === 'healed' || k === 'fallback');
+      .filter(({ k }) => k === 'healed' || k === 'fallback' || k === 'key_failover');
     return {
       ...ts,
       keys: picked.map(({ k }) => k),
@@ -522,15 +523,15 @@ const Overview: Component = () => {
                         onTabChange={setActiveView}
                         requestsValue={d().summary?.messages?.value ?? 0}
                         requestsTrendPct={d().summary?.messages?.trend_pct ?? 0}
-                        selfHealedValue={
-                          (currentAutofixStats()?.autofix_saves.value ?? 0) +
-                          (currentAutofixStats()?.fallback_saves?.value ?? 0)
-                        }
+                        selfHealedValue={(() => {
+                          const s = currentAutofixStats();
+                          return s ? recoveredSaves(s, 'value') : 0;
+                        })()}
                         selfHealedTrendPct={(() => {
                           const s = currentAutofixStats();
                           if (!s) return 0;
-                          const cur = s.autofix_saves.value + (s.fallback_saves?.value ?? 0);
-                          const prev = s.autofix_saves.previous + (s.fallback_saves?.previous ?? 0);
+                          const cur = recoveredSaves(s, 'value');
+                          const prev = recoveredSaves(s, 'previous');
                           if (prev === 0) return 0;
                           return Math.max(
                             -999,

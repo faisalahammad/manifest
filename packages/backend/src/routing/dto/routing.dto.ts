@@ -15,7 +15,13 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
-import { AUTH_TYPES, RESPONSE_MODES, TIER_SLOTS, type ResponseMode } from 'manifest-shared';
+import {
+  AUTH_TYPES,
+  MAX_KEYS_PER_PROVIDER,
+  RESPONSE_MODES,
+  TIER_SLOTS,
+  type ResponseMode,
+} from 'manifest-shared';
 import { PROVIDER_BY_ID_OR_ALIAS } from '../../common/constants/providers';
 
 const KNOWN_PROVIDER_IDS: readonly string[] = Array.from(PROVIDER_BY_ID_OR_ALIAS.keys());
@@ -172,11 +178,18 @@ export class RenameProviderKeyDto {
 export class ReorderProviderKeysDto {
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(5)
+  @ArrayMaxSize(MAX_KEYS_PER_PROVIDER)
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
   labels!: string[];
 
+  @IsOptional()
+  @IsIn(AUTH_TYPES)
+  authType?: 'api_key' | 'subscription';
+}
+
+/** Auth type of the key ring a rotation reset or key status call targets. */
+export class ProviderKeyRotationDto {
   @IsOptional()
   @IsIn(AUTH_TYPES)
   authType?: 'api_key' | 'subscription';

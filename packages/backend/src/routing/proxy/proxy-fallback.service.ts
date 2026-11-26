@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { AuthType, ModelRoute, RequestParamDefaults } from 'manifest-shared';
@@ -91,10 +91,16 @@ import type { ProxyApiMode } from './proxy-types';
 import { refreshRejectedOAuthCredential } from './oauth-credentials';
 import {
   buildCredentialFailureFallback,
+  buildCredentialFailureForward,
   presentCredentialFailure,
   resolveRouteCredentials,
+  type CredentialFailureReason,
+  type ResolvedRouteCredentials,
   type RouteCredentialDeps,
 } from './route-credentials';
+import { KeyRotationService, type KeyRotationRef } from '../routing-core/key-rotation.service';
+import type { CachedProviderKey } from '../routing-core/routing-cache.service';
+import { classifyKeyFailover, parseKeyFailoverMaxAttempts } from './key-failover';
 import { recordingResponseFromText } from './attempt-recording-capture';
 import {
   CredentialRejectionCooldown,
@@ -146,11 +152,95 @@ export interface FailedFallback {
   autofixRole?: 'original' | 'retry';
 }
 
+/** Credentials of the key a hop actually used. */
+export type ResolvedKeyCredentials = Extract<ResolvedRouteCredentials, { ok: true }>;
+
+/**
+ * Request-wide key failover state, shared by the primary hop and every
+ * fallback hop of one request.
+ */
+export interface KeyFailoverContext {
+  /** Epoch ms after which no new key try or fallback hop starts. */
+  deadlineAt: number;
+  /**
+   * Keys whose credential itself failed (401 after refresh, 402, unusable
+   * subscription): later hops of the same request skip them on Auto routes.
+   */
+  deadKeyIds: Set<string>;
+}
+
+/** One route to forward: a pinned route names its key, Auto leaves it unset. */
+export interface HopRoute {
+  provider: string;
+  authType: AuthType;
+  keyLabel?: string | null;
+}
+
+export type HopForwardOptions = Omit<
+  ForwardProviderOptions,
+  | 'provider'
+  | 'authType'
+  | 'apiKey'
+  | 'rawApiKey'
+  | 'providerKeyLabel'
+  | 'resourceUrl'
+  | 'providerRegion'
+  | 'tenantProviderId'
+> & { agentId: string; tenantId: string };
+
+export type HopResult =
+  | { ok: true; forward: ForwardResult; credentials: ResolvedKeyCredentials }
+  | {
+      ok: false;
+      reason: CredentialFailureReason;
+      tenantProviderId: string | null;
+      /** Label of the key whose credentials were unusable, when one was selected. */
+      keyLabel?: string;
+    };
+
+/** A failed key try, kept open until the hop knows whether another key follows. */
+interface PendingKeyFailure {
+  forward: ForwardResult;
+  errorBody: string;
+  credentials: ResolvedKeyCredentials;
+}
+
+/** An unusable credential met before any key reached the provider. */
+interface DeferredCredentialFailure {
+  key: CachedProviderKey;
+  reason: CredentialFailureReason;
+  tenantProviderId: string | null;
+  index: number;
+}
+
+/** Tag every attempt of a key retry with its position in the hop. */
+function withKeyFailoverIndex(
+  start: StartProviderAttempt | undefined,
+  keyIndex: number,
+): StartProviderAttempt | undefined {
+  if (!start || keyIndex === 0) return start;
+  return (attempt) => start({ ...attempt, keyFailoverIndex: keyIndex });
+}
+
+/** The failed key's body was read to finish its attempt; hand the caller a fresh one. */
+function rebuildResponse(pending: PendingKeyFailure): Response {
+  const headers = new Headers(pending.forward.response.headers);
+  headers.delete('content-encoding');
+  headers.delete('content-length');
+  headers.delete('transfer-encoding');
+  return new Response(pending.errorBody, {
+    status: pending.forward.response.status,
+    statusText: pending.forward.response.statusText,
+    headers,
+  });
+}
+
 @Injectable()
 export class ProxyFallbackService {
   private readonly logger = new Logger(ProxyFallbackService.name);
   private readonly rateLimitCooldowns = new Map<string, number>();
   private readonly credentialRejections = new CredentialRejectionCooldown();
+  private readonly keyFailoverMaxAttempts = parseKeyFailoverMaxAttempts();
 
   constructor(
     private readonly providerKeyService: ProviderKeyService,
@@ -169,7 +259,12 @@ export class ProxyFallbackService {
     private readonly providerParamSpecs: ProviderParamSpecService,
     private readonly reasoningCache: ReasoningContentCache,
     private readonly autofixService: AutofixService,
-  ) {}
+    @Optional() private readonly keyRotation: KeyRotationService = new KeyRotationService(),
+  ) {
+    // A manual rotation reset also forgets this instance's cooldowns for the
+    // provider's keys, so the next request really starts from the first key.
+    this.keyRotation.addResetListener((ref) => this.clearKeyCooldowns(ref));
+  }
 
   /**
    * Per-attempt merge: look up the user's saved params for this
@@ -224,6 +319,8 @@ export class ProxyFallbackService {
     reasoningCacheKey?: string,
     /** The caller's raw `anthropic-beta` header; a fallback hop onto Anthropic needs it too. */
     clientAnthropicBeta?: string | string[],
+    /** Request-wide key failover state (deadline, keys already found dead). */
+    keyFailover?: KeyFailoverContext,
   ): Promise<{
     success: {
       forward: ForwardResult;
@@ -253,6 +350,12 @@ export class ProxyFallbackService {
       Array.isArray(fallbackRoutes) && fallbackRoutes.length === fallbackModels.length;
 
     for (let i = 0; i < fallbackModels.length; i++) {
+      if (keyFailover && Date.now() >= keyFailover.deadlineAt) {
+        this.logger.warn(
+          `Routing deadline reached: skipping ${fallbackModels.length - i} remaining fallback(s) (primary=${primaryModel})`,
+        );
+        break;
+      }
       const requestedModel = fallbackModels[i];
       const route = useStructuredRoutes ? fallbackRoutes![i] : null;
       let provider: string | undefined;
@@ -294,52 +397,15 @@ export class ProxyFallbackService {
         )) as AuthType;
       }
       const model = normalizeProviderModel(provider, requestedModel);
-      // Same credential resolution as primary (select key + OAuth unwrap).
-      const credentials = await resolveRouteCredentials(this.routeCredentialDeps(), {
-        agentId,
-        tenantId,
-        provider,
-        authType,
-        providerKeyLabel,
-      });
-      if (!credentials.ok) {
-        this.logger.debug(
-          `Fallback ${i}: credential failure model=${model} provider=${provider} reason=${credentials.reason}`,
-        );
-        failures.push(
-          buildCredentialFailureFallback({
-            model,
-            provider,
-            fallbackIndex: i,
-            authType,
-            tenantProviderId: credentials.tenantProviderId,
-            keyLabel: providerKeyLabel,
-            presentation: presentCredentialFailure(
-              credentials.reason,
-              provider,
-              credentialDashboardUrl ?? 'the dashboard',
-            ),
-            startProviderAttempt,
-          }),
-        );
-        continue;
-      }
-      // resolveRouteCredentials always reports the row it selected, which may
-      // differ from the pin when the pin matched nothing.
-      providerKeyLabel = credentials.keyLabel;
-      const tenantProviderId = credentials.tenantProviderId;
-
       this.logger.log(
         `Fallback ${i}: trying model=${model} provider=${provider} auth_type=${authType} (primary=${primaryModel})`,
       );
-
-      // A hop's stream is warmed up exactly like the primary's: a 200 that
-      // never sends a byte becomes a failed hop, so the next route still gets
-      // its turn instead of the client receiving a dead stream.
-      const forward = await this.warmUpStreamBody(
-        await this.tryForwardToProvider({
-          provider,
-          apiKey: credentials.apiKey,
+      // Same hop as the primary: credential resolution, key failover across the
+      // provider's keys on an Auto route, and stream warm-up, so a 200 that
+      // never sends a byte becomes a failed key or hop instead of a dead stream.
+      const hop = await this.forwardHop({
+        route: { provider, authType, keyLabel: providerKeyLabel },
+        forward: {
           model,
           body,
           resolveChatBody,
@@ -350,21 +416,43 @@ export class ProxyFallbackService {
           signal,
           agentId,
           tenantId,
-          rawApiKey: credentials.rawApiKey,
-          providerKeyLabel,
-          authType,
           apiMode,
-          resourceUrl: credentials.resourceUrl,
-          providerRegion: credentials.providerRegion,
           signatureLookup,
           thinkingLookup,
           clientAnthropicBeta,
           paramMergeContext,
-          tenantProviderId,
           startProviderAttempt,
-        }),
-        { stream, provider, model },
-      );
+        },
+        keyFailover,
+        credentialDashboardUrl,
+      });
+      if (!hop.ok) {
+        this.logger.debug(
+          `Fallback ${i}: credential failure model=${model} provider=${provider} reason=${hop.reason}`,
+        );
+        failures.push(
+          buildCredentialFailureFallback({
+            model,
+            provider,
+            fallbackIndex: i,
+            authType,
+            tenantProviderId: hop.tenantProviderId,
+            keyLabel: hop.keyLabel ?? providerKeyLabel,
+            presentation: presentCredentialFailure(
+              hop.reason,
+              provider,
+              credentialDashboardUrl ?? 'the dashboard',
+            ),
+            startProviderAttempt,
+          }),
+        );
+        continue;
+      }
+      const forward = hop.forward;
+      // The hop always reports the row it selected, which may differ from the
+      // pin when the pin matched nothing, or from the first key after failover.
+      providerKeyLabel = hop.credentials.keyLabel;
+      const tenantProviderId = hop.credentials.tenantProviderId;
 
       // Autofix runs on a failed fallback hop too, not just the primary: a
       // fallback that rejects a request-side param (e.g. an unsupported
@@ -571,6 +659,287 @@ export class ProxyFallbackService {
         { status: 502, headers: { 'content-type': 'application/json' } },
       ),
     };
+  }
+
+  /**
+   * Forward one route: resolve its key, call the provider, warm up a stream.
+   * Shared by the primary and every fallback hop.
+   *
+   * An Auto route (no pinned key) on a provider with several keys fails over
+   * across them: keys are tried in priority order starting at the rotation
+   * cursor, each at most once, and a key-scoped failure (see
+   * classifyKeyFailover) moves on to the next key for the same model. Only
+   * when every eligible key failed, or the attempt cap or the routing
+   * deadline stopped the loop, does the caller move to the next fallback.
+   * Cooled keys (recent 429 or 401) and keys this request already found dead
+   * are skipped without a call or an attempt row. Each failed key that is
+   * followed by another key is completed as a superseded attempt; the last
+   * one is returned for the caller to record, as for any failed hop.
+   *
+   * A pinned route, or a provider with a single key, is forwarded exactly as
+   * before: one key, no rotation.
+   */
+  async forwardHop(input: {
+    route: HopRoute;
+    forward: HopForwardOptions;
+    keyFailover?: KeyFailoverContext;
+    credentialDashboardUrl?: string;
+  }): Promise<HopResult> {
+    const { route, keyFailover } = input;
+    const base = input.forward;
+    const { agentId, tenantId, model } = base;
+    const { provider, authType } = route;
+    if (route.keyLabel) return this.forwardWithKey(input, route.keyLabel);
+    const keys = await this.providerKeyService.getProviderKeys(
+      tenantId,
+      provider,
+      authType,
+      agentId,
+    );
+    if (keys.length <= 1) return this.forwardWithKey(input, undefined);
+
+    const ref: KeyRotationRef = { tenantId, agentId, provider, authType };
+    const ordered = this.keyRotation.order(ref, keys);
+    let expected = ordered[0].id;
+    let tried = 0;
+    let exhausted = true;
+    let pending: PendingKeyFailure | null = null;
+    const deferred: DeferredCredentialFailure[] = [];
+
+    for (const key of ordered) {
+      if (tried >= this.keyFailoverMaxAttempts) {
+        exhausted = false;
+        break;
+      }
+      if (tried > 0 && keyFailover && Date.now() >= keyFailover.deadlineAt) {
+        this.logger.warn(`Routing deadline reached: no more keys tried for ${provider}/${model}`);
+        exhausted = false;
+        break;
+      }
+      if (keyFailover?.deadKeyIds.has(key.id) || this.isKeyRateLimited(base, route, key.label)) {
+        continue;
+      }
+      const credentials = await resolveRouteCredentials(this.routeCredentialDeps(), {
+        agentId,
+        tenantId,
+        provider,
+        authType,
+        providerKeyLabel: key.label,
+      });
+      if (credentials.ok && this.isKeyCredentialRejected(base, route, credentials)) continue;
+
+      const index = tried++;
+      if (!credentials.ok) {
+        keyFailover?.deadKeyIds.add(key.id);
+        expected = this.keyRotation.recordFailure(ref, expected, key.id, keys);
+        const failure: DeferredCredentialFailure = {
+          key,
+          reason: credentials.reason,
+          tenantProviderId: credentials.tenantProviderId,
+          index,
+        };
+        // Before any key reached the provider, an unusable credential stays
+        // local (no row) so the caller keeps today's credential-failure path.
+        // After one did, it becomes a failed attempt like any other key.
+        if (!pending) {
+          deferred.push(failure);
+          continue;
+        }
+        await this.supersede(pending);
+        pending = this.materializeCredentialFailure(input, failure);
+        continue;
+      }
+
+      await this.flushDeferredCredentialFailures(input, deferred);
+      if (pending) await this.supersede(pending);
+      pending = null;
+      const forward = await this.forwardResolved(base, route, credentials, index);
+      if (forward.response.ok) {
+        this.keyRotation.recordSuccess(ref, key.id);
+        return { ok: true, forward, credentials };
+      }
+      const status = forward.response.status;
+      if (classifyKeyFailover(status) === 'stop') return { ok: true, forward, credentials };
+      if (status === 401 || status === 402) keyFailover?.deadKeyIds.add(key.id);
+      expected = this.keyRotation.recordFailure(ref, expected, key.id, keys);
+      this.logger.warn(
+        `Key failover: provider=${provider} model=${model} key="${credentials.keyLabel}" status=${status}`,
+      );
+      pending = {
+        forward,
+        errorBody: await forward.response.text(),
+        credentials,
+      };
+    }
+
+    if (!pending && deferred.length === 0) {
+      // Every key was cooled or already dead: the cursor key takes the
+      // single-key path, which answers with today's local skip.
+      return this.forwardWithKey(input, ordered[0].label);
+    }
+    if (exhausted) this.keyRotation.wrap(ref, expected, keys);
+    if (!pending) {
+      const last = deferred[deferred.length - 1];
+      return {
+        ok: false,
+        reason: last.reason,
+        tenantProviderId: last.tenantProviderId,
+        keyLabel: last.key.label,
+      };
+    }
+    return {
+      ok: true,
+      forward: { ...pending.forward, response: rebuildResponse(pending) },
+      credentials: pending.credentials,
+    };
+  }
+
+  /** The single-key path: a pinned key, the default key, or the cursor key. */
+  private async forwardWithKey(
+    input: { route: HopRoute; forward: HopForwardOptions },
+    keyLabel: string | undefined,
+  ): Promise<HopResult> {
+    const { route, forward: base } = input;
+    const credentials = await resolveRouteCredentials(this.routeCredentialDeps(), {
+      agentId: base.agentId,
+      tenantId: base.tenantId,
+      provider: route.provider,
+      authType: route.authType,
+      providerKeyLabel: keyLabel,
+    });
+    if (!credentials.ok) {
+      return {
+        ok: false,
+        reason: credentials.reason,
+        tenantProviderId: credentials.tenantProviderId,
+        keyLabel,
+      };
+    }
+    const forward = await this.forwardResolved(base, route, credentials, 0);
+    return { ok: true, forward, credentials };
+  }
+
+  private forwardResolved(
+    base: HopForwardOptions,
+    route: HopRoute,
+    credentials: ResolvedKeyCredentials,
+    keyIndex: number,
+  ): Promise<ForwardResult> {
+    return this.tryForwardToProvider({
+      ...base,
+      provider: route.provider,
+      authType: route.authType,
+      apiKey: credentials.apiKey,
+      rawApiKey: credentials.rawApiKey,
+      // The selected row's label: OAuth refresh persists to this same row.
+      providerKeyLabel: credentials.keyLabel,
+      resourceUrl: credentials.resourceUrl,
+      providerRegion: credentials.providerRegion,
+      tenantProviderId: credentials.tenantProviderId,
+      startProviderAttempt: withKeyFailoverIndex(base.startProviderAttempt, keyIndex),
+    }).then((forward) =>
+      this.warmUpStreamBody(forward, {
+        stream: base.stream,
+        provider: route.provider,
+        model: base.model,
+      }),
+    );
+  }
+
+  /** Another key follows this failed one: finish it as a superseded attempt. */
+  private async supersede(pending: PendingKeyFailure): Promise<void> {
+    const { forward, errorBody } = pending;
+    await forward.attempt?.finishRecording?.(recordingResponseFromText(errorBody));
+    await forward.attempt?.completeFailure?.({
+      status: forward.response.status,
+      errorBody,
+      superseded: true,
+    });
+  }
+
+  /** Unusable credentials met before the first call get their rows once a call follows. */
+  private async flushDeferredCredentialFailures(
+    input: { route: HopRoute; forward: HopForwardOptions; credentialDashboardUrl?: string },
+    deferred: DeferredCredentialFailure[],
+  ): Promise<void> {
+    for (const failure of deferred.splice(0)) {
+      await this.supersede(this.materializeCredentialFailure(input, failure));
+    }
+  }
+
+  private materializeCredentialFailure(
+    input: { route: HopRoute; forward: HopForwardOptions; credentialDashboardUrl?: string },
+    failure: DeferredCredentialFailure,
+  ): PendingKeyFailure {
+    const { route, forward: base } = input;
+    const presentation = presentCredentialFailure(
+      failure.reason,
+      route.provider,
+      input.credentialDashboardUrl ?? 'the dashboard',
+    );
+    const forward = buildCredentialFailureForward({
+      provider: route.provider,
+      model: base.model,
+      authType: route.authType,
+      tenantProviderId: failure.tenantProviderId,
+      keyLabel: failure.key.label,
+      presentation,
+      startProviderAttempt: withKeyFailoverIndex(base.startProviderAttempt, failure.index),
+    });
+    return {
+      forward,
+      errorBody: presentation.errorBody,
+      credentials: {
+        ok: true,
+        apiKey: '',
+        rawApiKey: '',
+        providerRegion: failure.key.region,
+        tenantProviderId: failure.tenantProviderId,
+        keyLabel: failure.key.label,
+      },
+    };
+  }
+
+  private isKeyRateLimited(base: HopForwardOptions, route: HopRoute, keyLabel: string): boolean {
+    return (
+      this.getActiveRateLimitCooldown({
+        ...base,
+        provider: route.provider,
+        authType: route.authType,
+        providerKeyLabel: keyLabel,
+        apiKey: '',
+      }) !== null
+    );
+  }
+
+  private isKeyCredentialRejected(
+    base: HopForwardOptions,
+    route: HopRoute,
+    credentials: ResolvedKeyCredentials,
+  ): boolean {
+    return (
+      this.credentialRejections.rejectedUntil({
+        tenantId: base.tenantId,
+        connectionId: credentials.tenantProviderId,
+        provider: route.provider,
+        authType: route.authType,
+        keyLabel: credentials.keyLabel,
+        model: base.model,
+        secret: credentials.apiKey,
+      }) !== null
+    );
+  }
+
+  /** Forget the 429 and 401 cooldowns of one provider's keys (manual rotation reset). */
+  private clearKeyCooldowns(ref: KeyRotationRef): void {
+    const provider = ref.provider.toLowerCase();
+    for (const key of [...this.rateLimitCooldowns.keys()]) {
+      const [agentId, keyProvider, authType] = key.split('\u0000');
+      if (agentId === ref.agentId && keyProvider === provider && authType === ref.authType) {
+        this.rateLimitCooldowns.delete(key);
+      }
+    }
+    this.credentialRejections.clear(ref.tenantId, provider, ref.authType);
   }
 
   private routeCredentialDeps(): RouteCredentialDeps {

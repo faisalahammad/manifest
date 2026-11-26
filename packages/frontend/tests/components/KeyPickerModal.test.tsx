@@ -77,7 +77,22 @@ describe('KeyPickerModal', () => {
         onClose={vi.fn()}
       />
     ));
-    expect(screen.getByText(/^•+$/)).toBeDefined();
+    expect(screen.getByText(/^•+ · this key only$/)).toBeDefined();
+  });
+
+  it('offers Auto first and picks null for it', () => {
+    const onPick = vi.fn();
+    render(() => (
+      <KeyPickerModal
+        providerName="Google"
+        modelName="Gemini 2.5 Pro"
+        keys={[k({ label: 'Personal' })]}
+        onPick={onPick}
+        onClose={vi.fn()}
+      />
+    ));
+    fireEvent.click(screen.getByText('Auto (fails over across keys)'));
+    expect(onPick).toHaveBeenCalledWith(null);
   });
 
   it('closes on overlay click', () => {

@@ -37,7 +37,12 @@ export const MESSAGE_STATUS_FILTER_VALUES = [
 ] as const;
 export type MessageStatusFilter = (typeof MESSAGE_STATUS_FILTER_VALUES)[number];
 
-export const MESSAGE_TRIGGER_FILTER_VALUES = ['none', 'fallback', 'autofix'] as const;
+export const MESSAGE_TRIGGER_FILTER_VALUES = [
+  'none',
+  'fallback',
+  'autofix',
+  'key_failover',
+] as const;
 export type MessageTriggerFilter = (typeof MESSAGE_TRIGGER_FILTER_VALUES)[number];
 
 /**

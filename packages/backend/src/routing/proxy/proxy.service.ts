@@ -34,7 +34,9 @@ import {
   ProxyFallbackService,
   FailedFallback,
   normalizeProviderModel,
+  type KeyFailoverContext,
 } from './proxy-fallback.service';
+import { parseRoutingDeadlineMs } from './key-failover';
 import {
   ProxyApiMode,
   ProxyRequestOptions,
@@ -232,6 +234,7 @@ function warmupFailureForward(forward: ForwardResult, message: string): ForwardR
 @Injectable()
 export class ProxyService {
   private readonly logger = new Logger(ProxyService.name);
+  private readonly routingDeadlineMs = parseRoutingDeadlineMs();
 
   constructor(
     private readonly resolveService: ResolveService,
@@ -269,6 +272,7 @@ export class ProxyService {
       headers,
       startProviderAttempt,
     } = opts;
+    const requestStartedAt = Date.now();
     const apiMode = opts.apiMode ?? 'chat_completions';
     const routingSource = opts.routingBody ?? body;
     const resolveChatBody = this.createChatBodyResolver(apiMode, body);
@@ -310,11 +314,12 @@ export class ProxyService {
     }
 
     const route = resolved.route;
-    const credentials = await this.resolveCredentials(agentId, tenantId, {
-      provider: route.provider,
-      auth_type: route.authType,
-      provider_key_label: route.keyLabel ?? undefined,
-    });
+    // Request-wide key failover state: one deadline for the whole routing
+    // chain, and the keys found dead so later hops skip them.
+    const keyFailover: KeyFailoverContext = {
+      deadlineAt: requestStartedAt + this.routingDeadlineMs,
+      deadKeyIds: new Set(),
+    };
 
     const primaryModel = normalizeProviderModel(route.provider, route.model);
     this.logger.log(
@@ -369,20 +374,43 @@ export class ProxyService {
 
     const dashboardUrl = getDashboardUrl(this.config, agentName, 'routing');
 
+    // One hop for the primary route: key selection (with failover across the
+    // provider's keys on an Auto route), the provider call, and stream warm-up,
+    // all before the fallback decision below.
+    const hop = await this.fallbackService.forwardHop({
+      route,
+      forward: {
+        model: primaryModel,
+        body,
+        resolveChatBody,
+        stream,
+        sessionKey,
+        reasoningCacheKey: sessionCacheKey,
+        providerCacheKey,
+        signal,
+        agentId,
+        tenantId,
+        apiMode,
+        signatureLookup,
+        thinkingLookup,
+        clientAnthropicBeta: headers?.['anthropic-beta'],
+        paramMergeContext,
+        startProviderAttempt,
+      },
+      keyFailover,
+      credentialDashboardUrl: dashboardUrl,
+    });
+
     // Credential resolution can fail before any provider HTTP call (missing
     // key, or a subscription OAuth blob whose refresh token is dead). Treat
     // that as a failed primary attempt with a real error body, then enter the
     // same fallback chain as HTTP failures — do not silently promote a
     // fallback to primary.
-    if (!credentials.ok) {
-      const credentialFailure = presentCredentialFailure(
-        credentials.reason,
-        route.provider,
-        dashboardUrl,
-      );
+    if (!hop.ok) {
+      const credentialFailure = presentCredentialFailure(hop.reason, route.provider, dashboardUrl);
       this.logger.warn(
         `Primary ${route.provider}/${primaryModel} credentials unusable for ` +
-          `agent=${agentId} reason=${credentials.reason}`,
+          `agent=${agentId} reason=${hop.reason}`,
       );
       // A synthetic provider attempt is only recorded by the fallback chain
       // (recordPrimaryFailure completes it). When no chain will run — explicit
@@ -398,8 +426,8 @@ export class ProxyService {
         provider: route.provider,
         model: primaryModel,
         authType: route.authType,
-        tenantProviderId: credentials.tenantProviderId,
-        keyLabel: route.keyLabel ?? undefined,
+        tenantProviderId: hop.tenantProviderId,
+        keyLabel: hop.keyLabel ?? route.keyLabel ?? undefined,
         presentation: credentialFailure,
         startProviderAttempt: willRunChain ? startProviderAttempt : undefined,
       });
@@ -423,11 +451,12 @@ export class ProxyService {
           thinkingLookup,
           apiMode,
           paramMergeContext,
-          primaryTenantProviderId: credentials.tenantProviderId,
-          primaryKeyLabel: route.keyLabel ?? undefined,
+          primaryTenantProviderId: hop.tenantProviderId,
+          primaryKeyLabel: hop.keyLabel ?? route.keyLabel ?? undefined,
           startProviderAttempt,
           credentialDashboardUrl: dashboardUrl,
           clientAnthropicBeta: headers?.['anthropic-beta'],
+          keyFailover,
         });
         if (fallbackResult) return fallbackResult;
       }
@@ -440,34 +469,8 @@ export class ProxyService {
       );
     }
 
-    let forward = await this.fallbackService.tryForwardToProvider({
-      provider: route.provider,
-      apiKey: credentials.apiKey,
-      model: primaryModel,
-      body,
-      resolveChatBody,
-      stream,
-      sessionKey,
-      reasoningCacheKey: sessionCacheKey,
-      providerCacheKey,
-      signal,
-      agentId,
-      tenantId,
-      rawApiKey: credentials.rawApiKey,
-      // Always the selected row's label (see resolveRouteCredentials), so the
-      // forwarded connection and the recorded one can never diverge.
-      providerKeyLabel: credentials.keyLabel,
-      authType: route.authType,
-      apiMode,
-      resourceUrl: credentials.resourceUrl,
-      providerRegion: credentials.providerRegion,
-      signatureLookup,
-      thinkingLookup,
-      clientAnthropicBeta: headers?.['anthropic-beta'],
-      paramMergeContext,
-      tenantProviderId: credentials.tenantProviderId,
-      startProviderAttempt,
-    });
+    const { credentials } = hop;
+    let forward = hop.forward;
     const autofixOriginalAttempt = forward.attempt;
     const autofixOriginalProviderCallStarted = forward.providerCallStarted;
 
@@ -554,6 +557,7 @@ export class ProxyService {
         startProviderAttempt,
         credentialDashboardUrl: dashboardUrl,
         clientAnthropicBeta: headers?.['anthropic-beta'],
+        keyFailover,
       });
       if (fallbackResult) {
         return {
@@ -566,114 +570,6 @@ export class ProxyService {
           autofix: autofixRecord,
         };
       }
-    }
-
-    // Stream warm-up: for streaming 200 responses, verify the provider
-    // actually starts delivering data before committing to the client.
-    // If the stream stalls or dies, we can still try fallback providers.
-    if (forward.response.ok && stream && forward.response.body) {
-      const warmup = await peekStream(forward.response.body, STREAM_WARMUP_MS);
-      if (warmup.ok) {
-        const peeked: ForwardResult = {
-          response: new Response(warmup.stream, {
-            status: forward.response.status,
-            statusText: forward.response.statusText,
-            headers: forward.response.headers,
-          }),
-          attempt: forward.attempt,
-          isGoogle: forward.isGoogle,
-          isAnthropic: forward.isAnthropic,
-          isChatGpt: forward.isChatGpt,
-          isResponses: forward.isResponses,
-          isCodeAssist: forward.isCodeAssist,
-          responsesTextFormat: forward.responsesTextFormat,
-          responsesToolNames: forward.responsesToolNames,
-          wireRequestBody: forward.wireRequestBody,
-          wireRequestUrl: forward.wireRequestUrl,
-          wireFormat: forward.wireFormat,
-          wireApiMode: forward.wireApiMode,
-          retryWireBody: forward.retryWireBody,
-          providerCallStarted: forward.providerCallStarted,
-        };
-        this.recordTierIfScoring(sessionMomentumKey, resolved.tier);
-        this.recordCategoryIfValid(sessionMomentumKey, resolved.specificity_category);
-        return {
-          forward: peeked,
-          meta: this.buildBaseMeta(resolved, primaryModel, {
-            request_params: primaryRequestParams,
-            tenantProviderId: credentials.tenantProviderId,
-            // Label of the row actually selected — a stale pin resolves to the
-            // default key, and the recorded label must follow the key used.
-            provider_key_label: credentials.keyLabel,
-            attempt: forward.attempt,
-            providerCallStarted: forward.providerCallStarted,
-            autofixOriginalAttempt,
-            autofixOriginalProviderCallStarted,
-          }),
-          autofix: autofixRecord,
-        };
-      }
-
-      this.logger.warn(
-        `Stream warmup failed: provider=${route.provider} model=${primaryModel} reason=${warmup.reason} message=${warmup.message}`,
-      );
-
-      const syntheticForward = warmupFailureForward(forward, warmup.message);
-      if (!explicitModelOverride && paramMergeContext) {
-        const fallbackResult = await this.tryFallbackChain({
-          agentId,
-          tenantId,
-          resolved,
-          primaryModel,
-          forward: syntheticForward,
-          body,
-          resolveChatBody,
-          stream,
-          sessionKey,
-          sessionCacheKey,
-          providerCacheKey,
-          sessionMomentumKey,
-          signal,
-          signatureLookup,
-          thinkingLookup,
-          apiMode,
-          paramMergeContext,
-          primaryTenantProviderId: credentials.tenantProviderId,
-          primaryKeyLabel: credentials.keyLabel,
-          startProviderAttempt,
-          credentialDashboardUrl: dashboardUrl,
-          clientAnthropicBeta: headers?.['anthropic-beta'],
-        });
-        if (fallbackResult) {
-          return {
-            ...fallbackResult,
-            meta: {
-              ...fallbackResult.meta,
-              autofixOriginalAttempt,
-              autofixOriginalProviderCallStarted,
-            },
-            autofix: autofixRecord,
-          };
-        }
-      }
-
-      // Warmup failed and no fallbacks available: return the synthetic 502
-      // instead of the original forward (whose body was consumed by peekStream).
-      this.recordTierIfScoring(sessionMomentumKey, resolved.tier);
-      this.recordCategoryIfValid(sessionMomentumKey, resolved.specificity_category);
-      return {
-        forward: syntheticForward,
-        meta: this.buildBaseMeta(resolved, primaryModel, {
-          request_params: primaryRequestParams,
-          tenantProviderId: credentials.tenantProviderId,
-          provider_key_label: credentials.keyLabel,
-          attempt: forward.attempt,
-          providerCallStarted: forward.providerCallStarted,
-          autofixOriginalAttempt,
-          autofixOriginalProviderCallStarted,
-        }),
-        autofix: autofixRecord,
-      };
     }
 
     this.recordTierIfScoring(sessionMomentumKey, resolved.tier);
@@ -1042,14 +938,14 @@ export class ProxyService {
 
     const models = await this.modelDiscovery.getModelsForAgent(tenantId, agentId);
     const catalogRoute = routeForOpenAiModelId(requestedModel, models);
-    if (catalogRoute) return this.explicitRouting(agentId, tenantId, catalogRoute);
+    if (catalogRoute) return this.explicitRouting(agentId, catalogRoute);
 
     // A bare ID served by both the subscription and api_key connections of
     // one provider is not ambiguous: the flat-fee subscription already covers
     // the request, so route it there instead of silently metering the key.
     if (!requestedModel.includes('/')) {
       const preferred = subscriptionPreferredRoute(requestedModel, models);
-      if (preferred) return this.explicitRouting(agentId, tenantId, preferred);
+      if (preferred) return this.explicitRouting(agentId, preferred);
     }
 
     // A bare ID already present under multiple connections is ambiguous, not
@@ -1068,7 +964,7 @@ export class ProxyService {
       return null;
     }
 
-    return this.explicitRouting(agentId, tenantId, route);
+    return this.explicitRouting(agentId, route);
   }
 
   /**
@@ -1121,18 +1017,17 @@ export class ProxyService {
   /**
    * The single funnel for both explicit-model branches (catalog match and
    * uncatalogued passthrough). Neither branch knows about connections, so the
-   * route arrives without a `keyLabel` and would resolve to the first key of
-   * the provider. Pin it here — through the same logic tier routing uses — so
-   * an operator's connection choice survives a request that names a model.
+   * route arrives without a `keyLabel`. Pin it here, through the same logic
+   * tier routing uses, so an operator's connection choice survives a request
+   * that names a model; without a pin it stays Auto and fails over across keys.
    */
   private async explicitRouting(
     agentId: string,
-    tenantId: string,
     route: NonNullable<ResolvedRouting['route']>,
   ): Promise<ResolvedRouting> {
     return {
       tier: 'default' as const,
-      route: await this.resolveService.pinRouteKeyLabel(agentId, tenantId, route),
+      route: await this.resolveService.pinRouteKeyLabel(agentId, route),
       fallback_routes: null,
       response_mode: DEFAULT_RESPONSE_MODE,
       confidence: 1,
@@ -1221,6 +1116,8 @@ export class ProxyService {
     credentialDashboardUrl?: string;
     /** The caller's raw `anthropic-beta` header, forwarded on an Anthropic hop. */
     clientAnthropicBeta?: string | string[];
+    /** Request-wide key failover state shared with every fallback hop. */
+    keyFailover?: KeyFailoverContext;
   }): Promise<ProxyResult | null> {
     const {
       agentId,
@@ -1274,6 +1171,7 @@ export class ProxyService {
       providerCacheKey,
       sessionCacheKey,
       args.clientAnthropicBeta,
+      args.keyFailover,
     );
 
     this.recordTierIfScoring(sessionMomentumKey, resolved.tier);

@@ -50,6 +50,12 @@ export interface ProviderAttemptStart {
   /** Reserve ordering for a Manifest-local route failure without a pending provider-call row. */
   providerCallStarted?: boolean;
   /**
+   * Position of this key try inside its hop when key failover moved past an
+   * earlier key of the same provider (1 = the second key tried). Unset for the
+   * first key, so only real key retries carry it.
+   */
+  keyFailoverIndex?: number;
+  /**
    * Label of the connection serving this attempt. Carried from the start so a
    * row that never reaches a terminal writer (a cancelled request) still names
    * the connection it was billed against.

@@ -68,7 +68,6 @@ describe('ProxyFallbackService', () => {
     providerKeyService = {
       getProviderApiKey: jest.fn(),
       getProviderKeyId: jest.fn().mockResolvedValue('up-fallback'),
-      getDefaultKeyLabel: jest.fn().mockResolvedValue(undefined),
       getAuthType: jest.fn().mockResolvedValue('api_key'),
       findProviderForModel: jest.fn().mockResolvedValue(undefined),
       getProviderRegion: jest.fn().mockResolvedValue(null),
@@ -78,6 +77,8 @@ describe('ProxyFallbackService', () => {
       // only drive getProviderApiKey/getProviderRegion/getProviderKeyId keep
       // working: the apiKey forwarded, the id stamped, and the region all come
       // from this one object. Tests that need divergent rows override it.
+      // Single key unless a test sets several: the hop takes the single-key path.
+      getProviderKeys: jest.fn().mockResolvedValue([]),
       selectProviderKey: jest.fn(
         async (
           tenantId: string,
@@ -2386,7 +2387,7 @@ describe('ProxyFallbackService', () => {
       });
       providerKeyService.getAuthType.mockResolvedValue('subscription');
       // The selected row's own label ('Work') resolves the unpinned subscription
-      // credential lookups; getDefaultKeyLabel is no longer consulted.
+      // credential lookups.
       providerKeyService.selectProviderKey.mockResolvedValue({
         apiKey: rawBlob,
         id: 'up-fallback',

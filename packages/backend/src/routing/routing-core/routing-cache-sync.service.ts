@@ -1,7 +1,18 @@
-import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+  OnModuleDestroy,
+  Optional,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { RoutingCacheService } from './routing-cache.service';
+import {
+  decodeKeyRotationRef,
+  encodeKeyRotationRef,
+  KeyRotationService,
+} from './key-rotation.service';
 
 /** How often every instance applies the invalidations the others published. */
 export const SYNC_POLL_INTERVAL_MS = 1_000;
@@ -16,7 +27,11 @@ const OVERLAP_SECONDS = 2;
 const RETENTION_MINUTES = 10;
 const PRUNE_EVERY_POLLS = 60;
 
-type Scope = 'agent' | 'tenant';
+/**
+ * `key_rotation` carries a manual key rotation reset (target: an encoded
+ * KeyRotationRef). Instances that predate it ignore the unknown scope.
+ */
+type Scope = 'agent' | 'tenant' | 'key_rotation';
 
 interface FeedRow {
   next_since: string;
@@ -61,9 +76,11 @@ export class RoutingCacheSyncService implements OnApplicationBootstrap, OnModule
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly routingCache: RoutingCacheService,
+    @Optional() private readonly keyRotation?: KeyRotationService,
   ) {
     routingCache.addInvalidationListener((agentId) => this.enqueue('agent', agentId));
     routingCache.addTenantInvalidationListener((tenantId) => this.enqueue('tenant', tenantId));
+    keyRotation?.addResetListener((ref) => this.enqueue('key_rotation', encodeKeyRotationRef(ref)));
   }
 
   onApplicationBootstrap(): void {
@@ -166,10 +183,16 @@ export class RoutingCacheSyncService implements OnApplicationBootstrap, OnModule
         seen.add(key);
         if (scope === 'agent') this.routingCache.invalidateAgent(target_id);
         else if (scope === 'tenant') this.routingCache.invalidateTenant(target_id);
+        else if (scope === 'key_rotation') this.applyKeyRotationReset(target_id);
       }
     } finally {
       this.applyingFeed = false;
     }
+  }
+
+  private applyKeyRotationReset(target: string): void {
+    const ref = decodeKeyRotationRef(target);
+    if (ref) this.keyRotation?.reset(ref);
   }
 
   private async prune(): Promise<void> {

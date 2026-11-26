@@ -333,7 +333,7 @@ export class ResolveService {
       provider && authType
         ? { provider, authType, model: primaryOverride.model, keyLabel: primaryOverride.keyLabel }
         : null;
-    const route = baseRoute ? await this.enrichRouteKeyLabel(agentId, tenantId, baseRoute) : null;
+    const route = baseRoute;
 
     const outputModality = outputModalityFor(match);
     const responseMode = responseModeFor(match);
@@ -414,12 +414,7 @@ export class ResolveService {
     const outputModality = outputModalityFor(assignment);
     const responseMode = responseModeFor(assignment);
     const fallbackRoutes = readFallbackRoutes(assignment);
-    const enrichedRoute = await this.enrichRouteKeyLabel(agentId, tenantId, route);
-    const effectiveRoutes = effectiveRoutesForResponseMode(
-      responseMode,
-      enrichedRoute,
-      fallbackRoutes,
-    );
+    const effectiveRoutes = effectiveRoutesForResponseMode(responseMode, route, fallbackRoutes);
 
     return {
       tier: 'standard',
@@ -457,7 +452,7 @@ export class ResolveService {
 
     if (override && (await this.providerKeyService.isRouteAvailable(tenantId, override, agentId))) {
       return {
-        primaryRoute: await this.enrichRouteKeyLabel(agentId, tenantId, override),
+        primaryRoute: override,
         fallbackRoutes,
         unavailableOverrideModel: null,
       };
@@ -489,7 +484,7 @@ export class ResolveService {
       if (await this.providerKeyService.hasRouteCredentials(tenantId, candidates[i], agentId)) {
         const rest = candidates.slice(i + 1);
         return {
-          primaryRoute: await this.enrichRouteKeyLabel(agentId, tenantId, candidates[i]),
+          primaryRoute: candidates[i],
           fallbackRoutes: rest.length > 0 ? rest : null,
           unavailableOverrideModel: null,
         };
@@ -507,17 +502,13 @@ export class ResolveService {
    * With two connections for one provider that means the *first* key wins and
    * the pin is silently ignored. Adopt the default tier's `override_route`
    * label when that override addresses the same (provider, authType) as the
-   * resolved route, then fall back to the default-connection label.
+   * resolved route. Without that pin the route stays Auto (no label), so the
+   * proxy fails over across the provider's keys.
    */
-  async pinRouteKeyLabel(
-    agentId: string,
-    tenantId: string,
-    route: ModelRoute,
-  ): Promise<ModelRoute> {
+  async pinRouteKeyLabel(agentId: string, route: ModelRoute): Promise<ModelRoute> {
     if (route.keyLabel) return route;
     const pinned = await this.defaultTierKeyLabel(agentId, route);
-    if (pinned) return { ...route, keyLabel: pinned };
-    return this.enrichRouteKeyLabel(agentId, tenantId, route);
+    return pinned ? { ...route, keyLabel: pinned } : route;
   }
 
   /**
@@ -537,31 +528,6 @@ export class ResolveService {
     if (override.provider.toLowerCase() !== route.provider.toLowerCase()) return undefined;
     if (override.authType !== route.authType) return undefined;
     return override.keyLabel;
-  }
-
-  /**
-   * Fill in `route.keyLabel` from the tenant's default (priority-0) key for
-   * (route.provider, route.authType) when the route doesn't already pin a
-   * specific label. The proxy needs a concrete keyLabel to pick the right row
-   * in `tenant_providers`; without this, multi-key users would always hit the
-   * first key instead of the default key for the selected auth mode.
-   *
-   * authType is taken from the route itself, not from any assignment-level
-   * legacy field.
-   */
-  private async enrichRouteKeyLabel(
-    agentId: string,
-    tenantId: string,
-    route: ModelRoute,
-  ): Promise<ModelRoute> {
-    if (route.keyLabel) return route;
-    const label = await this.providerKeyService.getDefaultKeyLabel(
-      tenantId,
-      route.provider,
-      route.authType,
-      agentId,
-    );
-    return label ? { ...route, keyLabel: label } : route;
   }
 
   /**

@@ -38,6 +38,8 @@ export const COMMANDS: Record<string, Handler> = {
   'agent env': agent.agentEnv,
   'agent provider enable': provider.agentProviderEnable,
   'agent provider disable': provider.agentProviderDisable,
+  'agent provider keys': provider.agentProviderKeys,
+  'agent provider reset-rotation': provider.agentProviderResetRotation,
   'agent setup': agent.agentSetup,
   'agent key path': agent.agentKeyPathCmd,
   'agent key show': agent.agentKeyShow,
@@ -107,6 +109,10 @@ Agents
   mnfst agent setup <name> [--reveal]                   (platform setup instructions, same content as the dashboard)
   mnfst agent provider enable <name> <provider> [--auth-type <a>] [--label <l>]
   mnfst agent provider disable <name> <provider> [--auth-type <a>] [--label <l>] --yes
+  mnfst agent provider keys <name> <provider> [--auth-type <a>]
+    (each key: last served, last success, last failure; Auto routes fail over across keys)
+  mnfst agent provider reset-rotation <name> <provider> [--auth-type <a>]
+    (next Auto request starts from the first key again; key cooldowns are cleared)
   mnfst agent key path <name> | mnfst agent key show <name> [--raw]
   mnfst agent get <name> | mnfst agent update <name> [--name|--category|--platform]
   mnfst agent delete <name> --yes

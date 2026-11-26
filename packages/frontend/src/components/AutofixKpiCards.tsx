@@ -10,6 +10,7 @@ import {
   REQUEST_SUCCESS_RATE_TOOLTIP,
   type AutofixStats,
 } from '../services/api/analytics.js';
+import { recoveredSaves } from '../services/recovered-saves.js';
 
 function fmtPct(v: number): string {
   const pct = v * 100;
@@ -84,12 +85,12 @@ const AutofixKpiCards: Component<AutofixKpiCardsProps> = (props) => {
   const selfHealed = () => {
     const s = props.stats;
     if (!s) return 0;
-    return s.autofix_saves.value + (s.fallback_saves?.value ?? 0);
+    return recoveredSaves(s, 'value');
   };
   const selfHealedPrev = () => {
     const s = props.stats;
     if (!s) return 0;
-    return s.autofix_saves.previous + (s.fallback_saves?.previous ?? 0);
+    return recoveredSaves(s, 'previous');
   };
   const selfHealedPct = () => {
     const s = props.stats;
@@ -119,7 +120,7 @@ const AutofixKpiCards: Component<AutofixKpiCardsProps> = (props) => {
           <div
             class="overview-stat-card"
             {...linkProps(
-              requestsLink('&status=ok&trigger=autofix,fallback'),
+              requestsLink('&status=ok&trigger=autofix,fallback,key_failover'),
               scopeTitle('recovered requests'),
             )}
           >

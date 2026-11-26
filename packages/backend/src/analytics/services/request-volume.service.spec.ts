@@ -131,8 +131,8 @@ describe('RequestVolumeService (#2511 request-level volume)', () => {
       splitAt: '2026-01-08',
     });
     expect(windows).toEqual({
-      current: { total: 5, success: 3, healed: 0, fallback: 0, error: 2 },
-      previous: { total: 5, success: 4, healed: 0, fallback: 0, error: 1 },
+      current: { total: 5, success: 3, healed: 0, fallback: 0, key_failover: 0, error: 2 },
+      previous: { total: 5, success: 4, healed: 0, fallback: 0, key_failover: 0, error: 1 },
     });
     const sql = lastSql();
     // No agent scope: the split is the 4th parameter, after the defaulted `to`.
@@ -156,6 +156,7 @@ describe('RequestVolumeService (#2511 request-level volume)', () => {
       { dim: 'success', current_count: 70, previous_count: 60 },
       { dim: 'healed', current_count: 4, previous_count: 3 },
       { dim: 'fallback', current_count: 6, previous_count: 5 },
+      { dim: 'key_failover', current_count: 3, previous_count: 2 },
       { dim: 'error', current_count: 20, previous_count: 30 },
     ]);
     const windows = await service.getDispositionTotalsForWindows({
@@ -166,12 +167,17 @@ describe('RequestVolumeService (#2511 request-level volume)', () => {
       agentScope: selectedAgent('t1', 'demo'),
     });
     expect(windows).toEqual({
-      current: { total: 100, success: 70, healed: 4, fallback: 6, error: 20 },
-      previous: { total: 98, success: 60, healed: 3, fallback: 5, error: 30 },
+      current: { total: 103, success: 70, healed: 4, fallback: 6, key_failover: 3, error: 20 },
+      previous: { total: 100, success: 60, healed: 3, fallback: 5, key_failover: 2, error: 30 },
     });
     // A single terminal-CTE execution for both windows.
     expect(messageRepo.query).toHaveBeenCalledTimes(1);
     const sql = lastSql();
+    // Key failover reads from the terminal attempt, after fallback.
+    expect(sql).toContain('pa.key_failover_index');
+    expect(sql).toMatch(
+      /fallback_from_model IS NOT NULL THEN 'fallback'[\s\S]*key_failover_index IS NOT NULL THEN 'key_failover'/,
+    );
     // One scan bounded by [from, to), split at the current-window start.
     expect(sql).toContain('AND r.timestamp < $3');
     expect(sql).toContain('r.agent_id = $4');
@@ -188,8 +194,8 @@ describe('RequestVolumeService (#2511 request-level volume)', () => {
         splitAt: '2026-01-08',
       }),
     ).resolves.toEqual({
-      current: { total: 0, success: 0, healed: 0, fallback: 0, error: 0 },
-      previous: { total: 0, success: 0, healed: 0, fallback: 0, error: 0 },
+      current: { total: 0, success: 0, healed: 0, fallback: 0, key_failover: 0, error: 0 },
+      previous: { total: 0, success: 0, healed: 0, fallback: 0, key_failover: 0, error: 0 },
     });
     expect(messageRepo.query).not.toHaveBeenCalled();
   });

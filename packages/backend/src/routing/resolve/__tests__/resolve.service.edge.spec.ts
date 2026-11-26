@@ -84,7 +84,6 @@ describe('ResolveService — edge cases', () => {
       | 'isRouteAvailable'
       | 'hasActiveProvider'
       | 'getAuthType'
-      | 'getDefaultKeyLabel'
       | 'hasRouteCredentials'
     >
   >;
@@ -106,7 +105,6 @@ describe('ResolveService — edge cases', () => {
       isRouteAvailable: jest.fn().mockResolvedValue(true),
       hasActiveProvider: jest.fn().mockResolvedValue(true),
       getAuthType: jest.fn().mockResolvedValue('api_key'),
-      getDefaultKeyLabel: jest.fn().mockResolvedValue(undefined),
       hasRouteCredentials: jest.fn().mockResolvedValue(true),
     };
     specificityService = { getActiveAssignments: jest.fn().mockResolvedValue([]) };

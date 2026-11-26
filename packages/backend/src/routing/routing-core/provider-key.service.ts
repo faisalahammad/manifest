@@ -97,17 +97,6 @@ export class ProviderKeyService {
     return result;
   }
 
-  /** Returns the label of the first (default) key for the given provider+authType. */
-  async getDefaultKeyLabel(
-    tenantId: string,
-    provider: string,
-    authType?: AuthType,
-    agentId?: string,
-  ): Promise<string | undefined> {
-    const keys = await this.getProviderKeys(tenantId, provider, authType, agentId);
-    return keys[0]?.label;
-  }
-
   /**
    * Selects the key for (tenant, provider, authType): the case-insensitive label
    * match when a label is given, else the first (priority-ordered) default key.

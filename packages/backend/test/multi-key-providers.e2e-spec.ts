@@ -3,7 +3,9 @@
  *
  *  - POST /providers with `label` adds extra keys
  *  - PATCH /providers/:provider/keys/:label renames a key
- *  - PUT /providers/:provider/keys/order rewrites priorities by index
+ *  - PUT /providers/:provider/keys/order rewrites priorities by index, with
+ *    more than five keys too
+ *  - GET /providers/:provider/keys/status and POST .../keys/reset-rotation
  *  - DELETE /providers/:provider?label=… removes one key from the chain
  *    while leaving the provider connected (and renumbers priorities)
  *  - DELETE /providers/:provider with no label keeps legacy whole-provider
@@ -11,11 +13,13 @@
  */
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { DataSource } from 'typeorm';
 import {
   createTestApp,
   stubProviderDiscoveryFetch,
   TEST_AGENT_ID,
   TEST_API_KEY,
+  TEST_TENANT_ID,
 } from './helpers';
 
 let app: INestApplication;
@@ -180,5 +184,120 @@ describe('Multi-key per provider — HTTP', () => {
     // inactive after the beforeEach `deactivate-all`).
     const active = await listActiveOpenAi();
     expect(active).toHaveLength(0);
+  });
+
+  it('PUT /providers/:provider/keys/order accepts more than five keys', async () => {
+    const labels = ['Default', 'K2', 'K3', 'K4', 'K5', 'K6', 'K7'];
+    for (const label of labels) {
+      await auth(api().post('/api/v1/routing/test-agent/providers'))
+        .send({
+          provider: 'openai',
+          apiKey: `sk-seven-${label}`,
+          ...(label === 'Default' ? {} : { label }),
+        })
+        .expect(201);
+    }
+    const reversed = [...labels].reverse();
+
+    const res = await auth(api().put('/api/v1/routing/test-agent/providers/openai/keys/order'))
+      .send({ labels: reversed })
+      .expect(200);
+
+    expect(res.body.map((r: { label: string }) => r.label)).toEqual(reversed);
+  });
+
+  it('GET keys/status lists each key with no history, and reset-rotation answers the same shape', async () => {
+    await auth(api().post('/api/v1/routing/test-agent/providers'))
+      .send({ provider: 'openai', apiKey: 'sk-status-default' })
+      .expect(201);
+    await auth(api().post('/api/v1/routing/test-agent/providers'))
+      .send({ provider: 'openai', apiKey: 'sk-status-work', label: 'Work' })
+      .expect(201);
+
+    const status = await auth(
+      api().get('/api/v1/routing/test-agent/providers/openai/keys/status'),
+    ).expect(200);
+    expect(status.body.provider).toBe('openai');
+    expect(status.body.auth_type).toBe('api_key');
+    expect(
+      status.body.keys.map((k: { label: string; last_served: boolean; last_failure: unknown }) => [
+        k.label,
+        k.last_served,
+        k.last_failure,
+      ]),
+    ).toEqual(
+      // Order follows priority, which earlier tests on the shared DB may have changed.
+      expect.arrayContaining([
+        ['Default', false, null],
+        ['Work', false, null],
+      ]),
+    );
+    expect(status.body.keys).toHaveLength(2);
+    // Never any key material.
+    expect(JSON.stringify(status.body)).not.toContain('sk-status');
+
+    const reset = await auth(
+      api().post('/api/v1/routing/test-agent/providers/openai/keys/reset-rotation'),
+    )
+      .send({})
+      .expect(201);
+    expect(reset.body.keys).toHaveLength(2);
+  });
+
+  it('GET keys/status reads the last success and failure of each key from attempts', async () => {
+    await auth(api().post('/api/v1/routing/test-agent/providers'))
+      .send({ provider: 'openai', apiKey: 'sk-hist-default' })
+      .expect(201);
+    await auth(api().post('/api/v1/routing/test-agent/providers'))
+      .send({ provider: 'openai', apiKey: 'sk-hist-backup', label: 'Backup' })
+      .expect(201);
+    const rows = await listProviders();
+    const id = (label: string) =>
+      (rows as Array<{ id?: string; label: string; provider: string; is_active: boolean }>).find(
+        (r) => r.provider === 'openai' && r.is_active && r.label === label,
+      )!.id!;
+    const ds = app.get(DataSource);
+    const at = (minutesAgo: number) =>
+      new Date(Date.now() - minutesAgo * 60_000).toISOString().replace('T', ' ').slice(0, 19);
+    await ds.query(
+      `INSERT INTO agent_messages
+         (id, tenant_id, agent_id, agent_name, timestamp, status, model, provider,
+          tenant_provider_id, error_http_status, error_class, superseded, key_failover_index)
+       VALUES
+         ('kf-1', $1, $2, 'test-agent', $5, 'failed', 'gpt-4o', 'openai', $3, 429, 'rate_limit', true, NULL),
+         ('kf-2', $1, $2, 'test-agent', $6, 'success', 'gpt-4o', 'openai', $4, NULL, NULL, false, 1),
+         ('kf-3', $1, $2, 'test-agent', $7, 'success', 'gpt-4o', 'openai', $3, NULL, NULL, false, NULL)`,
+      [TEST_TENANT_ID, TEST_AGENT_ID, id('Default'), id('Backup'), at(5), at(4), at(30)],
+    );
+
+    const res = await auth(
+      api().get('/api/v1/routing/test-agent/providers/openai/keys/status'),
+    ).expect(200);
+    const byLabel = Object.fromEntries(
+      res.body.keys.map((k: { label: string }) => [k.label, k]),
+    ) as Record<
+      string,
+      {
+        last_served: boolean;
+        last_success_at: string | null;
+        last_failure: { http_status: number; error_class: string; at: string } | null;
+      }
+    >;
+    expect(byLabel['Backup'].last_served).toBe(true);
+    expect(byLabel['Default'].last_served).toBe(false);
+    expect(byLabel['Default'].last_failure).toMatchObject({
+      http_status: 429,
+      error_class: 'rate_limit',
+    });
+    // Text timestamps, as stored (UTC without a zone).
+    expect(byLabel['Default'].last_failure!.at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+    expect(byLabel['Backup'].last_success_at).toMatch(/^\d{4}-\d{2}-\d{2} /);
+    expect(byLabel['Backup'].last_failure).toBeNull();
+  });
+
+  it('rejects an unknown auth type on reset-rotation', async () => {
+    await auth(api().post('/api/v1/routing/test-agent/providers/openai/keys/reset-rotation'))
+      .send({ authType: 'magic' })
+      .expect(400);
   });
 });

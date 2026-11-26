@@ -158,6 +158,15 @@ export class AgentMessage {
   fallback_index!: number | null;
 
   /**
+   * Position of this attempt inside its hop when key failover moved past an
+   * earlier key of the same provider (1 = the second key tried). Null for the
+   * first key. A successful Last Attempt with this set and no
+   * `fallback_from_model` means the Request was recovered by key failover.
+   */
+  @Column('integer', { nullable: true })
+  key_failover_index!: number | null;
+
+  /**
    * True when this row is a superseded attempt — one that failed but was
    * recovered by a later attempt (retry / fallback). It is the failed hop, not
    * the request's terminal outcome, so it must never count as a message. Splits

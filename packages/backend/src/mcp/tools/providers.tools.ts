@@ -20,6 +20,8 @@ import { McpToolDeps } from '../tool-deps';
 import { ok, result } from '../tool-result';
 
 const AUTH_TYPES = ['api_key', 'subscription', 'local'] as const;
+/** Auth types that hold a ring of keys key failover rotates through. */
+const KEY_RING_AUTH_TYPES = ['api_key', 'subscription'] as const;
 
 /**
  * Provider connection tools. Providers are tenant-global; an agent only decides
@@ -132,9 +134,57 @@ export function registerProviderTools(
       ),
   );
 
+  server.registerTool(
+    'manifest_provider_keys',
+    {
+      title: 'Provider key status',
+      description:
+        "Per-key status of one provider for one agent. Auto routes fail over across a provider's keys; this shows which key served last and each key's last success and last failure (from recorded attempts). Never returns key material.",
+      inputSchema: z.object({
+        agent: z.string().min(1),
+        provider: z.string().min(1),
+        auth_type: z.enum(KEY_RING_AUTH_TYPES).optional(),
+      }),
+      annotations: { readOnlyHint: true },
+    },
+    async ({ agent, provider, auth_type }) =>
+      result(
+        (async () => {
+          const resolved = await deps.resolveAgent.resolve(operator.tenantId, agent);
+          return deps.keyRotation.getStatus(resolved, provider, auth_type ?? 'api_key');
+        })(),
+      ),
+  );
+
   // Everything below connects, disconnects, or mutates provider access — a
   // read-only token must not see these tools.
   if (!operator.scopes.has(MCP_WRITE_SCOPE)) return;
+
+  server.registerTool(
+    'manifest_provider_reset_rotation',
+    {
+      title: 'Reset provider key rotation',
+      description:
+        "Start the provider's next Auto request for this agent from its first key again, and clear its keys' rate-limit and rejection cooldowns, on every instance. Returns the key status after the reset.",
+      inputSchema: z.object({
+        agent: z.string().min(1),
+        provider: z.string().min(1),
+        auth_type: z.enum(KEY_RING_AUTH_TYPES).optional(),
+      }),
+    },
+    async ({ agent, provider, auth_type }) =>
+      result(
+        (async () => {
+          const resolved = await deps.resolveAgent.resolve(operator.tenantId, agent);
+          const authType = auth_type ?? 'api_key';
+          deps.keyRotation.reset(resolved, provider, authType);
+          return {
+            reset: true,
+            ...(await deps.keyRotation.getStatus(resolved, provider, authType)),
+          };
+        })(),
+      ),
+  );
 
   server.registerTool(
     'manifest_provider_connect',

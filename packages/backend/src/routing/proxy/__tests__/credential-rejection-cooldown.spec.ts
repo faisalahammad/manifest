@@ -125,4 +125,23 @@ describe('CredentialRejectionCooldown', () => {
       before + CREDENTIAL_REJECTION_COOLDOWN_MS,
     );
   });
+
+  it('clear forgets one provider and auth type of one tenant only', () => {
+    const cooldown = new CredentialRejectionCooldown(60_000, 10, clock);
+    cooldown.reject(ref({ connectionId: 'connection-1' }));
+    cooldown.reject(ref({ connectionId: 'connection-2', keyLabel: 'Home' }));
+    cooldown.reject(ref({ tenantId: 'tenant-2' }));
+    cooldown.reject(ref({ provider: 'anthropic' }));
+    cooldown.reject(ref({ authType: 'api_key' }));
+
+    cooldown.clear('tenant-1', 'OpenAI', 'subscription');
+
+    expect(cooldown.rejectedUntil(ref({ connectionId: 'connection-1' }))).toBeNull();
+    expect(
+      cooldown.rejectedUntil(ref({ connectionId: 'connection-2', keyLabel: 'Home' })),
+    ).toBeNull();
+    expect(cooldown.rejectedUntil(ref({ tenantId: 'tenant-2' }))).not.toBeNull();
+    expect(cooldown.rejectedUntil(ref({ provider: 'anthropic' }))).not.toBeNull();
+    expect(cooldown.rejectedUntil(ref({ authType: 'api_key' }))).not.toBeNull();
+  });
 });

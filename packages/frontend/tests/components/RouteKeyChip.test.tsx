@@ -125,12 +125,14 @@ describe('RouteKeyChip', () => {
     expect(optKey2!.hasAttribute('disabled')).toBe(false);
   });
 
-  it('calls onPick with null when Clear pin is clicked and closes dropdown', () => {
+  it('calls onPick with null when Auto is picked and closes dropdown', () => {
     const onPick = vi.fn();
     const { container } = renderChip({ allowClear: true, currentLabel: 'key-1', onPick });
     fireEvent.click(getTriggerButton(container));
 
-    const clearBtn = getOptionButtons(container).find((b) => b.textContent?.includes('Clear pin'));
+    const clearBtn = getOptionButtons(container).find((b) =>
+      b.textContent?.includes('Auto (fails over across keys)'),
+    );
     expect(clearBtn).toBeDefined();
     fireEvent.click(clearBtn!);
 
@@ -177,14 +179,28 @@ describe('RouteKeyChip', () => {
     expect(optKey2!.getAttribute('aria-selected')).toBe('false');
   });
 
-  it('falls back to first key label when currentLabel is null', () => {
+  it('shows Auto, not a key, when currentLabel is null', () => {
     const { container } = renderChip({
       currentLabel: null,
       keys: [makeKey('default-key'), makeKey('other-key', { id: 'id-other', priority: 1 })],
     });
     const button = getTriggerButton(container);
-    expect(button.textContent).toContain('default-key');
-    expect(button.textContent).not.toContain('other-key');
+    expect(button.textContent).toContain('Auto');
+    expect(button.textContent).not.toContain('default-key');
+    expect(button.getAttribute('title')).toBe('Auto (fails over across keys)');
+    fireEvent.click(button);
+    // No key is marked selected on an Auto route.
+    expect(
+      getOptionButtons(container).some((o) => o.getAttribute('aria-selected') === 'true'),
+    ).toBe(false);
+  });
+
+  it('says a pinned key is used alone', () => {
+    const { container } = renderChip({ currentLabel: 'key-1' });
+    const button = getTriggerButton(container);
+    expect(button.getAttribute('title')).toBe('key-1 (this key only)');
+    fireEvent.click(button);
+    expect(getOptionButtons(container)[0].textContent).toContain('this key only');
   });
 
   it('calls event.stopPropagation when stopPropagation prop is true', () => {
@@ -262,12 +278,11 @@ describe('RouteKeyChip', () => {
     expect(style).toContain('min-width: 160px');
   });
 
-  it('renders an empty string when keys is empty and currentLabel is null', () => {
+  it('renders Auto when keys is empty and currentLabel is null', () => {
     const { container } = renderChip({ keys: [], currentLabel: null });
     const button = getTriggerButton(container);
-    // The displayed label span is the first child span — its text should be empty.
     const labelSpan = button.querySelector('span:first-child');
-    expect(labelSpan?.textContent).toBe('');
+    expect(labelSpan?.textContent).toBe('Auto');
   });
 
   it('treats usedLabels as case-insensitive (lowercase set lookup)', () => {

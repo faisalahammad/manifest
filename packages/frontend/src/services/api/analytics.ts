@@ -300,6 +300,8 @@ export interface AutofixStats {
   autofix_saves: { value: number; previous: number };
   /** Requests recovered by a successful fallback attempt (additive field). */
   fallback_saves: { value: number; previous: number };
+  /** Requests recovered by the same provider's next key (additive field). */
+  key_failover_saves?: { value: number; previous: number };
   /** Window total — denominator for the self-healed share (additive field). */
   total_requests: { value: number; previous: number };
   errors_remaining: { value: number; previous: number };
@@ -382,7 +384,7 @@ export interface ProviderReliabilityRow {
 
 /** One-line definition surfaced by the ⓘ tooltips next to "Recovered requests". */
 export const RECOVERED_REQUESTS_TOOLTIP =
-  'Successful requests that were recovered by Autofix or fallback.';
+  'Successful requests that were recovered by Autofix, fallback, or key failover.';
 
 /** Self-healed = recovered by Autofix + recovered by fallback. */
 export function selfHealedCount(row: { autofixed: number; fallback_saves?: number }): number {

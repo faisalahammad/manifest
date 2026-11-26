@@ -1,5 +1,6 @@
 import { For, type Component } from 'solid-js';
 import type { RoutingProvider } from '../services/api.js';
+import { AUTO_KEY_LABEL, PINNED_KEY_HINT } from './RouteKeyChip.js';
 
 export interface KeyPickerModalProps {
   /** Display name of the provider (e.g. "Google"). */
@@ -9,8 +10,9 @@ export interface KeyPickerModalProps {
   /** Active api_key chain for the provider, sorted by priority ASC. */
   keys: RoutingProvider[];
   /**
-   * Called when the user picks a key. Pass `null` to leave the tier on Auto
-   * (proxy resolves to the priority-0 / Primary key at request time).
+   * Called when the user picks a key. `null` leaves the route on Auto: the
+   * proxy tries the provider's keys in priority order, starting from the one
+   * that worked last, and fails over to the next key when one fails.
    */
   onPick: (label: string | null) => void;
   onClose: () => void;
@@ -54,6 +56,19 @@ const KeyPickerModal: Component<KeyPickerModalProps> = (props) => (
           aria-label={`Choose a ${props.providerName} key`}
           style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;"
         >
+          <li>
+            <button
+              type="button"
+              class="key-picker-modal__option"
+              onClick={() => props.onPick(null)}
+              style="width: 100%; text-align: left; padding: 10px 12px; border: 1px solid hsl(var(--border)); border-radius: 6px; background: hsl(var(--background)); color: hsl(var(--foreground)); cursor: pointer;"
+            >
+              <div style="font-weight: 500;">{AUTO_KEY_LABEL}</div>
+              <div style="font-size: var(--font-size-xs); color: hsl(var(--muted-foreground));">
+                Starts from the key that worked last and moves to the next key when one fails.
+              </div>
+            </button>
+          </li>
           <For each={props.keys}>
             {(k) => (
               <li>
@@ -65,7 +80,8 @@ const KeyPickerModal: Component<KeyPickerModalProps> = (props) => (
                 >
                   <div style="font-weight: 500;">{k.label}</div>
                   <div style="font-size: var(--font-size-xs); color: hsl(var(--muted-foreground));">
-                    {k.key_prefix ? `${k.key_prefix}${'•'.repeat(8)}` : '••••••••••••'}
+                    {k.key_prefix ? `${k.key_prefix}${'•'.repeat(8)}` : '••••••••••••'} ·{' '}
+                    {PINNED_KEY_HINT}
                   </div>
                 </button>
               </li>

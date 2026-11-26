@@ -892,9 +892,40 @@ describe('MessagesQueryService', () => {
     ).toEqual({ triggerAutofixRole: 'retry' });
     expect(
       andWhereSpy.mock.calls.find(
-        ([clause]) => clause === "(at.fallback_from_model IS NULL OR at.fallback_from_model = '')",
+        ([clause]) =>
+          clause ===
+          "(at.fallback_from_model IS NULL OR at.fallback_from_model = '') AND at.key_failover_index IS NULL",
       ),
     ).toBeDefined();
+  });
+
+  it('filters attempts that were key retries', async () => {
+    const andWhereSpy = await runWithTrigger('key_failover');
+    expect(andWhereSpy).toHaveBeenCalledWith('at.key_failover_index IS NOT NULL');
+  });
+
+  it('ORs key retries with other kinds at attempt grain', async () => {
+    mockGetRawOne.mockResolvedValueOnce({ total: 0 });
+    mockGetRawMany.mockResolvedValueOnce([]);
+    const mockQb = (
+      service as unknown as { turnRepo: { createQueryBuilder: jest.Mock } }
+    ).turnRepo.createQueryBuilder();
+    const andWhereSpy = mockQb.andWhere as jest.Mock;
+    andWhereSpy.mockClear();
+
+    await service.getMessages({
+      range: '24h',
+      tenantId: 'test-user',
+      limit: 20,
+      triggers: ['key_failover', 'none'],
+      include_filter_options: false,
+    });
+
+    const clause = andWhereSpy.mock.calls
+      .map(([c]) => String(c))
+      .find((c) => c.includes('key_failover_index'));
+    expect(clause).toContain('at.key_failover_index IS NOT NULL OR');
+    expect(clause).toContain('AND at.key_failover_index IS NULL');
   });
 
   function runWithOrigin(params: {

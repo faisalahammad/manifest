@@ -50,4 +50,4 @@ Namespace = scope: `provider *` acts tenant-wide, `agent *` acts on one agent, `
 - Verifying a route with hand-rolled `curl` — fake-200s read as success. Use `routing test`.
 - Slurping the whole request log — pagination is one page per call by design; loop on `next_cursor`.
 
-Also on the surface when needed: `mnfst doctor` (first stop when anything is wrong), `agent setup <name> [--reveal]` (setup block anytime; key masked unless revealed), `agent key path|show`, `agent provider enable|disable <agent> <provider>`, `agent rotate-key` (revocation is instant), `mnfst models <agent> --cost --capabilities`.
+Also on the surface when needed: `mnfst doctor` (first stop when anything is wrong), `agent setup <name> [--reveal]` (setup block anytime; key masked unless revealed), `agent key path|show`, `agent provider enable|disable <agent> <provider>`, `agent provider keys|reset-rotation <agent> <provider>` (Auto routes fail over across a provider's keys; `keys` shows which key served last and each key's last failure, `reset-rotation` starts again from the first key), `agent rotate-key` (revocation is instant), `mnfst models <agent> --cost --capabilities`.

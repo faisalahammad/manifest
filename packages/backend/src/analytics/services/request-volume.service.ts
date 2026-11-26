@@ -40,12 +40,14 @@ const REQUEST_SUCCEEDED = sqlIsSuccessStatus('t.request_status');
 
 /**
  * How the request CONCLUDED. Autofix comes from the request outcome; fallback
- * comes from the terminal attempt. These mark the method that produced the
- * conclusion, never mere attempts along the way.
+ * and key failover come from the terminal attempt. These mark the method that
+ * produced the conclusion, never mere attempts along the way. Order matters:
+ * a key retry inside a fallback hop still reads as recovered by fallback.
  */
 const DISPOSITION_EXPR = `CASE
     WHEN ${REQUEST_SUCCEEDED} AND t.autofix_status = 'retry_succeeded' THEN 'healed'
     WHEN ${REQUEST_SUCCEEDED} AND t.fallback_from_model IS NOT NULL THEN 'fallback'
+    WHEN ${REQUEST_SUCCEEDED} AND t.key_failover_index IS NOT NULL THEN 'key_failover'
     WHEN ${REQUEST_SUCCEEDED} THEN 'success'
     ELSE 'error'
   END`;
@@ -62,6 +64,8 @@ export interface DispositionTotals {
   success: number;
   healed: number;
   fallback: number;
+  /** Recovered by key failover: another key of the same provider served it. */
+  key_failover: number;
   error: number;
 }
 
@@ -124,6 +128,7 @@ export class RequestVolumeService {
           pa.provider,
           pa.model,
           pa.fallback_from_model,
+          pa.key_failover_index,
           pa.auth_type,
           pa.provider_key_label,
           pa.tenant_provider_id
@@ -154,6 +159,7 @@ export class RequestVolumeService {
           pa.provider,
           pa.model,
           pa.fallback_from_model,
+          pa.key_failover_index,
           pa.auth_type,
           pa.provider_key_label,
           pa.tenant_provider_id
@@ -228,6 +234,7 @@ export class RequestVolumeService {
       success: 0,
       healed: 0,
       fallback: 0,
+      key_failover: 0,
       error: 0,
     });
     if (!params.tenantId) return { current: empty(), previous: empty() };
@@ -268,6 +275,9 @@ export class RequestVolumeService {
       } else if (r.dim === 'fallback') {
         current.fallback += c;
         previous.fallback += p;
+      } else if (r.dim === 'key_failover') {
+        current.key_failover += c;
+        previous.key_failover += p;
       } else {
         current.error += c;
         previous.error += p;
@@ -279,7 +289,7 @@ export class RequestVolumeService {
   /**
    * Request-level disposition timeseries: feeds the "By request status" chart
    * and the Healed requests tab. One count per request, keyed by how it
-   * concluded (success / healed / fallback / error).
+   * concluded (success / healed / fallback / key_failover / error).
    */
   async getDispositionTimeseries(params: {
     tenantId: string | null;

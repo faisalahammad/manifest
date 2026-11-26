@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { RoutingCacheService } from './routing-cache.service';
 import { RoutingCacheSyncService, SYNC_POLL_INTERVAL_MS } from './routing-cache-sync.service';
+import { KeyRotationService, type KeyRotationRef } from './key-rotation.service';
 
 type Row = { next_since: string; scope: string | null; target_id: string | null };
 
@@ -174,6 +175,62 @@ describe('RoutingCacheSyncService', () => {
       query.mockResolvedValueOnce(feed(['agent', 'agent-1'], ['agent', 'agent-1']));
       await sync.catchUp();
       expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    describe('key rotation resets', () => {
+      const ref: KeyRotationRef = {
+        tenantId: 'tenant-1',
+        agentId: 'agent-1',
+        provider: 'custom:x|y',
+        authType: 'api_key',
+      };
+      const keys = [{ id: 'A' }, { id: 'B' }];
+      const withRotation = () => {
+        const query = jest.fn();
+        const rotation = new KeyRotationService();
+        const sync = new RoutingCacheSyncService(
+          { query } as unknown as DataSource,
+          new RoutingCacheService(),
+          rotation,
+        );
+        const inserts = () => query.mock.calls.filter(([sql]) => String(sql).includes('INSERT'));
+        return { query, rotation, sync, inserts };
+      };
+
+      it('publishes a local reset to the other instances', async () => {
+        const { query, rotation, inserts } = withRotation();
+        query.mockResolvedValue([]);
+        rotation.reset(ref);
+        await tick();
+        expect(inserts()[0][1]).toEqual([
+          ['key_rotation'],
+          ['tenant-1|agent-1|api_key|custom:x|y'],
+        ]);
+      });
+
+      it('applies a reset another instance published, without re-publishing it', async () => {
+        const { query, rotation, sync, inserts } = withRotation();
+        rotation.recordSuccess(ref, 'B');
+        query.mockResolvedValueOnce(feed(['key_rotation', 'tenant-1|agent-1|api_key|custom:x|y']));
+        await sync.catchUp();
+        await tick();
+        expect(rotation.currentKeyId(ref, keys)).toBe('A');
+        expect(inserts()).toHaveLength(0);
+      });
+
+      it('ignores a malformed reset target', async () => {
+        const { query, rotation, sync } = withRotation();
+        rotation.recordSuccess(ref, 'B');
+        query.mockResolvedValueOnce(feed(['key_rotation', 'garbage']));
+        await sync.catchUp();
+        expect(rotation.currentKeyId(ref, keys)).toBe('B');
+      });
+
+      it('ignores a reset when rotation is not wired (older module graph)', async () => {
+        const { query, sync } = setup();
+        query.mockResolvedValueOnce(feed(['key_rotation', 'tenant-1|agent-1|api_key|openai']));
+        await expect(sync.catchUp()).resolves.toBeUndefined();
+      });
     });
 
     it('ignores unknown scopes', async () => {

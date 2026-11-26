@@ -164,6 +164,14 @@ function makeDeps(): McpToolDeps {
       delete: jest.fn().mockResolvedValue(undefined),
     } as never,
     agentRepo: { update: jest.fn().mockResolvedValue(undefined) } as never,
+    keyRotation: {
+      reset: jest.fn(),
+      getStatus: jest.fn().mockResolvedValue({
+        provider: 'openai',
+        auth_type: 'api_key',
+        keys: [{ id: 'conn-1', label: 'default', last_served: true }],
+      }),
+    } as never,
   };
 }
 
@@ -289,6 +297,44 @@ describe('MCP tools', () => {
       const tools = registerAll(makeDeps(), { ...OPERATOR, scopes: new Set(['mcp:read']) });
       expect(tools.has('manifest_agent_list')).toBe(true);
       expect(tools.has('manifest_agent_create')).toBe(false);
+    });
+  });
+
+  describe('provider key rotation tools', () => {
+    it('reads the per-key status of the agent ring, API keys by default', async () => {
+      const deps = makeDeps();
+      const { data } = await call(registerAll(deps), 'manifest_provider_keys', {
+        agent: 'demo',
+        provider: 'openai',
+      });
+      expect(data).toMatchObject({ provider: 'openai', keys: [{ last_served: true }] });
+      expect(deps.keyRotation.getStatus).toHaveBeenCalledWith(AGENT, 'openai', 'api_key');
+    });
+
+    it('resets rotation for the given auth type and returns the fresh status', async () => {
+      const deps = makeDeps();
+      const { data } = await call(registerAll(deps), 'manifest_provider_reset_rotation', {
+        agent: 'demo',
+        provider: 'openai',
+        auth_type: 'subscription',
+      });
+      expect(deps.keyRotation.reset).toHaveBeenCalledWith(AGENT, 'openai', 'subscription');
+      expect(data).toMatchObject({ reset: true, provider: 'openai' });
+    });
+
+    it('resets API keys by default', async () => {
+      const deps = makeDeps();
+      await call(registerAll(deps), 'manifest_provider_reset_rotation', {
+        agent: 'demo',
+        provider: 'openai',
+      });
+      expect(deps.keyRotation.reset).toHaveBeenCalledWith(AGENT, 'openai', 'api_key');
+    });
+
+    it('keeps the status readable and the reset hidden for a read-only token', () => {
+      const tools = registerAll(makeDeps(), { ...OPERATOR, scopes: new Set(['mcp:read']) });
+      expect(tools.has('manifest_provider_keys')).toBe(true);
+      expect(tools.has('manifest_provider_reset_rotation')).toBe(false);
     });
   });
 

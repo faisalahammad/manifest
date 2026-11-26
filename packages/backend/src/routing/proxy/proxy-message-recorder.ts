@@ -709,6 +709,9 @@ export class ProxyMessageRecorder implements OnModuleDestroy {
         // Stamped from the start so an attempt that never reaches a terminal
         // writer still names the connection it used.
         provider_key_label: start.keyLabel ?? null,
+        // Set only on key retries. Terminal writers update the row and never
+        // touch this column, so it survives to the final outcome.
+        key_failover_index: start.keyFailoverIndex ?? null,
       }),
     );
     return true;

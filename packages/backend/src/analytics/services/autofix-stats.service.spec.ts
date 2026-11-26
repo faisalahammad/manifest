@@ -53,8 +53,8 @@ describe('AutofixStatsService', () => {
   const requestVolume = {
     getDispositionTimeseries: jest.fn().mockResolvedValue([]),
     getDispositionTotalsForWindows: jest.fn().mockResolvedValue({
-      current: { total: 0, success: 0, healed: 0, fallback: 0, error: 0 },
-      previous: { total: 0, success: 0, healed: 0, fallback: 0, error: 0 },
+      current: { total: 0, success: 0, healed: 0, fallback: 0, key_failover: 0, error: 0 },
+      previous: { total: 0, success: 0, healed: 0, fallback: 0, key_failover: 0, error: 0 },
     }),
     getVolumeByDimension: jest.fn().mockResolvedValue([]),
     getVolumeByProviderTimeseries: jest.fn().mockResolvedValue([]),
@@ -68,8 +68,8 @@ describe('AutofixStatsService', () => {
     autofix.resolveEnabled.mockImplementation((stored: boolean | null) => stored ?? true);
     requestVolume.getDispositionTimeseries.mockResolvedValue([]);
     requestVolume.getDispositionTotalsForWindows.mockResolvedValue({
-      current: { total: 0, success: 0, healed: 0, fallback: 0, error: 0 },
-      previous: { total: 0, success: 0, healed: 0, fallback: 0, error: 0 },
+      current: { total: 0, success: 0, healed: 0, fallback: 0, key_failover: 0, error: 0 },
+      previous: { total: 0, success: 0, healed: 0, fallback: 0, key_failover: 0, error: 0 },
     });
     requestVolume.getVolumeByDimension.mockResolvedValue([]);
     service = new AutofixStatsService(
@@ -220,8 +220,8 @@ describe('AutofixStatsService', () => {
     // ONE terminal-CTE scan yields both windows; getStats derives the KPI
     // counts from that single result instead of scanning twice.
     requestVolume.getDispositionTotalsForWindows.mockResolvedValue({
-      current: { total: 10, success: 5, healed: 2, fallback: 1, error: 2 },
-      previous: { total: 0, success: 0, healed: 0, fallback: 0, error: 0 },
+      current: { total: 10, success: 5, healed: 2, fallback: 1, key_failover: 0, error: 2 },
+      previous: { total: 0, success: 0, healed: 0, fallback: 0, key_failover: 0, error: 0 },
     });
     internals.queryNeedsAttention = jest.fn().mockResolvedValue([{ error_message: 'bad' }]);
 
@@ -235,6 +235,7 @@ describe('AutofixStatsService', () => {
       success_rate: { value: 0.8, previous: 0 },
       autofix_saves: { value: 2, previous: 0 },
       fallback_saves: { value: 1, previous: 0 },
+      key_failover_saves: { value: 0, previous: 0 },
       total_requests: { value: 10, previous: 0 },
       errors_remaining: { value: 2, previous: 0 },
       coverage: { rate: 0.5, previous_rate: 0 },
@@ -383,17 +384,26 @@ describe('AutofixStatsService', () => {
         success: number;
         healed: number;
         fallback: number;
+        key_failover: number;
         error: number;
       }) => unknown;
     };
     // ONE definition: the KPI window reads the same reducer as the chart.
     expect(
-      internals.windowCounts({ total: 100, success: 70, healed: 4, fallback: 6, error: 20 }),
+      internals.windowCounts({
+        total: 103,
+        success: 70,
+        healed: 4,
+        fallback: 6,
+        key_failover: 3,
+        error: 20,
+      }),
     ).toEqual({
-      total: 100,
-      successes: 80, // success + recovered by Autofix + recovered by fallback
+      total: 103,
+      successes: 83, // success + recovered by Autofix, fallback, or key failover
       saves: 4, // autofix_status = retry_succeeded
       fallback_saves: 6,
+      key_failover_saves: 3,
       errors: 20,
       healed: 4,
       no_fix_found: 20,

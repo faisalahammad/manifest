@@ -65,6 +65,17 @@ export class CredentialRejectionCooldown {
     return rejection.secret === ref.secret ? rejection.until : null;
   }
 
+  /** Forget every rejection of one provider and auth type for a tenant (manual reset). */
+  clear(tenantId: string, provider: string, authType: string): void {
+    const lowerProvider = provider.toLowerCase();
+    for (const key of [...this.rejections.keys()]) {
+      const [keyTenant, , keyProvider, keyAuthType] = key.split('\u0000');
+      if (keyTenant === tenantId && keyProvider === lowerProvider && keyAuthType === authType) {
+        this.rejections.delete(key);
+      }
+    }
+  }
+
   /** Drop expired entries, then the oldest one if the map is still full. */
   private evict(): void {
     const now = this.now();

@@ -119,12 +119,36 @@ describe('ProxyMessageRecorder', () => {
           auth_type: 'api_key',
           tenant_provider_id: 'connection-1',
           provider_key_label: 'Work',
+          key_failover_index: null,
         }),
       );
       expect(updateMock).toHaveBeenCalledWith(
         { id: 'attempt-pending' },
         expect.objectContaining({ status: 'failed', duration_ms: 125, superseded: true }),
       );
+    });
+
+    it('stamps the key failover position on a key retry and never clears it', async () => {
+      const attempt: ProviderAttemptRef = {
+        id: 'attempt-key-2',
+        attemptNumber: 3,
+        startedAtMs: 1_000,
+        startedAt: '1970-01-01T00:00:01.000Z',
+        pendingWrite: Promise.resolve(true),
+      };
+      await recorder.recordPendingProviderAttempt(ctx, 'request-1', attempt, {
+        provider: 'openai',
+        model: 'gpt-4o',
+        authType: 'api_key',
+        keyLabel: 'Backup',
+        keyFailoverIndex: 1,
+      });
+      await recorder.completePendingProviderFailure(attempt, 503, 'down', true);
+
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'attempt-key-2', key_failover_index: 1 }),
+      );
+      expect(updateMock.mock.calls.at(-1)?.[1]).not.toHaveProperty('key_failover_index');
     });
 
     it('does not complete an attempt whose pending insert failed', async () => {

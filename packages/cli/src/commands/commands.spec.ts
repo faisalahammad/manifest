@@ -1581,6 +1581,56 @@ describe('models command', () => {
   });
 });
 
+describe('agent provider keys / reset-rotation', () => {
+  const status = {
+    provider: 'openai',
+    auth_type: 'api_key',
+    keys: [{ label: 'A', last_served: true }],
+  };
+
+  it('keys reads the per-key status of the agent ring', async () => {
+    const { io, calls } = authedIo([{ status: 200, body: status }]);
+    expect(
+      await run(io, ['agent', 'provider', 'keys', 'John', 'openai', '--auth-type', 'subscription']),
+    ).toBe(0);
+    expect(calls[0].method).toBe('GET');
+    expect(calls[0].url).toBe(
+      `${HOST}/api/v1/routing/john/providers/openai/keys/status?authType=subscription`,
+    );
+    expect(io.lastJson()).toMatchObject({ agent: 'john', ...status });
+  });
+
+  it('reset-rotation POSTs the reset and prints the fresh status', async () => {
+    const { io, calls } = authedIo([{ status: 201, body: status }]);
+    expect(await run(io, ['agent', 'provider', 'reset-rotation', 'john', 'openai'])).toBe(0);
+    expect(calls[0].method).toBe('POST');
+    expect(calls[0].url).toBe(`${HOST}/api/v1/routing/john/providers/openai/keys/reset-rotation`);
+    expect(JSON.parse(String(calls[0].body))).toEqual({});
+    expect(io.lastJson()).toMatchObject({ agent: 'john', reset: true, provider: 'openai' });
+  });
+
+  it('reset-rotation forwards an explicit auth type', async () => {
+    const { io, calls } = authedIo([{ status: 201, body: status }]);
+    expect(
+      await run(io, [
+        'agent',
+        'provider',
+        'reset-rotation',
+        'john',
+        'openai',
+        '--auth-type',
+        'subscription',
+      ]),
+    ).toBe(0);
+    expect(JSON.parse(String(calls[0].body))).toEqual({ authType: 'subscription' });
+  });
+
+  it('requires the provider', async () => {
+    const { io } = authedIo([]);
+    expect(await run(io, ['agent', 'provider', 'keys', 'john'])).toBe(1);
+  });
+});
+
 describe('agent provider enable/disable', () => {
   const groups = {
     providers: [
