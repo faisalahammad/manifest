@@ -10,6 +10,13 @@ import { registerRequestTools } from './tools/requests.tools';
 import { registerRoutingTools } from './tools/routing.tools';
 
 /**
+ * Array elements plus object keys one `tools/call` may carry. The largest tool
+ * input is a custom provider's model list (500). Without a cap, one request can
+ * exhaust memory during validation (GHSA-46jr-4wx8-v453).
+ */
+export const MAX_TOOL_INPUT_ELEMENTS = 1_000;
+
+/**
  * Build the MCP server for ONE request.
  *
  * The transport is stateless — a fresh server per POST — so the acting operator
@@ -28,6 +35,7 @@ export function buildMcpServer(deps: McpToolDeps, operator: McpOperator): McpSer
       // that could only ever sit open carrying nothing. `McpServer` turns the
       // bit on by default as soon as a tool is registered, so say no here.
       capabilities: { tools: { listChanged: false } },
+      maxToolInputElements: MAX_TOOL_INPUT_ELEMENTS,
       instructions:
         'TierGate is an LLM gateway control plane. Use these tools to manage harnesses ' +
         '(agents), provider connections, routing, model catalogs, and to read the request ' +
