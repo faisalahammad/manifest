@@ -27,4 +27,16 @@ export class InstallMetadata {
   /** When the self-hosted install consented to Autofix (null = never). */
   @Column(timestampType(), { nullable: true })
   autofix_consented_at!: string | null;
+
+  /** Self-hosted super admin: the first user who signed up (null = not resolved yet). */
+  @Column('varchar', { nullable: true })
+  super_admin_user_id!: string | null;
+
+  /** False when the super admin closed sign-up for new users. */
+  @Column('boolean', { default: true })
+  signup_enabled!: boolean;
+
+  /** Days to keep Requests and Provider Attempts; null keeps them forever. */
+  @Column('integer', { nullable: true })
+  log_retention_days!: number | null;
 }

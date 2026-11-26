@@ -1,5 +1,6 @@
 import { A, useLocation } from '@solidjs/router';
 import { Show, createSignal, createResource, type Component } from 'solid-js';
+import { getAdminStatus } from '../services/api/admin.js';
 import { getBillingStatus } from '../services/api/billing.js';
 import { checkIsSelfHosted, checkMcpEnabled } from '../services/setup-status.js';
 import AddAgentModal from './AddAgentModal.jsx';
@@ -32,6 +33,14 @@ const Sidebar: Component<SidebarProps> = (props) => {
   // status like the Local one does, rather than appearing and then vanishing
   // on the installs that don't have it.
   const [mcpEnabled] = createResource(checkMcpEnabled);
+  // Instance settings belong to the self-hosted super admin only.
+  const [adminStatus] = createResource(async () => {
+    try {
+      return await getAdminStatus();
+    } catch {
+      return { isSuperAdmin: false };
+    }
+  });
   const [billing] = createResource(async () => {
     try {
       return await getBillingStatus();
@@ -170,6 +179,18 @@ const Sidebar: Component<SidebarProps> = (props) => {
       >
         Playground
       </A>
+
+      <Show when={adminStatus()?.isSuperAdmin}>
+        <div class="sidebar__section-label">ADMIN</div>
+        <A
+          href="/instance-settings"
+          class="sidebar__link"
+          classList={{ active: isGlobalActive('/instance-settings') }}
+          aria-current={isGlobalActive('/instance-settings') ? 'page' : undefined}
+        >
+          Instance settings
+        </A>
+      </Show>
 
       <div class="sidebar__spacer" />
 

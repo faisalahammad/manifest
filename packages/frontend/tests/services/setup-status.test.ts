@@ -8,6 +8,7 @@ import {
   checkLocalLlmHost,
   checkEmailConfigured,
   checkMcpEnabled,
+  checkSignUpEnabled,
   resetSetupStatus,
   createFirstAdmin,
 } from '../../src/services/setup-status';
@@ -181,6 +182,29 @@ describe('setup-status service', () => {
       expect(social).toEqual(['google']);
       expect(ollama).toBe(true);
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('checkSignUpEnabled', () => {
+    const status = (body: object) =>
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => body }));
+
+    it('is false only when the backend says so', async () => {
+      status({ needsSetup: false, signUpEnabled: false });
+      expect(await checkSignUpEnabled()).toBe(false);
+    });
+
+    it('is true when the field is absent (older backend)', async () => {
+      status({ needsSetup: false });
+      expect(await checkSignUpEnabled()).toBe(true);
+    });
+
+    it('is true on a failed response or request', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+      expect(await checkSignUpEnabled()).toBe(true);
+      resetSetupStatus();
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+      expect(await checkSignUpEnabled()).toBe(true);
     });
   });
 

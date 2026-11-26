@@ -17,6 +17,9 @@ describe('InstallIdService', () => {
     first_send_at: null,
     last_sent_at: null,
     autofix_consented_at: null,
+    super_admin_user_id: null,
+    signup_enabled: true,
+    log_retention_days: null,
   };
 
   beforeEach(async () => {

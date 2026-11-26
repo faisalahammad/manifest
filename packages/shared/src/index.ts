@@ -211,3 +211,5 @@ export {
   isReservedCustomProviderAlias,
   normalizeCustomProviderAlias,
 } from './custom-provider-alias';
+export { LOG_RETENTION_DAY_OPTIONS, isLogRetentionDays } from './instance-settings';
+export type { LogRetentionDays } from './instance-settings';

@@ -57,7 +57,10 @@ vi.mock('../../src/services/toast-store.js', () => ({
 vi.mock('../../src/services/setup-status.js', () => ({
   checkSocialProviders: (...args: unknown[]) => mockCheckSocialProviders(...args),
   checkIsSelfHosted: (...args: unknown[]) => mockCheckIsSelfHosted(...args),
+  checkSignUpEnabled: (...args: unknown[]) => mockCheckSignUpEnabled(...args),
 }));
+
+const mockCheckSignUpEnabled = vi.fn();
 
 import Register from '../../src/pages/Register';
 import { getLastAuthMethod } from '../../src/services/last-auth-method';
@@ -71,9 +74,18 @@ describe('Register', () => {
     mockGetBillingStatus.mockResolvedValue({ enabled: false, plan: 'free' });
     mockCheckIsSelfHosted.mockResolvedValue(false);
     mockCheckSocialProviders.mockResolvedValue([]);
+    mockCheckSignUpEnabled.mockResolvedValue(true);
     mockLocationSearch = '';
     mockSearchParams = {};
     localStorage.clear();
+  });
+
+  it('shows a closed notice instead of the form when sign-up is off', async () => {
+    mockCheckSignUpEnabled.mockResolvedValue(false);
+    render(() => <Register />);
+    await vi.waitFor(() => expect(screen.getByText('Sign-up is turned off')).toBeDefined());
+    expect(screen.queryByPlaceholderText('Your name')).toBeNull();
+    expect(screen.getByText('Sign in')).toBeDefined();
   });
 
   it('renders create account heading', () => {

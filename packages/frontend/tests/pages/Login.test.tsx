@@ -34,8 +34,10 @@ vi.mock('../../src/services/toast-store.js', () => ({
 }));
 
 const mockCheckSocialProviders = vi.fn().mockResolvedValue([]);
+const mockCheckSignUpEnabled = vi.fn().mockResolvedValue(true);
 vi.mock('../../src/services/setup-status.js', () => ({
   checkSocialProviders: (...args: unknown[]) => mockCheckSocialProviders(...args),
+  checkSignUpEnabled: (...args: unknown[]) => mockCheckSignUpEnabled(...args),
 }));
 
 import Login from '../../src/pages/Login';
@@ -48,6 +50,7 @@ describe('Login', () => {
     mockLocationSearch = '';
     mockSignInEmail.mockResolvedValue({});
     mockCheckSocialProviders.mockResolvedValue([]);
+    mockCheckSignUpEnabled.mockResolvedValue(true);
     localStorage.clear();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
   });
@@ -88,6 +91,13 @@ describe('Login', () => {
     await vi.waitFor(() => {
       expect(container.textContent).toContain('Dev sign-in failed');
     });
+  });
+
+  it('hides the register link when the admin turned sign-up off', async () => {
+    mockCheckSignUpEnabled.mockResolvedValue(false);
+    render(() => <Login />);
+    await vi.waitFor(() => expect(screen.queryByText('Sign up')).toBeNull());
+    expect(mockCheckSignUpEnabled).toHaveBeenCalled();
   });
 
   it('has link to register', () => {

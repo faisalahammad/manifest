@@ -6,6 +6,7 @@ import { getContainerHostAlias, isSelfHosted } from '../common/utils/detect-self
 import { isEmailConfigured } from '../notifications/services/email-providers/send-email';
 import { mcpAvailability } from '../auth/mcp-availability';
 import { isAutofixGloballyEnabled } from '../routing/autofix/autofix-healing-config';
+import { isSignUpAllowed, SignupGateQuery } from '../auth/signup-gate';
 
 /**
  * Postgres advisory lock key reserved for the first-run setup wizard.
@@ -77,6 +78,21 @@ export class SetupService {
   /** Autofix is opt-in; the dashboard hides its toggles while it is off. */
   isAutofixAvailable(): boolean {
     return isAutofixGloballyEnabled(process.env['AUTOFIX_GLOBAL_ENABLED']);
+  }
+
+  /**
+   * Whether the Register page should offer sign-up. Only a hint for the UI:
+   * the Better Auth hook is what enforces it. A failed check shows the form,
+   * since the hook still refuses a sign-up that is not allowed.
+   */
+  async isSignUpEnabled(): Promise<boolean> {
+    try {
+      return await isSignUpAllowed(
+        (sql) => this.dataSource.query(sql) as ReturnType<SignupGateQuery>,
+      );
+    } catch {
+      return true;
+    }
   }
 
   /**

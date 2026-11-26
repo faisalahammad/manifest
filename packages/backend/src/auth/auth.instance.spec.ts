@@ -7,6 +7,16 @@ const mockBetterAuth = jest.fn().mockReturnValue({
 
 jest.mock('better-auth', () => ({ betterAuth: mockBetterAuth }));
 jest.mock('pg', () => ({ Pool: jest.fn() }));
+jest.mock('better-auth/api', () => ({
+  APIError: class APIError extends Error {
+    constructor(
+      public status: string,
+      public body: { message: string },
+    ) {
+      super(body.message);
+    }
+  },
+}));
 const mockStripePlugin = jest.fn().mockReturnValue({ id: 'stripe' });
 jest.mock('@better-auth/stripe', () => ({ stripe: mockStripePlugin }));
 // The MCP/OAuth plugins are ESM-only. Jest (Node 22) cannot require them, so
@@ -395,6 +405,35 @@ describe('auth.instance', () => {
 
       const config = mockBetterAuth.mock.calls[0][0];
       expect(config.emailVerification.autoSignInAfterVerification).toBe(true);
+    });
+  });
+
+  describe('sign-up gate hook', () => {
+    function loadHook(rows: unknown[]) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { Pool } = require('pg') as { Pool: jest.Mock };
+      const query = jest.fn().mockResolvedValue({ rows });
+      Pool.mockImplementation(() => ({ query }));
+      loadModule();
+      const config = mockBetterAuth.mock.calls[0][0];
+      return { before: config.databaseHooks.user.create.before, query };
+    }
+
+    it('lets the user through while sign-up is open', async () => {
+      process.env['MANIFEST_MODE'] = 'selfhosted';
+      const { before, query } = loadHook([{ has_users: true, signup_enabled: true }]);
+      const user = { email: 'new@example.com' };
+      await expect(before(user)).resolves.toEqual({ data: user });
+      expect(query).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses the user with 403 once the admin closed sign-up', async () => {
+      process.env['MANIFEST_MODE'] = 'selfhosted';
+      const { before } = loadHook([{ has_users: true, signup_enabled: false }]);
+      await expect(before({ email: 'new@example.com' })).rejects.toMatchObject({
+        status: 'FORBIDDEN',
+        message: expect.stringContaining('Sign-up is turned off'),
+      });
     });
   });
 

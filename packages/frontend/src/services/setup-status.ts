@@ -12,6 +12,7 @@ interface SetupStatusResponse {
   emailConfigured?: boolean;
   mcpEnabled?: boolean;
   autofixAvailable?: boolean;
+  signUpEnabled?: boolean;
 }
 
 interface SetupStatusResult {
@@ -23,6 +24,7 @@ interface SetupStatusResult {
   emailConfigured: boolean;
   mcpEnabled: boolean;
   autofixAvailable: boolean;
+  signUpEnabled: boolean;
 }
 
 let cachedPromise: Promise<SetupStatusResult> | null = null;
@@ -43,6 +45,7 @@ async function fetchSetupStatus(): Promise<SetupStatusResult> {
         emailConfigured: true,
         mcpEnabled: true,
         autofixAvailable: false,
+        signUpEnabled: true,
       };
     const data = (await res.json()) as SetupStatusResponse;
     return {
@@ -57,6 +60,8 @@ async function fetchSetupStatus(): Promise<SetupStatusResult> {
       // Same reasoning, plus a backend older than this field always serves MCP.
       mcpEnabled: data.mcpEnabled !== false,
       autofixAvailable: data.autofixAvailable === true,
+      // Only an explicit false hides sign-up; the backend hook enforces it anyway.
+      signUpEnabled: data.signUpEnabled !== false,
     };
   } catch {
     return {
@@ -68,6 +73,7 @@ async function fetchSetupStatus(): Promise<SetupStatusResult> {
       emailConfigured: true,
       mcpEnabled: true,
       autofixAvailable: false,
+      signUpEnabled: true,
     };
   }
 }
@@ -116,6 +122,11 @@ export async function checkMcpEnabled(): Promise<boolean> {
 /** False unless the operator opted in to Autofix (`AUTOFIX_GLOBAL_ENABLED=true`). */
 export async function checkAutofixAvailable(): Promise<boolean> {
   return (await getSetupStatus()).autofixAvailable;
+}
+
+/** False when the self-hosted super admin turned sign-up off. */
+export async function checkSignUpEnabled(): Promise<boolean> {
+  return (await getSetupStatus()).signUpEnabled;
 }
 
 /** Invalidate the cached status. Call this after a successful setup. */

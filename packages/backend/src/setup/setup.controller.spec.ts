@@ -16,6 +16,7 @@ describe('SetupController', () => {
   let mockGetLocalLlmHost: jest.Mock;
   let mockIsEmailConfigured: jest.Mock;
   let mockIsMcpEnabled: jest.Mock;
+  let mockIsSignUpEnabled: jest.Mock;
 
   beforeEach(async () => {
     mockNeedsSetup = jest.fn();
@@ -26,6 +27,7 @@ describe('SetupController', () => {
     mockGetLocalLlmHost = jest.fn().mockReturnValue('localhost');
     mockIsEmailConfigured = jest.fn().mockReturnValue(true);
     mockIsMcpEnabled = jest.fn().mockReturnValue(true);
+    mockIsSignUpEnabled = jest.fn().mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SetupController],
@@ -42,6 +44,7 @@ describe('SetupController', () => {
             isEmailConfigured: mockIsEmailConfigured,
             isMcpEnabled: mockIsMcpEnabled,
             isAutofixAvailable: () => false,
+            isSignUpEnabled: mockIsSignUpEnabled,
           },
         },
       ],
@@ -51,6 +54,13 @@ describe('SetupController', () => {
   });
 
   describe('getStatus', () => {
+    it('reports signUpEnabled=false when the admin closed sign-up', async () => {
+      mockNeedsSetup.mockResolvedValue(false);
+      mockIsSignUpEnabled.mockResolvedValue(false);
+      const result = await controller.getStatus();
+      expect(result.signUpEnabled).toBe(false);
+    });
+
     it('reports mcpEnabled=false when the install runs without the MCP server', async () => {
       mockNeedsSetup.mockResolvedValue(false);
       mockIsMcpEnabled.mockReturnValue(false);
@@ -70,6 +80,7 @@ describe('SetupController', () => {
         emailConfigured: true,
         mcpEnabled: true,
         autofixAvailable: false,
+        signUpEnabled: true,
       });
     });
 
@@ -85,6 +96,7 @@ describe('SetupController', () => {
         emailConfigured: true,
         mcpEnabled: true,
         autofixAvailable: false,
+        signUpEnabled: true,
       });
     });
 
@@ -101,6 +113,7 @@ describe('SetupController', () => {
         emailConfigured: true,
         mcpEnabled: true,
         autofixAvailable: false,
+        signUpEnabled: true,
       });
     });
 
@@ -118,6 +131,7 @@ describe('SetupController', () => {
         emailConfigured: true,
         mcpEnabled: true,
         autofixAvailable: false,
+        signUpEnabled: true,
       });
     });
 
@@ -135,6 +149,7 @@ describe('SetupController', () => {
         emailConfigured: true,
         mcpEnabled: true,
         autofixAvailable: false,
+        signUpEnabled: true,
       });
     });
 

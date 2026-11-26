@@ -29,6 +29,7 @@ import { GithubModule } from './github/github.module';
 import { VersionModule } from './version/version.module';
 import { ErrorPagesModule } from './error-pages/error-pages.module';
 import { SetupModule } from './setup/setup.module';
+import { AdminModule } from './admin/admin.module';
 import { FreeModelsModule } from './free-models/free-models.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
@@ -114,6 +115,7 @@ const mcpImports = mcpAvailability().enabled ? [McpModule] : [];
     VersionModule,
     ErrorPagesModule,
     SetupModule,
+    AdminModule,
     FreeModelsModule,
     TelemetryModule,
     BackfillModule,
