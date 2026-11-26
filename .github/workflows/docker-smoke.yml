@@ -176,7 +176,7 @@ jobs:
         run: |
           curl -sSf http://127.0.0.1:2099/ -o /tmp/index.html
           test -s /tmp/index.html
-          grep -q '<title>Manifest</title>' /tmp/index.html
+          grep -q '<title>TierGate</title>' /tmp/index.html
 
       - name: Verify public error pages are gated off by default
         run: |
