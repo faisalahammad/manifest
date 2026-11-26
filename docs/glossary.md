@@ -73,7 +73,7 @@ Newly written Superseded Attempts keep `agent_messages.status = 'failed'` and ha
 
 ### Recovered Request
 
-A Recovered Request is a successful Request after TierGate continued beyond a failed Attempt by applying Autofix or fallback.
+A Recovered Request is a successful Request after TierGate continued beyond a failed Attempt by applying Autofix, fallback, or key failover.
 
 Recovery belongs to Requests only. Providers, Provider Connections, models, and Attempts are never “recovered.” Applying a recovery method is not enough: the Request must ultimately succeed.
 
@@ -84,13 +84,20 @@ Each Request belongs to exactly one outcome category, evaluated in this order:
 3. **Failed:** `requests.status = 'failed'`.
 4. **Recovered by Autofix:** `requests.status = 'success'` and `requests.autofix_status = 'retry_succeeded'`.
 5. **Recovered by fallback:** `requests.status = 'success'`, the Last Attempt has a non-null `agent_messages.fallback_from_model`, and the Request was not recovered by Autofix.
-6. **Success:** any other Request with `requests.status = 'success'`.
+6. **Recovered by key failover:** `requests.status = 'success'`, the Last Attempt has a non-null `agent_messages.key_failover_index` and a null `agent_messages.fallback_from_model`, and the Request was not recovered by Autofix.
+7. **Success:** any other Request with `requests.status = 'success'`.
 
-The ordering makes Autofix the tie-breaker if inconsistent or historical data satisfies both recovery criteria. If an Autofix retry fails and a fallback succeeds, the Request is recovered by fallback because `requests.autofix_status` is not `retry_succeeded`.
+The ordering makes Autofix the tie-breaker if inconsistent or historical data satisfies both recovery criteria. If an Autofix retry fails and a fallback succeeds, the Request is recovered by fallback because `requests.autofix_status` is not `retry_succeeded`. A key retry inside a fallback hop also carries `fallback_from_model`, so that Request is recovered by fallback: key failover only names Requests that the primary model served on another key.
+
+### Key failover
+
+Key failover is TierGate trying the same model on the same Provider's next Provider Connection after a key-scoped failure (authentication, billing, quota, rate limit, provider error, or a stream that dies before its first byte). It applies only to routes that do not pin a Connection. It is not a fallback: the model does not change, so key retries never set `agent_messages.fallback_from_model` on their own.
+
+Each key tried is its own Provider Attempt. A failed key followed by another key is a Superseded Attempt. A key retry has `agent_messages.key_failover_index` set to its position in the hop (1 for the second key tried); the first key tried has it null. Keys skipped because of a cooldown get no Attempt.
 
 ### Recovery attempt
 
-A recovery attempt is a recovery method TierGate tried during a Request, whether or not it succeeded. The Requests table lists them in its "Recovery attempts" column and filter. Autofix and fallback fields on Attempts describe what happened in the chain; they do not replace the Request status or recovery category.
+A recovery attempt is a recovery method TierGate tried during a Request, whether or not it succeeded: Autofix, fallback, or key failover. The Requests table lists them in its "Recovery attempts" column and filter. Autofix, fallback and key failover fields on Attempts describe what happened in the chain; they do not replace the Request status or recovery category.
 
 ### AI Provider and Provider Connection
 
@@ -110,7 +117,7 @@ An Attempt identifies the Connection it used through `agent_messages.tenant_prov
 | Caller-visible status           | `requests.status` and the `requests.error_*` columns                                   |
 | End-to-end duration             | `requests.duration_ms`                                                                 |
 | Model requested by the agent    | `requests.requested_model`                                                             |
-| Autofix outcome                | `requests.autofix_status`                                                              |
+| Autofix outcome                 | `requests.autofix_status`                                                              |
 | Attempt identity and parent     | `agent_messages.id`, `agent_messages.request_id`                                       |
 | Attempt order                   | `agent_messages.attempt_number`                                                        |
 | Attempt status                  | `agent_messages.status` and the `agent_messages.error_*` columns                       |
@@ -152,16 +159,18 @@ Only `retry_succeeded` means the Request was recovered by Autofix.
 
 ## Examples
 
-| Scenario                                       | Counted Requests | Counted Attempts | Request status | Attempt statuses              | Recovery |
-| ---------------------------------------------- | ---------------: | ---------------: | -------------- | ----------------------------- | -------- |
-| Request or Attempt is still in progress        |                0 |                0 | `pending`      | `pending` where applicable    | Excluded |
-| Caller disconnects before an outcome           |                0 |                0 | `cancelled`    | `cancelled` where applicable  | Excluded |
-| Primary Provider succeeds                      |                1 |                1 | `success`      | `success`                     | None     |
-| TierGate rejects before contacting a Provider  |                1 |                0 | `failed`       | None                          | None     |
-| Primary Attempt fails, fallback succeeds       |                1 |                2 | `success`      | `failed`, `success`           | Fallback |
-| Primary Attempt fails, Autofix retry succeeds |                1 |                2 | `success`      | `failed`, `success`           | Autofix |
-| Autofix retry fails, fallback succeeds        |                1 |                3 | `success`      | `failed`, `failed`, `success` | Fallback |
-| Every Provider Attempt fails                   |                1 |                N | `failed`       | `failed` × N                  | None     |
+| Scenario                                      | Counted Requests | Counted Attempts | Request status | Attempt statuses              | Recovery     |
+| --------------------------------------------- | ---------------: | ---------------: | -------------- | ----------------------------- | ------------ |
+| Request or Attempt is still in progress       |                0 |                0 | `pending`      | `pending` where applicable    | Excluded     |
+| Caller disconnects before an outcome          |                0 |                0 | `cancelled`    | `cancelled` where applicable  | Excluded     |
+| Primary Provider succeeds                     |                1 |                1 | `success`      | `success`                     | None         |
+| TierGate rejects before contacting a Provider |                1 |                0 | `failed`       | None                          | None         |
+| Primary Attempt fails, fallback succeeds      |                1 |                2 | `success`      | `failed`, `success`           | Fallback     |
+| Primary Attempt fails, Autofix retry succeeds |                1 |                2 | `success`      | `failed`, `success`           | Autofix      |
+| Autofix retry fails, fallback succeeds        |                1 |                3 | `success`      | `failed`, `failed`, `success` | Fallback     |
+| Primary key fails, next key succeeds          |                1 |                2 | `success`      | `failed`, `success`           | Key failover |
+| Every key fails, fallback succeeds            |                1 |              K+1 | `success`      | `failed` × K, `success`       | Fallback     |
+| Every Provider Attempt fails                  |                1 |                N | `failed`       | `failed` × N                  | None         |
 
 The Counted Requests and Counted Attempts columns show how many rows the completed dashboard metrics count for each scenario; pending rows are excluded.
 
@@ -170,7 +179,7 @@ The Counted Requests and Counted Attempts columns show how many rows the complet
 1. Grouping is a lens, not a filter. Switching the grouping within one chart never changes its total.
 2. A Request counts once in Request-world surfaces; an Attempt counts once in Attempt-world surfaces. The totals are not expected to match.
 3. “Recovered” only qualifies Requests. Providers, Connections, models, and Attempts have no recovery metric.
-4. Autofix and fallback fields on an Attempt describe its trigger or context, never its result. The Attempt's status records its result.
+4. Autofix, fallback and key failover fields on an Attempt describe its trigger or context, never its result. The Attempt's status records its result.
 5. A Request-level Provider lens attributes each Request once to its Last Attempt's Provider. Zero-attempt Requests use the TierGate bucket. It must never count every Attempt as a separate Request.
 6. Connection and model surfaces remain Attempt-level because one Request may use several Connections or models.
 
