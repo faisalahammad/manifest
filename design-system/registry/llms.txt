@@ -96,7 +96,7 @@
 --z-toast: 8000
 --z-tooltip: 9999
 
-## Blocks (317 BEM blocks, 1704 classes)
+## Blocks (316 BEM blocks, 1699 classes)
 account-back-btn (agents.css): account-back-btn
 account-email-footer (agents.css): account-email-footer
 account-email-toggle (agents.css): account-email-toggle--disabled
@@ -165,7 +165,7 @@ custom-provider-item (routing-providers.css): custom-provider-item custom-provid
 custom-provider-model-row (routing-providers.css): custom-provider-model-row custom-provider-model-row__name custom-provider-model-row__price custom-provider-model-row__remove
 custom-provider-models (routing-providers.css): custom-provider-models custom-provider-models__column custom-provider-models__column--name custom-provider-models__column--price custom-provider-models__column-spacer custom-provider-models__columns custom-provider-models__label
 custom-select (connection-detail.css, custom-select.css, discovery.css, routing-providers.css): custom-select custom-select__chevron custom-select__dropdown custom-select__dropdown--portal custom-select__dropdown--wide custom-select__option custom-select__option--disabled custom-select__option--selected custom-select__option--top custom-select__option-desc custom-select__option-text custom-select__option-text--inline custom-select__trigger custom-select__trigger--open custom-select__value
-dark (agent-type-select.css, agents.css, analytics-overview.css, auth.css, controls.css, data.css, modals.css, model-filter.css, overview.css, platform-icons.css, request-drawer.css, routing-deprecation.css, routing-providers.css, routing.css, syntax-highlight.css, tokens.css, welcome.css, wizard.css): dark
+dark (agent-type-select.css, agents.css, analytics-overview.css, auth.css, controls.css, data.css, modals.css, model-filter.css, overview.css, platform-icons.css, request-drawer.css, routing-providers.css, routing.css, syntax-highlight.css, tokens.css, welcome.css, wizard.css): dark
 data-table (data.css, feedback.css, theme.css): data-table data-table__sortable
 data-table-scroll (data.css): data-table-scroll
 demo-dashboard (overview.css): demo-dashboard
@@ -318,7 +318,6 @@ routing-card (routing-header-tiers.css, routing-specificity.css, routing.css): r
 routing-cards (routing.css, welcome.css): routing-cards routing-cards--centered routing-cards--unified-compact routing-cards--wide
 routing-cards-backdrop (routing.css): routing-cards-backdrop
 routing-complexity (routing-tabs.css): routing-complexity__disable
-routing-deprecation (routing-deprecation.css): routing-deprecation routing-deprecation__body routing-deprecation__icon routing-deprecation__link routing-deprecation__title
 routing-disable-btn (routing.css): routing-disable-btn
 routing-enable-card (routing.css): routing-enable-card routing-enable-card__desc routing-enable-card__icon routing-enable-card__title
 routing-footer (routing.css): routing-footer routing-footer__instructions routing-footer__sep
@@ -520,7 +519,7 @@ workspace-table (agents.css): workspace-table__actions workspace-table__icon wor
 .welcome__route-test-heading { align-items: flex-start }  at welcome.css:873 loses to welcome.css:903
 .welcome__route-test-heading { gap: 14px }  at welcome.css:875 loses to welcome.css:904
 
-## Component-loaded sheets — imported by components, not theme.css; they load after the global styles (20)
+## Component-loaded sheets — imported by components, not theme.css; they load after the global styles (19)
 agent-chart-tooltip.css ← components/ChartHoverTooltip.tsx
 analytics-overview.css ← components/AutofixKpiCards.tsx, pages/GlobalOverview.tsx, pages/providers/ConnectionDetail.tsx, pages/providers/ProviderConnectionsPage.tsx
 connection-detail.css ← pages/providers/ConnectionDetail.tsx
@@ -532,7 +531,6 @@ overview.css ← pages/GlobalOverview.tsx, pages/MessageLog.tsx, pages/Overview.
 playground.css ← pages/Playground.tsx
 reliability-card.css ← components/ReliabilityChart.tsx
 request-drawer.css ← components/RequestDrawer.tsx
-routing-deprecation.css ← components/RoutingDeprecationNotice.tsx
 routing-header-tiers.css ← pages/RoutingHeaderTiersSection.tsx
 routing-modal.css ← pages/Welcome.tsx
 routing-providers.css ← pages/Welcome.tsx

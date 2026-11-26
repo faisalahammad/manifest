@@ -149,18 +149,11 @@ describe('RoutingSpecificitySection', () => {
     expect(screen.queryByTestId('tier-card-trading')).toBeNull();
   });
 
-  it('renders the task-specific deprecation notice', () => {
-    render(() => <RoutingSpecificitySection {...makeProps({ assignments: () => [codingActive] })} />);
-    expect(screen.getByText("We're deprecating rule-based routing.")).toBeDefined();
-  });
-
-  it('renders the deprecation notice in embedded mode', () => {
+  it('never shows a deprecation notice', () => {
     render(() => (
-      <RoutingSpecificitySection
-        {...makeProps({ embedded: true, assignments: () => [codingActive] })}
-      />
+      <RoutingSpecificitySection {...makeProps({ assignments: () => [codingActive] })} />
     ));
-    expect(screen.getByText("We're deprecating rule-based routing.")).toBeDefined();
+    expect(screen.queryByText("We're deprecating rule-based routing.")).toBeNull();
   });
 
   it('renders the Response mode control and forwards response mode changes', async () => {
@@ -428,8 +421,7 @@ describe('RoutingSpecificitySection', () => {
     ));
     const cardProps = tierCardCalls[tierCardCalls.length - 1];
     const tier = (cardProps.tier as () => unknown)?.() as
-      | { tier: string; category: string }
-      | undefined;
+      { tier: string; category: string } | undefined;
     expect(tier?.tier).toBe('coding');
     expect(tier?.category).toBe('coding');
   });

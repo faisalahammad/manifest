@@ -10,7 +10,6 @@ import type {
 } from '../services/api.js';
 import { DEFAULT_STAGE, STAGES } from '../services/providers.js';
 import OutputControls from '../components/OutputControls.js';
-import RoutingDeprecationNotice from '../components/RoutingDeprecationNotice.js';
 import RoutingTierCard from './RoutingTierCard.js';
 
 export interface RoutingDefaultTierSectionProps {
@@ -170,21 +169,9 @@ const RoutingDefaultTierSection: Component<RoutingDefaultTierSectionProps> = (pr
     </Show>
   );
 
-  // Deprecation banner: shown to legacy/invested agents (the only ones with the
-  // toggle) while complexity routing is actually active.
-  const deprecationNotice = () => (
-    <Show when={showComplexityToggle() && props.complexityEnabled()}>
-      <RoutingDeprecationNotice title="We're deprecating rule-based routing.">
-        You can still use it until September 1, 2026, but we recommend migrating to default or
-        custom routing.
-      </RoutingDeprecationNotice>
-    </Show>
-  );
-
   if (props.embedded) {
     return (
       <div>
-        {deprecationNotice()}
         <div
           class="routing-section__header routing-section__header--with-control"
           style="margin-bottom: 16px;"
@@ -204,7 +191,6 @@ const RoutingDefaultTierSection: Component<RoutingDefaultTierSectionProps> = (pr
 
   return (
     <div class="routing-section">
-      {deprecationNotice()}
       <div class="routing-section__header routing-section__header--with-control">
         <div>
           <span class="routing-section__title">Default routing</span>

@@ -1103,7 +1103,6 @@
         "overview.css",
         "platform-icons.css",
         "request-drawer.css",
-        "routing-deprecation.css",
         "routing-providers.css",
         "routing.css",
         "syntax-highlight.css",
@@ -3105,18 +3104,6 @@
         "routing-tabs.css"
       ]
     },
-    "routing-deprecation": {
-      "classes": [
-        "routing-deprecation",
-        "routing-deprecation__body",
-        "routing-deprecation__icon",
-        "routing-deprecation__link",
-        "routing-deprecation__title"
-      ],
-      "files": [
-        "routing-deprecation.css"
-      ]
-    },
     "routing-disable-btn": {
       "classes": [
         "routing-disable-btn"
@@ -5074,9 +5061,6 @@
     "request-drawer.css": [
       "components/RequestDrawer.tsx"
     ],
-    "routing-deprecation.css": [
-      "components/RoutingDeprecationNotice.tsx"
-    ],
     "routing-header-tiers.css": [
       "pages/RoutingHeaderTiersSection.tsx"
     ],
@@ -5115,8 +5099,8 @@
   "stats": {
     "tokens": 79,
     "darkOverrides": 38,
-    "blocks": 317,
-    "classes": 1704,
+    "blocks": 316,
+    "classes": 1699,
     "canonicalRules": 46,
     "ghostRules": 46
   }
