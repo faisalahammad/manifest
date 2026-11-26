@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TierGate · Self-host your LLM gateway</title>
+<meta name="description" content="Set up TierGate, the open-source LLM router, on Docker, a VPS, Dokploy or Coolify.">
+<link rel="icon" href="favicon.ico">
+<style>
+  :root {
+    --bg: #0d1017; --panel: #151a24; --line: #262d3b; --text: #e8eaf0; --muted: #9aa3b5;
+    --blue: #5865ff; --teal: #2be1b7; --code: #0a0d13;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--teal); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+  header { padding: 56px 0 32px; text-align: center; }
+  header img { height: 56px; }
+  header p { color: var(--muted); font-size: 1.15rem; margin: 18px auto 24px; max-width: 620px; }
+  .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid var(--line); color: var(--text); }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+  nav.tabs { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); }
+  nav.tabs .wrap { display: flex; gap: 4px; overflow-x: auto; }
+  nav.tabs a { padding: 14px 16px; color: var(--muted); text-decoration: none; font-weight: 600; white-space: nowrap; border-bottom: 2px solid transparent; }
+  nav.tabs a:hover { color: var(--text); }
+  nav.tabs a.active { color: var(--text); border-color: var(--teal); }
+  section { padding: 40px 0 8px; scroll-margin-top: 56px; }
+  h2 { font-size: 1.6rem; margin: 0 0 6px; }
+  h3 { font-size: 1.05rem; margin: 28px 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 8px; }
+  ol { padding-left: 22px; } li { margin: 6px 0; }
+  code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--panel); padding: 2px 6px; border-radius: 4px; }
+  pre { position: relative; background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 10px 0 16px; }
+  pre code { background: none; padding: 0; font-size: 0.86rem; line-height: 1.55; }
+  .copy { position: absolute; top: 8px; right: 8px; background: var(--panel); color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; font-size: 0.75rem; cursor: pointer; }
+  .copy:hover { color: var(--text); }
+  .note { background: var(--panel); border-left: 3px solid var(--teal); padding: 12px 16px; border-radius: 0 8px 8px 0; color: var(--muted); margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  footer { border-top: 1px solid var(--line); margin-top: 48px; padding: 24px 0 40px; color: var(--muted); font-size: 0.9rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <img src="logo.svg" alt="TierGate">
+  <p>One OpenAI-compatible endpoint for all your AI agents. Every request goes to the cheapest model that can handle it. Self-hosted, open source, MIT licensed.</p>
+  <div class="btns">
+    <a class="btn primary" href="#docker">Get started</a>
+    <a class="btn" href="https://github.com/faisalahammad/tiergate">GitHub</a>
+    <a class="btn" href="https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md">Full guide</a>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="wrap">
+    <a href="#docker">Docker</a>
+    <a href="#vps">VPS</a>
+    <a href="#dokploy">Dokploy</a>
+    <a href="#coolify">Coolify</a>
+    <a href="#connect">Connect an agent</a>
+    <a href="#upgrade">Upgrade</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="docker">
+  <h2>Docker (local machine)</h2>
+  <p class="lead">Runs on macOS, Windows or Linux. You need Docker Desktop or Docker Engine 20.10+ with Compose v2.</p>
+
+  <h3>Option A: the installer</h3>
+  <p>It downloads the compose file, writes a <code>.env</code> with random secrets and starts the stack.</p>
+<pre><code>curl -sSLO https://raw.githubusercontent.com/faisalahammad/tiergate/main/docker/install.sh
+bash install.sh</code></pre>
+  <p>Add <code>--dry-run</code> to see what it will do first, <code>--dir /path</code> to change the folder, or <code>--port 8080</code> to change the port.</p>
+
+  <h3>Option B: by hand</h3>
+<pre><code>mkdir -p ~/tiergate &amp;&amp; cd ~/tiergate
+curl -sSLf https://raw.githubusercontent.com/faisalahammad/tiergate/main/docker/docker-compose.yml -o docker-compose.yml
+printf 'BETTER_AUTH_SECRET=%s\nMANIFEST_ENCRYPTION_KEY=%s\n' "$(openssl rand -hex 32)" "$(openssl rand -hex 32)" &gt; .env
+docker compose up -d</code></pre>
+  <p>Wait until <code>docker compose ps</code> shows both containers <code>healthy</code> (first boot takes up to 90 seconds), then open <a href="http://localhost:2099">http://localhost:2099</a>. The first account you create is the admin.</p>
+  <div class="note">Keep a copy of <code>.env</code>. <code>MANIFEST_ENCRYPTION_KEY</code> encrypts your stored provider keys. If you lose it, they can not be decrypted.</div>
+</section>
+
+<section id="vps">
+  <h2>VPS (Ubuntu, Debian, Oracle Cloud...)</h2>
+  <p class="lead">1 vCPU and 1 GB RAM is enough. amd64 and arm64 (Ampere) images are both published.</p>
+  <ol>
+    <li>Install Docker:
+<pre><code>curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER   # log out and back in after this</code></pre></li>
+    <li>Install TierGate with the installer from the <a href="#docker">Docker</a> step. The dashboard listens on <code>127.0.0.1:2099</code> only, so nothing is public yet.</li>
+    <li>Point a DNS <code>A</code> record, for example <code>ai.example.com</code>, at the server IP.</li>
+    <li>Open ports 80 and 443. With <code>ufw</code>:
+<pre><code>sudo ufw allow 80,443/tcp</code></pre>
+      On Oracle Cloud, also add ingress rules for TCP 80 and 443 in the VCN Security List, then:
+<pre><code>sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+sudo netfilter-persistent save</code></pre></li>
+    <li>Install Caddy for automatic HTTPS and put this in <code>/etc/caddy/Caddyfile</code>:
+<pre><code>ai.example.com {
+    reverse_proxy 127.0.0.1:2099
+}</code></pre>
+<pre><code>sudo apt install -y caddy
+sudo systemctl reload caddy</code></pre></li>
+    <li>Add <code>BETTER_AUTH_URL=https://ai.example.com</code> to the install's <code>.env</code> and run <code>docker compose up -d</code>.</li>
+  </ol>
+  <p>To reach the dashboard before you have a domain, use an SSH tunnel and open <a href="http://localhost:2099">http://localhost:2099</a>:</p>
+<pre><code>ssh -L 2099:127.0.0.1:2099 user@your-server-ip</code></pre>
+</section>
+
+<section id="dokploy">
+  <h2>Dokploy</h2>
+  <p class="lead">Dokploy runs the stack as a Docker Compose service and its Traefik proxy handles the domain and HTTPS.</p>
+  <ol>
+    <li>In your project, click <strong>Create Service</strong> and choose <strong>Compose</strong>. Name it <code>tiergate</code>.</li>
+    <li>In <strong>General</strong>, choose the <strong>Raw</strong> provider and paste <a href="https://github.com/faisalahammad/tiergate/blob/main/deploy/dokploy/docker-compose.yml"><code>deploy/dokploy/docker-compose.yml</code></a>. Save.</li>
+    <li>In <strong>Environment</strong>, add these values. Generate each secret with <code>openssl rand -hex 32</code>:
+<pre><code>BETTER_AUTH_SECRET=&lt;random hex&gt;
+MANIFEST_ENCRYPTION_KEY=&lt;random hex&gt;
+POSTGRES_PASSWORD=&lt;random hex&gt;
+BETTER_AUTH_URL=https://ai.example.com</code></pre></li>
+    <li>In <strong>Domains</strong>, add <code>ai.example.com</code> with service <code>tiergate</code>, container port <code>2099</code>, HTTPS on and the Let's Encrypt certificate.</li>
+    <li>Click <strong>Deploy</strong>. When the logs show the app is listening, open your domain and create the admin account.</li>
+  </ol>
+  <div class="note">Do not change <code>POSTGRES_PASSWORD</code> after the first deploy. Postgres only reads it when the volume is created.</div>
+</section>
+
+<section id="coolify">
+  <h2>Coolify</h2>
+  <p class="lead">Coolify generates the URL, database password and secrets for you with its magic variables.</p>
+  <ol>
+    <li>In your project, click <strong>New Resource</strong> and choose <strong>Docker Compose Empty</strong>.</li>
+    <li>Paste <a href="https://github.com/faisalahammad/tiergate/blob/main/deploy/coolify/docker-compose.yml"><code>deploy/coolify/docker-compose.yml</code></a> and save.</li>
+    <li>Check that Coolify filled in <code>SERVICE_URL_MANIFEST_2099</code>, <code>SERVICE_PASSWORD_POSTGRES</code>, <code>SERVICE_HEX_64_AUTH</code> and <code>SERVICE_HEX_64_ENCRYPTION</code>. Set your own domain on the <code>manifest</code> service if you want.</li>
+    <li>Click <strong>Deploy</strong>, open the generated URL and create the admin account.</li>
+  </ol>
+  <p>Check it is up:</p>
+<pre><code>curl -sSf https://your-coolify-domain/api/v1/health</code></pre>
+</section>
+
+<section id="connect">
+  <h2>Connect an agent</h2>
+  <ol>
+    <li>In the dashboard, open <strong>Providers</strong> and connect at least one: an API key, a subscription, or a local server like Ollama.</li>
+    <li>Open <strong>Harnesses</strong>, create one for your agent and copy its key (it starts with <code>mnfst_</code>).</li>
+    <li>Point your agent at TierGate as an OpenAI-compatible provider:</li>
+  </ol>
+  <table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Base URL</td><td><code>https://ai.example.com/v1</code> (or <code>http://localhost:2099/v1</code>)</td></tr>
+    <tr><td>API key</td><td>the <code>mnfst_...</code> key</td></tr>
+    <tr><td>Model</td><td><code>auto</code></td></tr>
+  </table>
+<pre><code>curl https://ai.example.com/v1/chat/completions \
+  -H "Authorization: Bearer mnfst_YOUR_KEY" -H "Content-Type: application/json" \
+  -d '{"model":"auto","messages":[{"role":"user","content":"Say hi"}]}'</code></pre>
+  <p>Then open the harness, go to <strong>Routing</strong> and turn on <strong>Route by complexity</strong> to pick models for the Simple, Standard, Complex and Reasoning tiers.</p>
+</section>
+
+<section id="upgrade">
+  <h2>Upgrade</h2>
+  <p>Back up the database first. Migrations run by themselves when the new version starts.</p>
+<pre><code>docker compose exec -T postgres pg_dump -U manifest manifest | gzip &gt; tiergate-$(date +%F).sql.gz
+docker compose pull &amp;&amp; docker compose up -d</code></pre>
+  <p>On Dokploy or Coolify, click <strong>Redeploy</strong>. Coming from Manifest? Run the installer with <code>--upgrade --dir "$PWD"</code> in your existing install folder. Your <code>.env</code> and data are kept. See the <a href="https://github.com/faisalahammad/tiergate/blob/main/docs/self-hosting.md#8-move-from-manifest-to-tiergate">migration steps</a>.</p>
+</section>
+
+</main>
+
+<footer class="wrap">
+  TierGate is a fork of <a href="https://github.com/mnfst/manifest">Manifest</a>, MIT licensed. ·
+  <a href="https://github.com/faisalahammad/tiergate">Source</a> ·
+  <a href="https://github.com/faisalahammad/tiergate/issues">Issues</a>
+</footer>
+
+<script>
+  document.querySelectorAll('pre').forEach(pre => {
+    const b = document.createElement('button');
+    b.className = 'copy'; b.type = 'button'; b.textContent = 'Copy';
+    b.onclick = () => navigator.clipboard.writeText(pre.querySelector('code').innerText).then(() => {
+      b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500);
+    });
+    pre.appendChild(b);
+  });
+  const links = [...document.querySelectorAll('nav.tabs a')];
+  const spy = new IntersectionObserver(entries => entries.forEach(e => {
+    if (e.isIntersecting) links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+  }), { rootMargin: '-40% 0px -55% 0px' });
+  document.querySelectorAll('main section').forEach(s => spy.observe(s));
+</script>
+</body>
+</html>

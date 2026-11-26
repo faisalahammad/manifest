@@ -1,0 +1,9 @@
+<svg width="600" height="138" viewBox="0 0 600 138" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>TierGate</title>
+  <rect x="10" y="14" width="14" height="110" rx="4" fill="#2430F0"/>
+  <rect x="96" y="14" width="14" height="110" rx="4" fill="#2430F0"/>
+  <rect x="32" y="30" width="56" height="16" rx="5" fill="#2BE1B7"/>
+  <rect x="32" y="61" width="42" height="16" rx="5" fill="#2BE1B7" opacity="0.8"/>
+  <rect x="32" y="92" width="28" height="16" rx="5" fill="#2BE1B7" opacity="0.6"/>
+  <text x="136" y="100" font-family="'Bricolage Grotesque', 'DM Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="88" font-weight="700" letter-spacing="-2" fill="#F1F1F1">TierGate</text>
+</svg>

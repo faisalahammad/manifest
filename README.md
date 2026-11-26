@@ -34,6 +34,8 @@ Open [http://localhost:2099](http://localhost:2099) and create the first account
 
 Step-by-step guide for a VPS or your own machine, with HTTPS, backups and upgrades: **[docs/self-hosting.md](docs/self-hosting.md)**.
 
+Setup for Docker, a VPS, Dokploy and Coolify on one page: **[faisalahammad.github.io/tiergate](https://faisalahammad.github.io/tiergate/)**.
+
 ## Providers
 
 TierGate connects to **300+ models through 35 built-in provider connections** plus any custom OpenAI/Anthropic-compatible endpoint. Bring your own API key, reuse one of **18 subscription flows**, or run models locally. Everything is routed through the same OpenAI-compatible endpoint — send `"model": "auto"` and TierGate picks the model.
@@ -80,6 +82,7 @@ Provider catalogs are discovered dynamically when credentials are connected. The
 
 ## Links
 
+- [Setup site](https://faisalahammad.github.io/tiergate/)
 - [Self-hosting guide](docs/self-hosting.md)
 - [Docker reference](docker/DOCKER_README.md)
 - [Contributing](CONTRIBUTING.md)
