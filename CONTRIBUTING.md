@@ -198,12 +198,12 @@ The hosted SPA is a static bundle with no first-party backend. Your API key is s
 
 ```bash
 npx changeset
-# → select "manifest"
+# → select "tiergate"
 # → choose patch / minor / major
 # → write a one-line summary
 ```
 
-Always target `manifest` — it's the canonical release version for the whole project, and it's the only package changesets will accept. `manifest-backend`, `manifest-frontend`, and `manifest-shared` are ignored regardless of what you pick. Commit the generated `.changeset/*.md` alongside your code. Changesets are optional for internal/tooling changes; skip this step if the change doesn't need a CHANGELOG entry.
+Always target `tiergate` — it's the canonical release version for the whole project, and it's the only package changesets will accept. `manifest-backend`, `manifest-frontend`, and `manifest-shared` are ignored regardless of what you pick. Commit the generated `.changeset/*.md` alongside your code. Changesets are optional for internal/tooling changes; skip this step if the change doesn't need a CHANGELOG entry.
 
 See [`packages/manifest/README.md`](packages/manifest/README.md) for why this package exists.
 

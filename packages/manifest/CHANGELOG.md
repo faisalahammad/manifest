@@ -1,4 +1,23 @@
-# manifest
+# tiergate
+
+## 1.0.0
+
+### Major Changes
+
+- First TierGate release. Version numbers start again at 1.0.0 and release tags read `tiergate@x.y.z`. Changelog entries older than 1.0.0 come from the upstream Manifest project.
+
+### Minor Changes
+
+- 479ba8e: Add Token Harbor as a subscription provider. Paste a Token Harbor API key to route through your Pass, with models discovered from the Token Harbor catalog.
+- aef683b: Self-hosted installs get an Instance settings page for the super admin (the first user who signed up): turn sign-up on or off, and choose how many days requests and their logs are kept (1, 7, 15, 30, 60 or 90 days, or forever).
+- 6a5aff1: Auto routes now fail over across a provider's keys: when one key fails with an auth, billing, quota, rate limit or provider error (or its stream dies before the first byte), TierGate tries the same model on the next key before moving to the next fallback, and remembers which key works. Pinned routes still use only their key. The key list shows the last served key and each key's last failure, and a Reset rotation action (also `mnfst agent provider reset-rotation` and the `manifest_provider_reset_rotation` MCP tool) starts again from the first key. Reordering keys now works with more than five keys. New settings: `KEY_FAILOVER_MAX_ATTEMPTS` (default 10) and `ROUTING_DEADLINE_MS` (default 300000).
+- 2aea8d5: Finish the TierGate rebrand. Removes the discovery form and the "Custom development" contact form. Telemetry and Autofix are now opt-in: set `TELEMETRY_ENDPOINT` for telemetry and `AUTOFIX_GLOBAL_ENABLED=true` for Autofix. Production no longer allows the hosted Wingman origin, and the CLI default URL is `http://localhost:2099`.
+
+### Patch Changes
+
+- 2ee3670: Add Muse Spark 1.3 and the 1.3 Contributor route to the Meta Model API catalog. Meta may train on Contributor inputs and outputs.
+- d21deea: Security: stop requests without an account from crashing or blocking the server. `/v1` bodies are now capped at 64 MB (was 512 MB). Above 1 MB they are read only with a valid harness key and share a 64 MB in-flight budget (429 beyond it). Compressed request bodies are refused with 415 on every route, and `/api/auth` bodies are capped at 1 MB. A request body that stops arriving for 30 seconds is dropped. Bodies still arriving share 32 MB and 1024 slots; when full, the quietest one is dropped with 408, and `/v1` bodies above 16 KB with a valid key go last. Updates `compression`, `body-parser`, the MCP SDK and other dependencies with security fixes, and Docker Compose now restarts both services.
+- 020db36: Routing and provider changes now apply right away on every server instance. Previously a change to a tier's model, fallbacks, provider keys or custom routing could take up to two minutes to show in the dashboard and to reach live requests.
 
 ## 6.29.4
 

@@ -8,7 +8,7 @@ TierGate is a smart model router for **AI agents**. It sits between an agent and
 
 **"Harness" is the dashboard word for an agent.** The UI now labels agents **Harnesses** (nav item "Harnesses", routes under `/harnesses`, categories `AI agent` / `Automation` / `App AI SDK` / `Coding Assistant` from `CATEGORY_LABELS` in `packages/shared/src/agent-type.ts`). This is a **copy-level rename only**: backend code, database tables (`agents`, `agent_messages`, …), API routes (`/api/v1/agents/*`), and entity/service names all still say _agent_. Legacy `/agents/*` dashboard URLs redirect to `/harnesses/*`. When writing UI copy say "harness"; when writing code or API docs keep "agent".
 
-**Product note:** this repo is **TierGate**, a self-hosted fork of [Manifest LLM Gateway](https://github.com/mnfst/llm-gateway). Everything a person reads says TierGate; identifiers (`MANIFEST_*`, `mnfst_`, `X-Manifest-*`, `M###`, package, database and Compose names, the `mnfst` command) keep the upstream names so existing installs upgrade in place. Nothing sends data to Manifest by default: telemetry and Autofix are opt-in, and the discovery form and "Custom development" contact form are removed. `POST /api/v1/waitlist/pivot/claim` stays only for older self-hosted versions.
+**Product note:** this repo is **TierGate**, a self-hosted fork of [Manifest LLM Gateway](https://github.com/mnfst/llm-gateway). Everything a person reads says TierGate; identifiers (`MANIFEST_*`, `mnfst_`, `X-Manifest-*`, `M###`, package, database and Compose names, the `mnfst` command) keep the upstream names so existing installs upgrade in place. The one exception is the release package in `packages/manifest/`, which is named `tiergate`. Nothing sends data to Manifest by default: telemetry and Autofix are opt-in, and the discovery form and "Custom development" contact form are removed. `POST /api/v1/waitlist/pivot/claim` stays only for older self-hosted versions.
 
 **Supported agents**: see `AGENT_PLATFORMS` in `packages/shared/src/agent-type.ts` for the current list (OpenClaw, Hermes, Claude Code, OpenCode, generic OpenAI/Anthropic SDK slots, and others — don't duplicate the list here, it grows independently of this doc). OpenClaw remains the deepest integration, but no new code or copy should frame TierGate as OpenClaw-only. When adding examples, prefer "AI agent" as the noun and pick OpenClaw as the worked example rather than the sole target. TierGate is consumed as a generic OpenAI-compatible HTTP endpoint — there are no first-party OpenClaw plugins in this repo anymore.
 
@@ -886,7 +886,7 @@ All pricing comes from a single source:
 
 ## Releases
 
-Most workspace packages are **not published to npm**: `packages/backend`, `packages/frontend`, `packages/shared`, and `packages/manifest` are all `private: true`. TierGate itself ships as the Docker image at `ghcr.io/faisalahammad/tiergate` (built from `docker/Dockerfile`).
+Most workspace packages are **not published to npm**: `packages/backend`, `packages/frontend`, `packages/shared`, and `packages/manifest` (package name `tiergate`) are all `private: true`. TierGate itself ships as the Docker image at `ghcr.io/faisalahammad/tiergate` (built from `docker/Dockerfile`).
 
 `packages/cli` is the exception: it publishes to npm as **`mnfst-gateway-cli`**. The name is unscoped and gateway-qualified: the bare `mnfst` belongs to an unrelated project, `manifest` is the Manifest SDK, and a `@mnfst` scope would need an npm organization that does not exist (a scoped publish fails with a 404). The binary stays `mnfst`. Its version **tracks the TierGate release** — it has no changeset target of its own and stays in the `.changeset/config.json` ignore list. The `publish-npm` job in `release.yml` runs on the same `should_publish` gate as the Docker image: it stamps the version from `packages/manifest/package.json` onto all three files that carry it (`packages/cli/package.json`, `src/version.ts`, and the generated `SKILL_VERSION` in `src/skill-content.gen.ts`, which `skill-content.spec.ts` pins to package.json) via `npm run set-version --workspace=packages/cli`, builds shared then the CLI, and publishes with provenance. Re-running the workflow for an already-published version is a no-op. Publishing needs the `NPM_TOKEN` repository secret.
 
@@ -894,15 +894,15 @@ The one npm-published artifact in the repo is the **n8n community node** `n8n-no
 
 ### `packages/manifest/` is the canonical version
 
-`packages/manifest/` is a **code-free shell package** that exists only to hold the canonical "TierGate version". It has no `src/`, no tests, no dependencies — just `package.json`, `README.md`, and (after the first release) a `CHANGELOG.md`. The real backend and frontend live under `packages/backend/` and `packages/frontend/` as before.
+`packages/manifest/` is a **code-free shell package** named `tiergate` that exists only to hold the canonical "TierGate version". Its numbering started again at 1.0.0; changelog entries older than that come from upstream. It has no `src/`, no tests, no dependencies — just `package.json`, `README.md`, and (after the first release) a `CHANGELOG.md`. The real backend and frontend live under `packages/backend/` and `packages/frontend/` as before.
 
-`.changeset/config.json` has `"ignore": ["manifest-backend", "manifest-frontend", "manifest-shared", "mnfst-cli"]`, so when a contributor runs `npx changeset`, **only `manifest` is a selectable target**. Bumps to `manifest-backend` / `manifest-frontend` / `manifest-shared` / `mnfst-cli` are silently discarded. Always target `manifest` regardless of which files you actually changed. A CI check (`scripts/check-changesets.js`, wired into the `changeset-check` job) enforces this: a changeset that targets an ignored package fails the PR, because it makes `changeset version` a no-op and breaks the Release workflow with "No commits between main and changeset-release/main".
+`.changeset/config.json` has `"ignore": ["manifest-backend", "manifest-frontend", "manifest-shared", "mnfst-cli"]`, so when a contributor runs `npx changeset`, **only `tiergate` is a selectable target**. Bumps to `manifest-backend` / `manifest-frontend` / `manifest-shared` / `mnfst-cli` are silently discarded. Always target `tiergate` regardless of which files you actually changed. A CI check (`scripts/check-changesets.js`, wired into the `changeset-check` job) enforces this: a changeset that targets an ignored package fails the PR, because it makes `changeset version` a no-op and breaks the Release workflow with "No commits between main and changeset-release/main".
 
 ### Adding a changeset
 
 ```bash
 npx changeset
-# → select "manifest"
+# → select "tiergate"
 # → choose patch / minor / major
 # → write a one-line summary (this becomes the CHANGELOG entry)
 ```

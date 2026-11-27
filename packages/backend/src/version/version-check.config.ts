@@ -53,7 +53,7 @@ export function compareVersions(a: string, b: string): number | null {
   return 0;
 }
 
-/** `manifest@6.22.0` → `6.22.0`; anything else → null. */
+/** `tiergate@1.0.0` → `1.0.0`; anything else → null. */
 export function parseReleaseTag(tag: unknown): string | null {
   if (typeof tag !== 'string') return null;
   const match = RELEASE_TAG.exec(tag);
