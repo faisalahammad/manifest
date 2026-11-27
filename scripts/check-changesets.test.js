@@ -40,25 +40,25 @@ test('flags a changeset with multiple ignored targets', () => {
   ]);
 });
 
-test('flags a mix of manifest and an ignored target', () => {
+test('flags a mix of tiergate and an ignored target', () => {
   const dir = makeChangesetDir({
     'mixed.md':
-      "---\n'manifest': patch\n'manifest-backend': patch\n---\n\nSummary.\n",
+      "---\n'tiergate': patch\n'manifest-backend': patch\n---\n\nSummary.\n",
   });
   const violations = findViolations(dir);
   assert.equal(violations.length, 1);
   assert.deepEqual(violations[0].ignoredTargets, ['manifest-backend']);
 });
 
-test('accepts a changeset that targets manifest', () => {
+test('accepts a changeset that targets tiergate', () => {
   const dir = makeChangesetDir({
-    'good.md': "---\n'manifest': patch\n---\n\nSummary.\n",
+    'good.md': "---\n'tiergate': patch\n---\n\nSummary.\n",
   });
   assert.deepEqual(findViolations(dir), []);
 });
 
-test('accepts an unquoted manifest target', () => {
-  const dir = makeChangesetDir({ 'good.md': '---\nmanifest: minor\n---\n\nx\n' });
+test('accepts an unquoted tiergate target', () => {
+  const dir = makeChangesetDir({ 'good.md': '---\ntiergate: minor\n---\n\nx\n' });
   assert.deepEqual(findViolations(dir), []);
 });
 
@@ -75,10 +75,10 @@ test('ignores README.md even if it looks like a changeset', () => {
 });
 
 test('parseTargets handles quoted, double-quoted and bare names', () => {
-  assert.deepEqual(parseTargets("'manifest': patch"), ['manifest']);
+  assert.deepEqual(parseTargets("'tiergate': patch"), ['tiergate']);
   assert.deepEqual(parseTargets('"manifest-backend": patch'), [
     'manifest-backend',
   ]);
-  assert.deepEqual(parseTargets('manifest: minor'), ['manifest']);
+  assert.deepEqual(parseTargets('tiergate: minor'), ['tiergate']);
   assert.deepEqual(parseTargets(''), []);
 });

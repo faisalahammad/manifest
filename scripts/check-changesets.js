@@ -62,12 +62,12 @@ function main() {
     console.error(`  .changeset/${file} -> ${ignoredTargets.join(', ')}`);
   }
   console.error(
-    '\nOnly "manifest" is releasable. manifest-backend / -frontend / -shared\n' +
+    '\nOnly "tiergate" is releasable. manifest-backend / -frontend / -shared\n' +
       'and mnfst-gateway-cli are ignored in .changeset/config.json, so\n' +
       '`changeset version` silently drops them. A changeset that targets them\n' +
       'makes versioning a no-op and breaks the Release workflow ("No commits\n' +
       'between main and changeset-release/main").\n\n' +
-      "Fix: change the front matter to `'manifest': patch` (or minor / major).",
+      "Fix: change the front matter to `'tiergate': patch` (or minor / major).",
   );
   process.exit(1);
 }
