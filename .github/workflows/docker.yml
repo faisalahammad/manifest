@@ -126,6 +126,9 @@ jobs:
       contents: read
       id-token: write
       packages: write
+    env:
+      # Without this secret the image is published to GHCR only.
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -156,10 +159,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        if: env.DOCKERHUB_TOKEN != ''
+        with:
+          username: faisalahammad
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
       - uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
         id: meta
         with:
-          images: ${{ env.IMAGE }}
+          images: |
+            ${{ env.IMAGE }}
+            name=faisalahammad/tiergate,enable=${{ env.DOCKERHUB_TOKEN != '' }}
           flavor: |
             latest=true
           tags: |
