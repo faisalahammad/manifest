@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import { EventEmitter } from 'events';
 import { once } from 'events';
 import { connect, Socket } from 'net';
@@ -38,6 +39,8 @@ function createApp({ authenticate = allow, inFlightLimitBytes, ...limits }: AppO
   const watch = createBodyWatcher(limits);
   const app = express();
   app.use(watchLeftoverBodies(watch));
+  // Far above what any test sends. Code scanning wants a limiter before a key check.
+  app.use(rateLimit({ limit: 100_000 }));
   app.post('/api/v1/limited', (_req, res) => {
     res.status(429).end();
   });
