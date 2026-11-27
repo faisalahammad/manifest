@@ -17,11 +17,16 @@ import { mountMcpDiscovery, mountMcpUnavailable } from './mcp/mcp-discovery';
 import { SpaFallbackFilter } from './common/filters/spa-fallback.filter';
 import { httpErrorLogger } from './common/middleware/http-error-logger.middleware';
 import {
-  API_BODY_LIMIT,
-  PROXY_BODY_LIMIT,
   bodyParserErrorHandler,
-  createProxyBodyBudgetMiddleware,
+  createApiBodyMiddleware,
+  createAuthBodyMiddleware,
+  createBodyWatcher,
+  createProxyBodyMiddleware,
+  watchLeftoverBodies,
 } from './common/middleware/body-parser-limits';
+import { AgentKeyAuthGuard } from './otlp/guards/agent-key-auth.guard';
+import { createProxyBodyAuthenticator } from './routing/proxy/proxy-body-auth';
+import { ProxyExceptionFilter } from './routing/proxy/proxy-exception.filter';
 import {
   applyPivotClaimCors,
   applyPrivateNetworkAllow,
@@ -56,6 +61,11 @@ export async function bootstrap() {
   const backendPort = Number(process.env['PORT']) || 3001;
   const wingmanPort = Number(process.env['WINGMAN_PORT']) || backendPort + 1;
   const frameSrc = buildFrameSrc({ isDev, wingmanPort });
+
+  // One watcher for every body reader, so the limits on unfinished bodies cover
+  // all routes together. It goes first to also see bodies answered early.
+  const watchBody = createBodyWatcher();
+  app.use(watchLeftoverBodies(watchBody));
 
   app.use(
     helmet({
@@ -212,7 +222,8 @@ export async function bootstrap() {
   expressApp.use('/api/auth/verify-email', verifyEmailLimiter);
   expressApp.use('/api/auth/send-verification-email', verifyEmailLimiter);
 
-  // Mount Better Auth handler (needs raw body, before express.json)
+  // Mount Better Auth handler (before express.json: it takes the body as text,
+  // read under a byte cap because its own handler has none)
   const { toNodeHandler } = await import('better-auth/node');
   const authHandler = (request: Request) =>
     auth
@@ -220,18 +231,26 @@ export async function bootstrap() {
       .then((response) => mcpOAuthResponse(request, response, mcpAnonymousClientRegistration));
   expressApp.all(
     '/api/auth/*splat',
+    createAuthBodyMiddleware(watchBody),
     // Better Auth's adapter checks for a handler property and delegates to it.
     toNodeHandler({ handler: authHandler } as typeof auth),
   );
 
   // Re-add body parsing for NestJS routes. The OpenAI-compatible proxy has a
   // separate parser because clients may legitimately send large inline image
-  // payloads. Regular Manifest API/auth routes stay small.
-  expressApp.use('/v1', createProxyBodyBudgetMiddleware());
-  expressApp.use('/v1', express.json({ limit: PROXY_BODY_LIMIT }));
-  expressApp.use('/v1', express.urlencoded({ extended: true, limit: PROXY_BODY_LIMIT }));
-  expressApp.use(express.json({ limit: API_BODY_LIMIT }));
-  expressApp.use(express.urlencoded({ extended: true, limit: API_BODY_LIMIT }));
+  // payloads; it reads those only for a valid harness key. Regular Manifest
+  // API/auth routes stay small.
+  expressApp.use(
+    '/v1',
+    createProxyBodyMiddleware({
+      watch: watchBody,
+      authenticate: createProxyBodyAuthenticator(
+        app.get(AgentKeyAuthGuard, { strict: false }),
+        app.get(ProxyExceptionFilter, { strict: false }),
+      ),
+    }),
+  );
+  expressApp.use(createApiBodyMiddleware(watchBody));
   expressApp.use(bodyParserErrorHandler);
 
   // Both the OAuth discovery documents and the MCP module go together: with the

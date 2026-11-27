@@ -2,18 +2,12 @@ import { spawn } from 'child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { json } from 'express';
-import {
-  API_BODY_LIMIT,
-  PROXY_BODY_LIMIT,
-  createProxyBodyBudgetMiddleware,
-} from '../src/common/middleware/body-parser-limits';
 import { INestApplication } from '@nestjs/common';
 import { createServer, Server } from 'http';
 import { AddressInfo } from 'net';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
-import { createTestApp, TEST_API_KEY } from './helpers';
+import { createTestApp, mountProductionBodyParsers, TEST_API_KEY } from './helpers';
 import { collectResponsesSseResponse } from '../src/routing/proxy/responses-adapter';
 
 type Json = Record<string, any>;
@@ -103,12 +97,7 @@ describe('Codex Responses tool loop (e2e)', () => {
       }
     });
     await new Promise<void>((resolve) => upstream.listen(0, '127.0.0.1', resolve));
-    app = await createTestApp({
-      configureApp: (app) => {
-        app.use('/v1', createProxyBodyBudgetMiddleware(), json({ limit: PROXY_BODY_LIMIT }));
-        app.use(json({ limit: API_BODY_LIMIT }));
-      },
-    });
+    app = await createTestApp({ configureApp: mountProductionBodyParsers });
     const created = await request(app.getHttpServer())
       .post('/api/v1/agents')
       .set('x-api-key', TEST_API_KEY)

@@ -57,6 +57,16 @@ import { SetupModule } from '../src/setup/setup.module';
 import { WaitlistModule } from '../src/waitlist/waitlist.module';
 import { CrmMetricsModule } from '../src/crm-metrics/crm-metrics.module';
 import { ProviderModelFetcherService } from '../src/model-discovery/provider-model-fetcher.service';
+import {
+  bodyParserErrorHandler,
+  createApiBodyMiddleware,
+  createBodyWatcher,
+  createProxyBodyMiddleware,
+  watchLeftoverBodies,
+} from '../src/common/middleware/body-parser-limits';
+import { AgentKeyAuthGuard } from '../src/otlp/guards/agent-key-auth.guard';
+import { createProxyBodyAuthenticator } from '../src/routing/proxy/proxy-body-auth';
+import { ProxyExceptionFilter } from '../src/routing/proxy/proxy-exception.filter';
 
 export const TEST_USER_ID = 'test-user-001';
 export const TEST_API_KEY = 'test-api-key-001';
@@ -223,6 +233,24 @@ class MockSessionGuard implements CanActivate {
     };
     return true;
   }
+}
+
+/** The body parsers `main.ts` mounts, with the same pre-parse proxy key check. */
+export function mountProductionBodyParsers(app: INestApplication): void {
+  const watch = createBodyWatcher();
+  app.use(watchLeftoverBodies(watch));
+  app.use(
+    '/v1',
+    createProxyBodyMiddleware({
+      watch,
+      authenticate: createProxyBodyAuthenticator(
+        app.get(AgentKeyAuthGuard, { strict: false }),
+        app.get(ProxyExceptionFilter, { strict: false }),
+      ),
+    }),
+  );
+  app.use(createApiBodyMiddleware(watch));
+  app.use(bodyParserErrorHandler);
 }
 
 export async function createTestApp(options: CreateTestAppOptions = {}): Promise<INestApplication> {

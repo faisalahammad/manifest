@@ -46,6 +46,7 @@ name: mnfst
 services:
   manifest:
     image: ghcr.io/faisalahammad/tiergate:${MANIFEST_VERSION:-latest}
+    restart: unless-stopped
     ports:
       - "${HOST_BIND_ADDRESS:-127.0.0.1}:${HOST_PORT:-${PORT:-2099}}:${PORT:-2099}"
     # Lets the container reach LLM servers running on the host (Ollama,
@@ -214,6 +215,7 @@ services:
 
   postgres:
     image: postgres:16-alpine@sha256:20edbde7749f822887a1a022ad526fde0a47d6b2be9a8364433605cf65099416
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=manifest
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-manifest}

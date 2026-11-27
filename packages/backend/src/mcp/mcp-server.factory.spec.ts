@@ -1,4 +1,4 @@
-import { buildMcpServer } from './mcp-server.factory';
+import { buildMcpServer, MAX_TOOL_INPUT_ELEMENTS } from './mcp-server.factory';
 import { McpToolDeps } from './tool-deps';
 import { McpOperator } from './mcp-auth';
 
@@ -53,6 +53,17 @@ describe('buildMcpServer', () => {
       scopes: new Set(['mcp:read']),
     }) as unknown as FakeServer;
     expect(server.opts).toMatchObject({ capabilities: { tools: { listChanged: false } } });
+  });
+
+  // The SDK option is off by default, so upgrading alone leaves the server open.
+  it('caps tool argument elements, with room for the largest custom provider model list', () => {
+    const server = buildMcpServer(deps, {
+      userId: 'u',
+      tenantId: 't',
+      scopes: new Set(['mcp:read']),
+    }) as unknown as FakeServer;
+    expect(server.opts).toMatchObject({ maxToolInputElements: MAX_TOOL_INPUT_ELEMENTS });
+    expect(MAX_TOOL_INPUT_ELEMENTS).toBeGreaterThan(500);
   });
 
   it('hides write tools from a read-only token', () => {
