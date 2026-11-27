@@ -17,10 +17,12 @@ import { mountMcpDiscovery, mountMcpUnavailable } from './mcp/mcp-discovery';
 import { SpaFallbackFilter } from './common/filters/spa-fallback.filter';
 import { httpErrorLogger } from './common/middleware/http-error-logger.middleware';
 import {
-  API_BODY_LIMIT,
   bodyParserErrorHandler,
+  createApiBodyMiddleware,
   createAuthBodyMiddleware,
+  createBodyWatcher,
   createProxyBodyMiddleware,
+  watchLeftoverBodies,
 } from './common/middleware/body-parser-limits';
 import { AgentKeyAuthGuard } from './otlp/guards/agent-key-auth.guard';
 import { createProxyBodyAuthenticator } from './routing/proxy/proxy-body-auth';
@@ -59,6 +61,11 @@ export async function bootstrap() {
   const backendPort = Number(process.env['PORT']) || 3001;
   const wingmanPort = Number(process.env['WINGMAN_PORT']) || backendPort + 1;
   const frameSrc = buildFrameSrc({ isDev, wingmanPort });
+
+  // One watcher for every body reader, so the limits on unfinished bodies cover
+  // all routes together. It goes first to also see bodies answered early.
+  const watchBody = createBodyWatcher();
+  app.use(watchLeftoverBodies(watchBody));
 
   app.use(
     helmet({
@@ -224,7 +231,7 @@ export async function bootstrap() {
       .then((response) => mcpOAuthResponse(request, response, mcpAnonymousClientRegistration));
   expressApp.all(
     '/api/auth/*splat',
-    createAuthBodyMiddleware(),
+    createAuthBodyMiddleware(watchBody),
     // Better Auth's adapter checks for a handler property and delegates to it.
     toNodeHandler({ handler: authHandler } as typeof auth),
   );
@@ -236,14 +243,14 @@ export async function bootstrap() {
   expressApp.use(
     '/v1',
     createProxyBodyMiddleware({
+      watch: watchBody,
       authenticate: createProxyBodyAuthenticator(
         app.get(AgentKeyAuthGuard, { strict: false }),
         app.get(ProxyExceptionFilter, { strict: false }),
       ),
     }),
   );
-  expressApp.use(express.json({ limit: API_BODY_LIMIT }));
-  expressApp.use(express.urlencoded({ extended: true, limit: API_BODY_LIMIT }));
+  expressApp.use(createApiBodyMiddleware(watchBody));
   expressApp.use(bodyParserErrorHandler);
 
   // Both the OAuth discovery documents and the MCP module go together: with the

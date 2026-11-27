@@ -8,32 +8,45 @@ import { Readable } from 'stream';
 import request from 'supertest';
 import { gzipSync } from 'zlib';
 import {
-  API_BODY_LIMIT,
   API_BODY_LIMIT_BYTES,
+  BodyWatcherLimits,
   PROXY_BODY_LIMIT,
   PROXY_BODY_LIMIT_BYTES,
   ProxyBodyOptions,
   bodyParserErrorHandler,
+  createApiBodyMiddleware,
   createAuthBodyMiddleware,
+  createBodyWatcher,
   createProxyBodyMiddleware,
-  discardBody,
+  watchLeftoverBodies,
 } from './body-parser-limits';
 
 const MB = 1024 * 1024;
 
-const allow = async () => true;
+const allow = async () => null;
+const refuseWith401 = jest.fn(async (_req: Request, res: Response) => () => {
+  res.status(401).json({ error: 'nope' });
+});
 
-function createApp(options: Partial<ProxyBodyOptions> = {}, authIdleTimeoutMs?: number) {
+type AppOptions = BodyWatcherLimits &
+  Partial<Pick<ProxyBodyOptions, 'authenticate' | 'inFlightLimitBytes'>>;
+
+/** The middleware in the order `main.ts` mounts it. */
+function createApp({ authenticate = allow, inFlightLimitBytes, ...limits }: AppOptions = {}) {
   const handled = jest.fn();
   const failed = jest.fn();
+  const watch = createBodyWatcher(limits);
   const app = express();
-  app.all('/api/auth/*splat', createAuthBodyMiddleware(authIdleTimeoutMs), (req, res) => {
+  app.use(watchLeftoverBodies(watch));
+  app.post('/api/v1/limited', (_req, res) => {
+    res.status(429).end();
+  });
+  app.all('/api/auth/*splat', createAuthBodyMiddleware(watch), (req, res) => {
     handled();
     res.json({ type: typeof req.body, body: req.body ?? null });
   });
-  app.use('/v1', createProxyBodyMiddleware({ authenticate: allow, ...options }));
-  app.use(express.json({ limit: API_BODY_LIMIT }));
-  app.use(express.urlencoded({ extended: true, limit: API_BODY_LIMIT }));
+  app.use('/v1', createProxyBodyMiddleware({ watch, authenticate, inFlightLimitBytes }));
+  app.use(createApiBodyMiddleware(watch));
   app.use(bodyParserErrorHandler);
   const reply = (req: Request, res: Response) => {
     handled();
@@ -42,6 +55,12 @@ function createApp(options: Partial<ProxyBodyOptions> = {}, authIdleTimeoutMs?: 
   app.post('/v1/chat/completions', reply);
   app.get('/v1/models', reply);
   app.post('/api/v1/test', reply);
+  app.post('/api/v1/echo', (req, res) => {
+    res.json(req.body);
+  });
+  app.post('/api/v1/slow', (_req, res) => {
+    setTimeout(() => res.status(200).end(), 300);
+  });
   // Anything that reaches Express's own error handler is a bug in these tests.
   app.use((err: unknown, _req: Request, res: Response, _next: express.NextFunction) => {
     failed(err);
@@ -51,6 +70,8 @@ function createApp(options: Partial<ProxyBodyOptions> = {}, authIdleTimeoutMs?: 
 }
 
 const chatBody = (bytes: number) => ({ messages: [{ role: 'user', content: 'x'.repeat(bytes) }] });
+/** A valid chat body padded with spaces to exactly `bytes`. */
+const padded = (bytes: number) => JSON.stringify(chatBody(10)).padEnd(bytes);
 
 const servers: Server[] = [];
 const sockets: Socket[] = [];
@@ -67,7 +88,13 @@ function open(port: number, path: string, headers: string[], method = 'POST') {
   const socket = connect(port, '127.0.0.1');
   sockets.push(socket);
   let reply = '';
-  const closed = new Promise<void>((resolve) => socket.on('close', () => resolve()));
+  let isClosed = false;
+  const closed = new Promise<void>((resolve) =>
+    socket.on('close', () => {
+      isClosed = true;
+      resolve();
+    }),
+  );
   const replied = new Promise<string>((resolve) => {
     socket.on('data', (chunk) => {
       reply += chunk.toString();
@@ -81,16 +108,21 @@ function open(port: number, path: string, headers: string[], method = 'POST') {
       '\r\n',
     ),
   );
-  return { socket, closed, replied, text: () => reply };
+  return { socket, closed, replied, text: () => reply, isClosed: () => isClosed };
 }
 
-const openJson = (port: number, length: number) =>
-  open(port, '/v1/chat/completions', [
-    'Content-Type: application/json',
-    `Content-Length: ${length}`,
-  ]);
+const openJson = (port: number, length: number, path = '/v1/chat/completions') =>
+  open(port, path, ['Content-Type: application/json', `Content-Length: ${length}`]);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Opens a body, sends all of it but the last byte, and lets the server read it. */
+async function openUnfinished(port: number, body: string, path?: string) {
+  const upload = openJson(port, body.length, path);
+  upload.socket.write(body.slice(0, -1));
+  await wait(60);
+  return { ...upload, finish: () => upload.socket.write(body.slice(-1)) };
+}
 
 function createMockResponse() {
   const res = new EventEmitter() as express.Response & EventEmitter;
@@ -129,32 +161,58 @@ describe('proxy body middleware', () => {
     const authenticate = jest.fn(allow);
     const { app } = createApp({ authenticate });
 
-    await request(app).post('/v1/chat/completions').send(chatBody(10)).expect(200);
+    await request(app)
+      .post('/v1/chat/completions')
+      .set('Authorization', 'Bearer key')
+      .send(chatBody(10))
+      .expect(200);
 
     expect(authenticate).not.toHaveBeenCalled();
   });
 
-  it('reads nothing large from a caller that fails authentication', async () => {
-    const authenticate = jest.fn(async (_req: Request, res: Response) => {
-      res.status(401).json({ error: 'nope' });
-      return false;
-    });
-    const { app, handled } = createApp({ authenticate });
-    const port = await listen(app);
+  it.each([
+    ['refused', refuseWith401],
+    ['unchecked after a failure', async () => Promise.reject(new Error('database down'))],
+  ])('leaves a mid-sized body with a key that is %s to the route guard', async (_l, check) => {
+    const { app, failed } = createApp({ authenticate: check });
 
-    // Only the headers are sent: no parser waits for the rest.
-    const upload = openJson(port, 2 * MB);
+    await request(app)
+      .post('/v1/chat/completions')
+      .set('Authorization', 'Bearer key')
+      .send(chatBody(100 * 1024))
+      .expect(200);
+
+    expect(failed).not.toHaveBeenCalled();
+  });
+
+  // Answering mid-upload resets a closing client before it hears why.
+  it('refuses a caller only after taking its body, and never routes it', async () => {
+    const { app, handled } = createApp({ authenticate: refuseWith401 });
+    const port = await listen(app);
+    const body = padded(8 * MB);
+
+    const upload = openJson(port, body.length);
+    upload.socket.write(body);
 
     expect(await upload.replied).toContain('401');
     expect(handled).not.toHaveBeenCalled();
   });
 
+  it('gives up on a refused body that stops arriving', async () => {
+    const { app } = createApp({ authenticate: refuseWith401, idleTimeoutMs: 100 });
+    const port = await listen(app);
+
+    const upload = openJson(port, 2 * MB);
+
+    expect(await upload.replied).toContain('408');
+  });
+
   it('stops quietly when the caller leaves during authentication', async () => {
-    let release: (value: boolean) => void = () => undefined;
+    let release: (value: null) => void = () => undefined;
     let gone: Promise<unknown> = Promise.resolve();
     const authenticate = jest.fn((_req: Request, res: Response) => {
       gone = once(res, 'close');
-      return new Promise<boolean>((resolve) => (release = resolve));
+      return new Promise<null>((resolve) => (release = resolve));
     });
     const { app, handled, failed } = createApp({ authenticate });
     const port = await listen(app);
@@ -163,7 +221,7 @@ describe('proxy body middleware', () => {
     await wait(50);
     upload.socket.destroy();
     await gone;
-    release(true);
+    release(null);
     await wait(20);
 
     expect(handled).not.toHaveBeenCalled();
@@ -215,16 +273,13 @@ describe('proxy body middleware', () => {
   });
 
   it('reserves nothing for a caller that fails authentication', async () => {
-    const authenticate = jest.fn(async (req: Request, res: Response) => {
-      if (req.headers.authorization) return true;
-      res.status(401).end();
-      return false;
-    });
+    const authenticate: ProxyBodyOptions['authenticate'] = async (req, res) =>
+      req.headers.authorization ? null : refuseWith401(req, res);
     const { app } = createApp({ authenticate, inFlightLimitBytes: 4 * MB });
     const port = await listen(app);
 
-    const stranger = openJson(port, 4 * MB);
-    expect(await stranger.replied).toContain('401');
+    openJson(port, 4 * MB);
+    await wait(50);
 
     await request(app)
       .post('/v1/chat/completions')
@@ -236,7 +291,7 @@ describe('proxy body middleware', () => {
   it('holds a large body size in the budget until its response ends', async () => {
     const { app, handled } = createApp({ inFlightLimitBytes: 4 * MB });
     const port = await listen(app);
-    const body = JSON.stringify(chatBody(10)).padEnd(3 * MB);
+    const body = padded(3 * MB);
 
     const holder = openJson(port, body.length);
     await wait(50);
@@ -276,29 +331,6 @@ describe('proxy body middleware', () => {
     expect(failed).not.toHaveBeenCalled();
   });
 
-  it('times out small bodies too', async () => {
-    const { app } = createApp({ idleTimeoutMs: 100 });
-    const port = await listen(app);
-
-    const stalled = openJson(port, 100);
-
-    expect(await stalled.replied).toContain('408');
-  });
-
-  it('keeps a slow body that is still arriving', async () => {
-    const { app } = createApp({ idleTimeoutMs: 300 });
-    const port = await listen(app);
-    const body = JSON.stringify(chatBody(10));
-
-    const slow = openJson(port, body.length);
-    for (const part of body.match(/.{1,9}/g) as string[]) {
-      slow.socket.write(part);
-      await wait(80);
-    }
-
-    expect(await slow.replied).toContain('200');
-  });
-
   it('rejects chunked bodies, which declare no length', async () => {
     const { app } = createApp();
     const port = await listen(app);
@@ -325,7 +357,7 @@ describe('proxy body middleware', () => {
   // limit, whatever the headers claim.
   it('never reads more than the API limit without authenticating', async () => {
     const authenticate = jest.fn(allow);
-    const middleware = createProxyBodyMiddleware({ authenticate });
+    const middleware = createProxyBodyMiddleware({ watch: jest.fn(), authenticate });
     const body = Buffer.from(JSON.stringify(chatBody(2 * MB)));
     const req = Object.assign(Readable.from([body]), {
       method: 'POST',
@@ -350,14 +382,11 @@ describe('proxy body middleware', () => {
   });
 
   it('applies the same rules to a GET that carries a large body', async () => {
-    const authenticate = jest.fn(async (_req: Request, res: Response) => {
-      res.status(401).end();
-      return false;
-    });
-    const { app, handled } = createApp({ authenticate });
+    const { app, handled } = createApp({ authenticate: refuseWith401 });
     const port = await listen(app);
 
     const download = open(port, '/v1/models', [`Content-Length: ${2 * MB}`], 'GET');
+    download.socket.write('x'.repeat(2 * MB));
 
     expect(await download.replied).toContain('401');
     expect(handled).not.toHaveBeenCalled();
@@ -390,7 +419,7 @@ describe('proxy body middleware', () => {
   });
 
   it('rejects invalid Content-Length headers', async () => {
-    const middleware = createProxyBodyMiddleware({ authenticate: allow });
+    const middleware = createProxyBodyMiddleware({ watch: jest.fn(), authenticate: allow });
     for (const value of ['-1', 'abc']) {
       const res = createMockResponse();
       const next = jest.fn();
@@ -412,32 +441,309 @@ describe('proxy body middleware', () => {
   });
 });
 
-describe('discardBody', () => {
-  const refuse = (idleTimeoutMs?: number) => {
-    const app = express();
-    app.post('/v1/chat/completions', async (req, res) => {
-      await discardBody(req, res, idleTimeoutMs);
-      if (!res.headersSent) res.status(401).end();
-    });
-    return app;
-  };
+describe('body watcher', () => {
+  const body = padded(900 * 1024);
+  const authPath = '/api/auth/update-user';
 
-  it('reads the whole body so a closing client still gets the answer', async () => {
-    const port = await listen(refuse());
-    const body = 'x'.repeat(8 * MB);
+  it('drops the quietest body when together they hold too much, on any route', async () => {
+    const { app, handled, failed } = createApp({ maxBytes: 1.5 * MB });
+    const port = await listen(app);
 
-    const upload = openJson(port, body.length);
-    upload.socket.write(body);
+    const oldest = await openUnfinished(port, body, authPath);
+    const newcomer = await openUnfinished(port, body, '/api/v1/test');
 
-    expect(await upload.replied).toContain('401');
+    expect(await oldest.replied).toContain('408');
+    await oldest.closed;
+    expect(oldest.text()).toContain('Too many unfinished request bodies');
+    newcomer.finish();
+    expect(await newcomer.replied).toContain('200');
+    expect(handled).toHaveBeenCalledTimes(1);
+    expect(failed).not.toHaveBeenCalled();
   });
 
-  it('gives up on a refused body that stops arriving', async () => {
-    const port = await listen(refuse(100));
+  it('spares a body that is still arriving over one that went quiet', async () => {
+    const { app } = createApp({ maxBytes: 1.5 * MB });
+    const port = await listen(app);
+    const small = padded(300 * 1024);
 
-    const upload = openJson(port, 2 * MB);
+    const active = openJson(port, body.length);
+    active.socket.write(body.slice(0, 100 * 1024));
+    await wait(60);
+    const quiet = await openUnfinished(port, body);
+    // The older body speaks again, so the other one is now the quietest.
+    active.socket.write(body.slice(100 * 1024, 700 * 1024));
+    await wait(60);
+    const newcomer = await openUnfinished(port, small);
 
-    expect(await upload.replied).toContain('408');
+    expect(await quiet.replied).toContain('408');
+    active.socket.write(body.slice(700 * 1024));
+    expect(await active.replied).toContain('200');
+    newcomer.finish();
+    expect(await newcomer.replied).toContain('200');
+  });
+
+  const keyOnly: ProxyBodyOptions['authenticate'] = async (req, res) =>
+    req.headers.authorization === 'Bearer good' ? null : refuseWith401(req, res);
+  const openWithKey = (port: number, content: string, key: string) => {
+    const upload = open(port, '/v1/chat/completions', [
+      'Content-Type: application/json',
+      `Content-Length: ${content.length}`,
+      `Authorization: Bearer ${key}`,
+    ]);
+    upload.socket.write(content.slice(0, -1));
+    return { ...upload, finish: () => upload.socket.write(content.slice(-1)) };
+  };
+
+  it('drops the body of a valid key only after all the others', async () => {
+    const { app } = createApp({ authenticate: keyOnly, maxBytes: 1.5 * MB });
+    const port = await listen(app);
+    const part = padded(600 * 1024);
+
+    // The oldest and quietest of all, but vouched for.
+    const keyed = openWithKey(port, part, 'good');
+    await wait(60);
+    const forged = openWithKey(port, part, 'forged');
+    await wait(60);
+    const anonymous = await openUnfinished(port, part);
+
+    expect(await forged.replied).toContain('408');
+    keyed.finish();
+    anonymous.finish();
+    expect(await keyed.replied).toContain('200');
+    expect(await anonymous.replied).toContain('200');
+  });
+
+  it('still bounds bodies when every one of them has a key', async () => {
+    const { app } = createApp({ authenticate: keyOnly, maxBytes: 1.5 * MB });
+    const port = await listen(app);
+
+    const first = openWithKey(port, body, 'good');
+    await wait(60);
+    openWithKey(port, body, 'good');
+
+    expect(await first.replied).toContain('408');
+  });
+
+  it('caps how many bodies may be unfinished, even ones that sent nothing', async () => {
+    const { app } = createApp({ maxBodies: 2 });
+    const port = await listen(app);
+
+    const first = openJson(port, 100);
+    await wait(30);
+    const second = openJson(port, 100);
+    await wait(30);
+    const third = openJson(port, 100, '/api/v1/test');
+
+    expect(await first.replied).toContain('408');
+    await wait(30);
+    expect(second.isClosed()).toBe(false);
+    expect(third.isClosed()).toBe(false);
+  });
+
+  it('leaves bodies holding nothing alone when only memory is short', async () => {
+    const { app } = createApp({ maxBytes: 1.5 * MB });
+    const port = await listen(app);
+
+    const empty = openJson(port, 100);
+    await wait(30);
+    const oldest = await openUnfinished(port, body);
+    await openUnfinished(port, body);
+
+    expect(await oldest.replied).toContain('408');
+    expect(empty.isClosed()).toBe(false);
+  });
+
+  it('never drops the only body for its own size', async () => {
+    const { app } = createApp({ maxBytes: 1024 });
+
+    await request(app)
+      .post('/v1/chat/completions')
+      .send(chatBody(500 * 1024))
+      .expect(200);
+  });
+
+  // The parser keeps a string piece per chunk, so many tiny chunks cost memory.
+  it('charges every chunk more than its length', async () => {
+    const { app } = createApp({ maxBytes: 1200 });
+    const port = await listen(app);
+
+    const dribble = openJson(port, 100);
+    for (let i = 0; i < 20; i++) {
+      dribble.socket.write(' ');
+      await wait(10);
+    }
+    const newcomer = openJson(port, 100);
+    newcomer.socket.write(' ');
+
+    expect(await dribble.replied).toContain('408');
+  });
+
+  it('keeps large keyed bodies out of the pressure, as their budget counts them', async () => {
+    const { app } = createApp({ maxBodies: 1, maxBytes: 1024 });
+    const port = await listen(app);
+    const large = padded(2 * MB);
+
+    const keyed = await openUnfinished(port, large);
+    const first = openJson(port, 100);
+    await wait(30);
+    openJson(port, 100);
+
+    expect(await first.replied).toContain('408');
+    keyed.finish();
+    expect(await keyed.replied).toContain('200');
+  });
+
+  it('does not count bytes it throws away', async () => {
+    const { app } = createApp({ authenticate: refuseWith401, maxBytes: 1.5 * MB });
+    const port = await listen(app);
+
+    const kept = await openUnfinished(port, body);
+    const refused = await openUnfinished(port, padded(4 * MB));
+
+    kept.finish();
+    expect(await kept.replied).toContain('200');
+    refused.finish();
+    expect(await refused.replied).toContain('401');
+  });
+
+  it('times out small bodies on every route', async () => {
+    const { app, handled } = createApp({ idleTimeoutMs: 100 });
+    const port = await listen(app);
+
+    for (const path of ['/v1/chat/completions', '/api/v1/test', authPath]) {
+      const stalled = openJson(port, 100, path);
+      expect(await stalled.replied).toContain('408');
+      expect(stalled.text()).toContain('Timed out waiting for the request body');
+    }
+    expect(handled).not.toHaveBeenCalled();
+  });
+
+  it('keeps a slow body that is still arriving', async () => {
+    const { app } = createApp({ idleTimeoutMs: 300 });
+    const port = await listen(app);
+    const slowBody = JSON.stringify(chatBody(10));
+
+    const slow = openJson(port, slowBody.length);
+    for (const part of slowBody.match(/.{1,9}/g) as string[]) {
+      slow.socket.write(part);
+      await wait(80);
+    }
+
+    expect(await slow.replied).toContain('200');
+  });
+
+  it('hangs up on a body that stalls after its response', async () => {
+    const { app } = createApp({ idleTimeoutMs: 100 });
+    const port = await listen(app);
+
+    const limited = openJson(port, 5000, '/api/v1/limited');
+
+    expect(await limited.replied).toContain('429');
+    await limited.closed;
+  });
+
+  it('counts a body still arriving after its response', async () => {
+    const { app } = createApp({ maxBodies: 1 });
+    const port = await listen(app);
+    // Keep the answered connection open, as a keep-alive client would.
+    const answered = connect(port, '127.0.0.1');
+    sockets.push(answered);
+    answered.on('error', () => undefined);
+    const closed = once(answered, 'close');
+    answered.write('POST /api/v1/limited HTTP/1.1\r\nHost: x\r\nContent-Length: 5000\r\n\r\n');
+    await once(answered, 'data');
+
+    openJson(port, 100);
+
+    await closed;
+  });
+
+  // An answered request is never told its connection closed, only its socket is.
+  it('forgets a body when its connection closes', async () => {
+    const watch = createBodyWatcher({ idleTimeoutMs: 20 });
+    const socket = new EventEmitter();
+    const req = Object.assign(new Readable({ read: () => undefined }), {
+      headers: { 'content-length': '5' },
+      socket,
+    }) as unknown as express.Request;
+    const res = createMockResponse();
+
+    watch(req, res);
+    socket.emit('close');
+    await wait(60);
+
+    expect(res.status).not.toHaveBeenCalled();
+    expect(req.destroyed).toBe(false);
+    expect(socket.listenerCount('close')).toBe(0);
+  });
+
+  it('leaves a body that has fully arrived to its handler', async () => {
+    const { app } = createApp({ idleTimeoutMs: 100, maxBodies: 1 });
+    const port = await listen(app);
+
+    // Nothing reads a text body, so only its arrival tells it apart from a stall.
+    const waiting = open(port, '/api/v1/slow', ['Content-Type: text/plain', 'Content-Length: 2']);
+    waiting.socket.write('hi');
+    await wait(30);
+    openJson(port, 100);
+
+    expect(await waiting.replied).toContain('200');
+  });
+});
+
+describe('API body middleware', () => {
+  it('parses JSON and form bodies', async () => {
+    const { app } = createApp();
+
+    await request(app).post('/api/v1/echo').send({ a: 1 }).expect(200, { a: 1 });
+    await request(app)
+      .post('/api/v1/echo')
+      .type('form')
+      .send('a[b]=2')
+      .expect(200, { a: { b: '2' } });
+  });
+
+  it('answers malformed JSON with a 400', async () => {
+    const { app } = createApp();
+
+    await request(app)
+      .post('/api/v1/echo')
+      .set('Content-Type', 'application/json')
+      .send('{')
+      .expect(400);
+  });
+
+  it.each(['application/json', 'application/x-www-form-urlencoded'])(
+    'refuses compressed %s bodies, whose size on the wire hides their size in memory',
+    async (type) => {
+      const { app } = createApp();
+
+      await request(app)
+        .post('/api/v1/echo')
+        .set('Content-Type', type)
+        .set('Content-Encoding', 'gzip')
+        .serialize((body) => body as string)
+        .send(gzipSync('{}') as unknown as string)
+        .expect(415);
+    },
+  );
+
+  it('refuses a chunked body that grows past the limit', async () => {
+    const { app, handled } = createApp();
+    const port = await listen(app);
+
+    const upload = open(port, '/api/v1/test', [
+      'Content-Type: application/json',
+      'Transfer-Encoding: chunked',
+    ]);
+    const chunk = 'x'.repeat(512 * 1024);
+    for (let i = 0; i < 4; i++) {
+      upload.socket.write(`${chunk.length.toString(16)}\r\n${chunk}\r\n`);
+    }
+    upload.socket.write('0\r\n\r\n');
+
+    expect(await upload.replied).toContain('413');
+    expect(handled).not.toHaveBeenCalled();
   });
 });
 
@@ -518,8 +824,8 @@ describe('auth body middleware', () => {
       .expect(415);
   });
 
-  it('drops a body that stops arriving', async () => {
-    const { app, handled, failed } = createApp({}, 100);
+  it('drops a chunked body that stops arriving', async () => {
+    const { app, handled, failed } = createApp({ idleTimeoutMs: 100 });
     const port = await listen(app);
 
     const stalled = open(port, signIn, ['Transfer-Encoding: chunked']);

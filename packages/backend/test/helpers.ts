@@ -1,4 +1,3 @@
-import { json } from 'express';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   CanActivate,
@@ -59,9 +58,11 @@ import { WaitlistModule } from '../src/waitlist/waitlist.module';
 import { CrmMetricsModule } from '../src/crm-metrics/crm-metrics.module';
 import { ProviderModelFetcherService } from '../src/model-discovery/provider-model-fetcher.service';
 import {
-  API_BODY_LIMIT,
   bodyParserErrorHandler,
+  createApiBodyMiddleware,
+  createBodyWatcher,
   createProxyBodyMiddleware,
+  watchLeftoverBodies,
 } from '../src/common/middleware/body-parser-limits';
 import { AgentKeyAuthGuard } from '../src/otlp/guards/agent-key-auth.guard';
 import { createProxyBodyAuthenticator } from '../src/routing/proxy/proxy-body-auth';
@@ -236,16 +237,19 @@ class MockSessionGuard implements CanActivate {
 
 /** The body parsers `main.ts` mounts, with the same pre-parse proxy key check. */
 export function mountProductionBodyParsers(app: INestApplication): void {
+  const watch = createBodyWatcher();
+  app.use(watchLeftoverBodies(watch));
   app.use(
     '/v1',
     createProxyBodyMiddleware({
+      watch,
       authenticate: createProxyBodyAuthenticator(
         app.get(AgentKeyAuthGuard, { strict: false }),
         app.get(ProxyExceptionFilter, { strict: false }),
       ),
     }),
   );
-  app.use(json({ limit: API_BODY_LIMIT }));
+  app.use(createApiBodyMiddleware(watch));
   app.use(bodyParserErrorHandler);
 }
 

@@ -16,12 +16,40 @@ export const PROXY_BODY_LIMIT_BYTES = 64 * 1024 * 1024;
 export const PROXY_IN_FLIGHT_LIMIT_BYTES = 64 * 1024 * 1024;
 /** Longest silence allowed while a body arrives. Node caps the total time. */
 export const BODY_IDLE_TIMEOUT_MS = 30_000;
+/** Memory the bodies still arriving may hold between them. */
+export const ARRIVING_LIMIT_BYTES = 32 * 1024 * 1024;
+/** Bodies still arriving at once: each also holds tens of KB of connection state. */
+export const ARRIVING_LIMIT_BODIES = 1024;
+// What a chunk costs beyond its bytes: the parser keeps one string piece for each.
+const CHUNK_OVERHEAD_BYTES = 64;
+
+/**
+ * `buffered` bytes stay in memory, `discarded` ones are thrown away, and
+ * `reserved` ones are already counted by the caller's own budget.
+ */
+export type BodyUse = 'buffered' | 'discarded' | 'reserved';
+export type BodyWatcher = (
+  req: express.Request,
+  res: express.Response,
+  use?: BodyUse,
+  /** Once this resolves true, the body is dropped only after all the others. */
+  vouched?: Promise<boolean>,
+) => void;
+
+/** A `/v1` body above this may take a while, so its key is checked as it arrives. */
+export const VOUCH_ABOVE_BYTES = 16 * 1024;
+
+export interface BodyWatcherLimits {
+  idleTimeoutMs?: number;
+  maxBytes?: number;
+  maxBodies?: number;
+}
 
 export interface ProxyBodyOptions {
-  /** Resolves false once it has answered a caller it refuses. */
-  authenticate: (req: express.Request, res: express.Response) => Promise<boolean>;
+  watch: BodyWatcher;
+  /** Resolves null for a caller allowed a large body, else how to refuse them. */
+  authenticate: (req: express.Request, res: express.Response) => Promise<(() => void) | null>;
   inFlightLimitBytes?: number;
-  idleTimeoutMs?: number;
 }
 
 interface BodyParserError extends Error {
@@ -40,42 +68,112 @@ function reject(res: express.Response, statusCode: number, error: string, messag
   res.status(statusCode).json({ message, error, statusCode });
 }
 
-/** Watches a body someone is reading, and drops the request when it stalls. */
-function watchBody(req: express.Request, res: express.Response, idleTimeoutMs: number): void {
-  // A `data` listener starts the stream flowing, so only join an existing reader.
-  if (req.listenerCount('data') === 0) return;
+function carriesBody(req: express.Request): boolean {
+  const { 'content-length': length, 'transfer-encoding': encoding } = req.headers;
+  return encoding !== undefined || Number(length) > 0;
+}
 
-  // Answer and hang up, so nothing downstream ever sees the half-read body.
-  const timer = setTimeout(() => {
-    if (!res.headersSent) {
-      res.set('Connection', 'close');
-      reject(res, 408, 'Request Timeout', 'Timed out waiting for the request body');
+/**
+ * Watches the request bodies still arriving, all routes together. A silent one is
+ * dropped. When they hold too much, or are too many, the quietest goes first,
+ * callers with a key last: refusing newcomers instead would let one caller lock
+ * everybody else out.
+ */
+export function createBodyWatcher({
+  idleTimeoutMs = BODY_IDLE_TIMEOUT_MS,
+  maxBytes = ARRIVING_LIMIT_BYTES,
+  maxBodies = ARRIVING_LIMIT_BODIES,
+}: BodyWatcherLimits = {}): BodyWatcher {
+  // A Map keeps insertion order, and every chunk moves its body to the end.
+  const arriving = new Map<
+    express.Request,
+    { bytes: number; vouched: boolean; drop: (why: string) => void }
+  >();
+  const watched = new WeakSet<express.Request>();
+  let heldBytes = 0;
+
+  const makeRoom = (newest: express.Request) => {
+    for (const spared of [true, false]) {
+      for (const [req, body] of arriving) {
+        const tooMany = arriving.size > maxBodies;
+        if (!tooMany && heldBytes <= maxBytes) return;
+        if (req === newest || (spared && body.vouched)) continue;
+        // Over on bytes alone, dropping a body that holds none frees nothing.
+        if (tooMany || body.bytes > 0) {
+          body.drop('Too many unfinished request bodies, and this one was the quietest');
+        }
+      }
     }
-    req.destroy();
-  }, idleTimeoutMs);
-  const onData = () => timer.refresh();
-  const stop = () => {
-    clearTimeout(timer);
-    req.off('data', onData);
   };
-  req.on('data', onData);
-  finished(req, stop);
-  res.once('close', stop);
+
+  return (req, res, use = 'buffered', vouched) => {
+    if (watched.has(req) || req.complete || !carriesBody(req)) return;
+    watched.add(req);
+
+    const { socket } = req;
+    const body = { bytes: 0, vouched: false, drop };
+    void vouched?.then((ok) => (body.vouched = ok));
+    const timer = setTimeout(() => drop('Timed out waiting for the request body'), idleTimeoutMs);
+    const onData = (chunk: Buffer) => {
+      timer.refresh();
+      if (!arriving.delete(req)) return;
+      if (use === 'buffered') {
+        const cost = chunk.length + CHUNK_OVERHEAD_BYTES;
+        body.bytes += cost;
+        heldBytes += cost;
+      }
+      arriving.set(req, body);
+      makeRoom(req);
+    };
+    function stop(): void {
+      clearTimeout(timer);
+      req.off('data', onData);
+      socket.off('close', stop);
+      if (arriving.delete(req)) heldBytes -= body.bytes;
+    }
+    // Answers and hangs up, so nothing downstream ever sees the half-read body.
+    function drop(why: string): void {
+      stop();
+      // Everything has arrived: it is only waiting to be handled.
+      if (req.complete) return;
+      if (!res.headersSent) {
+        res.set('Connection', 'close');
+        reject(res, 408, 'Request Timeout', why);
+      }
+      req.destroy();
+    }
+
+    // A `data` listener starts a stream flowing, so only join an existing reader.
+    if (req.listenerCount('data') > 0 || req.readableFlowing) req.on('data', onData);
+    finished(req, stop);
+    // Once answered, a request no longer hears that its connection closed.
+    socket.once('close', stop);
+    if (use === 'reserved') return;
+    arriving.set(req, body);
+    makeRoom(req);
+  };
+}
+
+/**
+ * Mount ahead of everything. A body can be answered before it has arrived (rate
+ * limit, unknown route, wrong content type) and still holds its connection.
+ */
+export function watchLeftoverBodies(watch: BodyWatcher): express.RequestHandler {
+  return (req, res, next) => {
+    res.once('finish', () => watch(req, res, 'discarded'));
+    next();
+  };
 }
 
 /**
  * Reads a refused body into the void. Answering mid-upload resets some clients
  * before they hear why.
  */
-export function discardBody(
-  req: express.Request,
-  res: express.Response,
-  idleTimeoutMs = BODY_IDLE_TIMEOUT_MS,
-): Promise<void> {
-  return new Promise((resolve) => {
+function discardBody(req: express.Request, res: express.Response, watch: BodyWatcher) {
+  return new Promise<void>((resolve) => {
     finished(req, () => resolve());
     req.on('data', () => undefined);
-    watchBody(req, res, idleTimeoutMs);
+    watch(req, res, 'discarded');
   });
 }
 
@@ -85,9 +183,9 @@ export function discardBody(
  * budget. Compressed bodies are refused: they hide their real size.
  */
 export function createProxyBodyMiddleware({
+  watch,
   authenticate,
   inFlightLimitBytes = PROXY_IN_FLIGHT_LIMIT_BYTES,
-  idleTimeoutMs = BODY_IDLE_TIMEOUT_MS,
 }: ProxyBodyOptions): express.RequestHandler {
   let activeBytes = 0;
   // Two limits, so an unauthenticated read stays small whatever the headers claim.
@@ -115,11 +213,26 @@ export function createProxyBodyMiddleware({
     // Small bodies are cheap, and the route's own guard checks them after parsing.
     if (declared <= API_BODY_LIMIT_BYTES) {
       parseSmall(req, res, next);
-      watchBody(req, res, idleTimeoutMs);
+      // Checked beside the upload, so a slow agent keeps its place under a flood.
+      const vouched =
+        declared > VOUCH_ABOVE_BYTES && req.headers.authorization
+          ? authenticate(req, res).then(
+              (refuse) => !refuse,
+              () => false,
+            )
+          : undefined;
+      watch(req, res, 'buffered', vouched);
       return;
     }
 
-    if (!(await authenticate(req, res)) || res.destroyed) return;
+    const refuse = await authenticate(req, res);
+    if (refuse) {
+      await discardBody(req, res, watch);
+      // A body that stalled was already answered with 408.
+      if (!res.headersSent) refuse();
+      return;
+    }
+    if (res.destroyed) return;
     // Reserved before reading, and only for a caller with a key. Refusing an
     // upload midway leaves its bytes in memory until the next collection.
     if (activeBytes + declared > inFlightLimitBytes) {
@@ -132,7 +245,7 @@ export function createProxyBodyMiddleware({
       activeBytes -= declared;
     });
     parseLarge(req, res, next);
-    watchBody(req, res, idleTimeoutMs);
+    watch(req, res, 'reserved');
   };
 }
 
@@ -140,9 +253,7 @@ export function createProxyBodyMiddleware({
  * Reads a Better Auth body under a byte cap, chunked bodies included: its Node
  * handler reads without one.
  */
-export function createAuthBodyMiddleware(
-  idleTimeoutMs = BODY_IDLE_TIMEOUT_MS,
-): express.RequestHandler {
+export function createAuthBodyMiddleware(watch: BodyWatcher): express.RequestHandler {
   // Text, not raw: Better Auth takes a string body as it is (Stripe signs it).
   const parse = express.text({ type: () => true, limit: API_BODY_LIMIT, inflate: false });
 
@@ -152,7 +263,19 @@ export function createAuthBodyMiddleware(
       if (req.body === '') req.body = undefined;
       next(err);
     });
-    watchBody(req, res, idleTimeoutMs);
+    watch(req, res);
+  };
+}
+
+/** Parses the JSON and form bodies of every other route. */
+export function createApiBodyMiddleware(watch: BodyWatcher): express.RequestHandler {
+  const options = { limit: API_BODY_LIMIT, inflate: false };
+  const parseJson = express.json(options);
+  const parseForm = express.urlencoded({ ...options, extended: true });
+
+  return (req, res, next) => {
+    parseJson(req, res, (err?: unknown) => (err ? next(err) : parseForm(req, res, next)));
+    watch(req, res);
   };
 }
 
